@@ -50,7 +50,7 @@ client behind one supported interface.
 
 ## Connect to the APIs
 
-The service endpoint is `grpc.tarka.rest:443` over TLS. Authentication metadata
+The service endpoint is `tarka.rest:443` over TLS. Authentication metadata
 uses the standard `authorization: Bearer <token>` key. Control-plane RPCs use a
 Tarka account access token. Customer keys beginning with `tk_live_` are accepted
 only by product RPCs for which the key has an explicit scope; currently that is
