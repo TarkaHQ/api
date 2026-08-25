@@ -1,0 +1,417 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Tarka Inference API",
+    "version": "2.0"
+  },
+  "servers": [
+    {"url": "https://tarka.rest"}
+  ],
+  "security": [
+    {"bearerAuth": []}
+  ],
+  "paths": {
+    "/v2/models": {
+      "get": {
+        "operationId": "listModelsV2",
+        "responses": {
+          "200": {
+            "description": "Model list",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ModelList"}}}
+          },
+          "default": {"$ref": "#/components/responses/Error"}
+        }
+      }
+    },
+    "/v2/models/{model}": {
+      "get": {
+        "operationId": "retrieveModelV2",
+        "parameters": [
+          {"name": "model", "in": "path", "required": true, "schema": {"type": "string"}}
+        ],
+        "responses": {
+          "200": {
+            "description": "Model",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Model"}}}
+          },
+          "default": {"$ref": "#/components/responses/Error"}
+        }
+      }
+    },
+    "/v2/chat/completions": {
+      "post": {
+        "operationId": "createChatCompletionV2",
+        "requestBody": {
+          "required": true,
+          "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ChatCompletionRequest"}}}
+        },
+        "responses": {
+          "200": {
+            "description": "Chat completion or server-sent event stream",
+            "content": {
+              "application/json": {"schema": {"$ref": "#/components/schemas/ChatCompletion"}},
+              "text/event-stream": {"schema": {"type": "string"}}
+            }
+          },
+          "default": {"$ref": "#/components/responses/Error"}
+        }
+      }
+    },
+    "/v2/ocr": {
+      "post": {
+        "operationId": "createOcrV2",
+        "requestBody": {
+          "required": true,
+          "content": {"application/json": {"schema": {"$ref": "#/components/schemas/OCRRequest"}}}
+        },
+        "responses": {
+          "200": {
+            "description": "OCR result or server-sent event stream",
+            "content": {
+              "application/json": {"schema": {"$ref": "#/components/schemas/OCRResponse"}},
+              "text/event-stream": {"schema": {"type": "string"}}
+            }
+          },
+          "default": {"$ref": "#/components/responses/Error"}
+        }
+      }
+    },
+    "/v2/audio/transcriptions": {
+      "post": {
+        "operationId": "createTranscriptionV2",
+        "requestBody": {
+          "required": true,
+          "content": {"multipart/form-data": {"schema": {"$ref": "#/components/schemas/TranscriptionRequest"}}}
+        },
+        "responses": {
+          "200": {
+            "description": "Transcription",
+            "content": {
+              "application/json": {"schema": {"$ref": "#/components/schemas/AudioTextResponse"}},
+              "text/plain": {"schema": {"type": "string"}},
+              "application/x-subrip": {"schema": {"type": "string"}},
+              "text/vtt": {"schema": {"type": "string"}}
+            }
+          },
+          "default": {"$ref": "#/components/responses/Error"}
+        }
+      }
+    },
+    "/v2/audio/translations": {
+      "post": {
+        "operationId": "createTranslationV2",
+        "requestBody": {
+          "required": true,
+          "content": {"multipart/form-data": {"schema": {"$ref": "#/components/schemas/TranslationRequest"}}}
+        },
+        "responses": {
+          "200": {
+            "description": "Translation",
+            "content": {
+              "application/json": {"schema": {"$ref": "#/components/schemas/AudioTextResponse"}},
+              "text/plain": {"schema": {"type": "string"}},
+              "application/x-subrip": {"schema": {"type": "string"}},
+              "text/vtt": {"schema": {"type": "string"}}
+            }
+          },
+          "default": {"$ref": "#/components/responses/Error"}
+        }
+      }
+    },
+    "/v2/audio/speech": {
+      "post": {
+        "operationId": "createSpeechV2",
+        "requestBody": {
+          "required": true,
+          "content": {"application/json": {"schema": {"$ref": "#/components/schemas/SpeechRequest"}}}
+        },
+        "responses": {
+          "200": {
+            "description": "Generated audio",
+            "content": {
+              "audio/mpeg": {"schema": {"type": "string", "format": "binary"}},
+              "audio/ogg": {"schema": {"type": "string", "format": "binary"}},
+              "audio/aac": {"schema": {"type": "string", "format": "binary"}},
+              "audio/flac": {"schema": {"type": "string", "format": "binary"}},
+              "audio/wav": {"schema": {"type": "string", "format": "binary"}},
+              "audio/L16": {"schema": {"type": "string", "format": "binary"}}
+            }
+          },
+          "default": {"$ref": "#/components/responses/Error"}
+        }
+      }
+    },
+    "/v2/audio/voice-clones": {
+      "post": {
+        "operationId": "createVoiceCloneV2",
+        "requestBody": {
+          "required": true,
+          "content": {"multipart/form-data": {"schema": {"$ref": "#/components/schemas/VoiceCloneRequest"}}}
+        },
+        "responses": {
+          "202": {
+            "description": "Voice clone accepted",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/VoiceClone"}}}
+          },
+          "default": {"$ref": "#/components/responses/Error"}
+        }
+      }
+    },
+    "/v2/audio/voice-clones/{voice_id}": {
+      "parameters": [
+        {"name": "voice_id", "in": "path", "required": true, "schema": {"type": "string"}}
+      ],
+      "get": {
+        "operationId": "getVoiceCloneV2",
+        "responses": {
+          "200": {
+            "description": "Voice clone",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/VoiceClone"}}}
+          },
+          "default": {"$ref": "#/components/responses/Error"}
+        }
+      },
+      "delete": {
+        "operationId": "deleteVoiceCloneV2",
+        "responses": {
+          "204": {"description": "Voice clone deleted"},
+          "default": {"$ref": "#/components/responses/Error"}
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {"type": "http", "scheme": "bearer"}
+    },
+    "responses": {
+      "Error": {
+        "description": "OpenAI-compatible error",
+        "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ErrorResponse"}}}
+      }
+    },
+    "schemas": {
+      "Model": {
+        "type": "object",
+        "required": ["id", "object", "created", "owned_by"],
+        "properties": {
+          "id": {"type": "string"},
+          "object": {"const": "model"},
+          "created": {"type": "integer", "format": "int64"},
+          "owned_by": {"type": "string"}
+        }
+      },
+      "ModelList": {
+        "type": "object",
+        "required": ["object", "data"],
+        "properties": {
+          "object": {"const": "list"},
+          "data": {"type": "array", "items": {"$ref": "#/components/schemas/Model"}}
+        }
+      },
+      "ChatMessage": {
+        "type": "object",
+        "required": ["role"],
+        "properties": {
+          "role": {"type": "string", "enum": ["developer", "system", "user", "assistant", "tool", "function"]},
+          "content": {},
+          "name": {"type": "string"},
+          "tool_calls": {"type": "array", "items": {"type": "object", "additionalProperties": true}},
+          "tool_call_id": {"type": "string"},
+          "function_call": {"type": "object", "additionalProperties": true},
+          "refusal": {"type": "string"},
+          "audio": {"type": "object", "additionalProperties": true}
+        },
+        "additionalProperties": true
+      },
+      "ChatCompletionRequest": {
+        "type": "object",
+        "required": ["model", "messages"],
+        "properties": {
+          "model": {"type": "string"},
+          "messages": {"type": "array", "minItems": 1, "items": {"$ref": "#/components/schemas/ChatMessage"}},
+          "stream": {"type": "boolean", "default": false},
+          "stream_options": {"type": "object", "additionalProperties": true},
+          "max_tokens": {"type": "integer"},
+          "max_completion_tokens": {"type": "integer"},
+          "temperature": {"type": "number"},
+          "top_p": {"type": "number"},
+          "top_k": {"type": "integer"},
+          "repeat_penalty": {"type": "number"},
+          "presence_penalty": {"type": "number"},
+          "frequency_penalty": {"type": "number"},
+          "stop": {"oneOf": [{"type": "string"}, {"type": "array", "items": {"type": "string"}}]},
+          "seed": {"type": "integer", "format": "int64"},
+          "user": {"type": "string"},
+          "tools": {"type": "array", "items": {"type": "object", "additionalProperties": true}},
+          "tool_choice": {},
+          "functions": {"type": "array", "items": {"type": "object", "additionalProperties": true}},
+          "function_call": {},
+          "n": {"type": "integer", "minimum": 1},
+          "response_format": {"type": "object", "additionalProperties": true},
+          "logprobs": {"type": "boolean"},
+          "top_logprobs": {"type": "integer"},
+          "logit_bias": {"type": "object", "additionalProperties": {"type": "number"}},
+          "parallel_tool_calls": {"type": "boolean"},
+          "modalities": {"type": "array", "items": {"type": "string"}},
+          "audio": {"type": "object", "additionalProperties": true},
+          "prediction": {"type": "object", "additionalProperties": true},
+          "reasoning_effort": {"type": "string"},
+          "service_tier": {"type": "string"},
+          "store": {"type": "boolean"},
+          "metadata": {"type": "object", "additionalProperties": true}
+        },
+        "additionalProperties": true
+      },
+      "Usage": {
+        "type": "object",
+        "properties": {
+          "prompt_tokens": {"type": "integer", "format": "int64"},
+          "completion_tokens": {"type": "integer", "format": "int64"},
+          "total_tokens": {"type": "integer", "format": "int64"},
+          "cost_microcents": {"type": "integer", "format": "int64"},
+          "prompt_tokens_details": {"type": "object", "additionalProperties": true},
+          "completion_tokens_details": {"type": "object", "additionalProperties": true}
+        }
+      },
+      "ChatCompletion": {
+        "type": "object",
+        "required": ["id", "object", "created", "model", "choices"],
+        "properties": {
+          "id": {"type": "string"},
+          "object": {"type": "string"},
+          "created": {"type": "integer", "format": "int64"},
+          "model": {"type": "string"},
+          "choices": {"type": "array", "items": {"type": "object", "additionalProperties": true}},
+          "usage": {"$ref": "#/components/schemas/Usage"},
+          "system_fingerprint": {"type": "string"},
+          "service_tier": {"type": "string"}
+        },
+        "additionalProperties": true
+      },
+      "OCRRequest": {
+        "type": "object",
+        "required": ["model"],
+        "anyOf": [{"required": ["image"]}, {"required": ["images"]}],
+        "properties": {
+          "model": {"type": "string"},
+          "image": {"type": "string"},
+          "images": {"type": "array", "items": {"type": "string"}},
+          "prompt": {"type": "string"},
+          "stream": {"type": "boolean", "default": false},
+          "max_tokens": {"type": "integer"},
+          "temperature": {"type": "number", "default": 0}
+        },
+        "additionalProperties": true
+      },
+      "OCRResponse": {
+        "type": "object",
+        "required": ["id", "object", "created", "model", "text"],
+        "properties": {
+          "id": {"type": "string"},
+          "object": {"type": "string"},
+          "created": {"type": "integer", "format": "int64"},
+          "model": {"type": "string"},
+          "text": {"type": "string"},
+          "usage": {"$ref": "#/components/schemas/Usage"}
+        },
+        "additionalProperties": true
+      },
+      "TranscriptionRequest": {
+        "type": "object",
+        "required": ["file", "model"],
+        "properties": {
+          "file": {"type": "string", "format": "binary"},
+          "model": {"type": "string"},
+          "language": {"type": "string"},
+          "prompt": {"type": "string"},
+          "response_format": {"type": "string", "enum": ["json", "text", "srt", "verbose_json", "vtt"], "default": "json"},
+          "temperature": {"type": "number"},
+          "timestamp_granularities[]": {"type": "array", "items": {"type": "string", "enum": ["segment", "word"]}}
+        },
+        "additionalProperties": true
+      },
+      "TranslationRequest": {
+        "type": "object",
+        "required": ["file", "model"],
+        "properties": {
+          "file": {"type": "string", "format": "binary"},
+          "model": {"type": "string"},
+          "prompt": {"type": "string"},
+          "response_format": {"type": "string", "enum": ["json", "text", "srt", "verbose_json", "vtt"], "default": "json"},
+          "temperature": {"type": "number"},
+          "timestamp_granularities[]": {"type": "array", "items": {"type": "string", "enum": ["segment", "word"]}}
+        },
+        "additionalProperties": true
+      },
+      "AudioTextResponse": {
+        "type": "object",
+        "required": ["text"],
+        "properties": {
+          "text": {"type": "string"},
+          "task": {"type": "string"},
+          "language": {"type": "string"},
+          "duration": {"type": "number"},
+          "words": {"type": "array", "items": {"type": "object", "additionalProperties": true}},
+          "segments": {"type": "array", "items": {"type": "object", "additionalProperties": true}}
+        },
+        "additionalProperties": true
+      },
+      "SpeechRequest": {
+        "type": "object",
+        "required": ["model", "input", "voice"],
+        "properties": {
+          "model": {"type": "string"},
+          "input": {"type": "string"},
+          "voice": {"type": "string"},
+          "response_format": {"type": "string", "enum": ["mp3", "opus", "aac", "flac", "wav", "pcm"], "default": "mp3"},
+          "speed": {"type": "number", "minimum": 0.25, "maximum": 4, "default": 1},
+          "instructions": {"type": "string"},
+          "stream_format": {"type": "string"}
+        },
+        "additionalProperties": true
+      },
+      "VoiceCloneRequest": {
+        "type": "object",
+        "required": ["model", "name", "sample", "consent_signed_by", "consent_date"],
+        "properties": {
+          "model": {"type": "string"},
+          "name": {"type": "string"},
+          "sample": {"type": "string", "format": "binary"},
+          "consent_signed_by": {"type": "string"},
+          "consent_date": {"type": "string", "format": "date"}
+        },
+        "additionalProperties": true
+      },
+      "VoiceClone": {
+        "type": "object",
+        "required": ["id", "object", "created", "model", "name", "status"],
+        "properties": {
+          "id": {"type": "string"},
+          "object": {"const": "voice.clone"},
+          "created": {"type": "integer", "format": "int64"},
+          "model": {"type": "string"},
+          "name": {"type": "string"},
+          "status": {"type": "string", "enum": ["pending", "processing", "ready", "failed"]}
+        },
+        "additionalProperties": true
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "required": ["error"],
+        "properties": {
+          "error": {
+            "type": "object",
+            "required": ["message", "type"],
+            "properties": {
+              "message": {"type": "string"},
+              "type": {"type": "string"},
+              "param": {},
+              "code": {}
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CONTROL_PATH = ROOT / "openapi" / "tarka-control-v1.swagger.json"
 INFERENCE_PATH = ROOT / "openapi" / "tarka-inference-v1.openapi.json"
 INFERENCE_V2_PATH = ROOT / "openapi" / "tarka-inference-v2.swagger.json"
+INFERENCE_V2_OPENAPI_PATH = ROOT / "openapi" / "tarka-inference-v2.openapi.json"
 
 
 def load(path: Path) -> dict[str, Any]:
@@ -167,17 +168,57 @@ def validate_inference_v2(document: dict[str, Any]) -> None:
         raise ValueError(f"{INFERENCE_V2_PATH}: missing request definitions: {missing}")
 
 
+def validate_inference_v2_openapi(document: dict[str, Any]) -> None:
+    if document.get("openapi") != "3.1.0":
+        raise ValueError(f"{INFERENCE_V2_OPENAPI_PATH}: expected OpenAPI 3.1.0")
+    expected = {
+        "/v2/models": {"get"},
+        "/v2/models/{model}": {"get"},
+        "/v2/chat/completions": {"post"},
+        "/v2/ocr": {"post"},
+        "/v2/audio/transcriptions": {"post"},
+        "/v2/audio/translations": {"post"},
+        "/v2/audio/speech": {"post"},
+        "/v2/audio/voice-clones": {"post"},
+        "/v2/audio/voice-clones/{voice_id}": {"get", "delete"},
+    }
+    routes = document.get("paths", {})
+    actual = {
+        route: {
+            method
+            for method in item
+            if method in {"get", "put", "post", "delete", "patch"}
+        }
+        for route, item in routes.items()
+    }
+    if actual != expected:
+        raise ValueError(f"{INFERENCE_V2_OPENAPI_PATH}: endpoint set mismatch")
+    schemes = document.get("components", {}).get("securitySchemes", {})
+    if schemes.get("bearerAuth", {}).get("scheme") != "bearer":
+        raise ValueError(f"{INFERENCE_V2_OPENAPI_PATH}: bearerAuth is required")
+    for route in ("/v2/audio/transcriptions", "/v2/audio/translations", "/v2/audio/voice-clones"):
+        content = routes[route]["post"]["requestBody"]["content"]
+        if "multipart/form-data" not in content:
+            raise ValueError(f"{INFERENCE_V2_OPENAPI_PATH}: {route} must be multipart")
+    speech_content = routes["/v2/audio/speech"]["post"]["responses"]["200"]["content"]
+    if not any(value.get("schema", {}).get("format") == "binary" for value in speech_content.values()):
+        raise ValueError(f"{INFERENCE_V2_OPENAPI_PATH}: speech response must be binary")
+
+
 def main() -> None:
     control = load(CONTROL_PATH)
     inference = load(INFERENCE_PATH)
     inference_v2 = load(INFERENCE_V2_PATH)
+    inference_v2_openapi = load(INFERENCE_V2_OPENAPI_PATH)
     validate_control(control)
     validate_inference(inference)
     validate_inference_v2(inference_v2)
+    validate_inference_v2_openapi(inference_v2_openapi)
     for source, document in (
         (CONTROL_PATH, control),
         (INFERENCE_PATH, inference),
         (INFERENCE_V2_PATH, inference_v2),
+        (INFERENCE_V2_OPENAPI_PATH, inference_v2_openapi),
     ):
         operation_ids(document, source)
         walk_references(document, document, source)
