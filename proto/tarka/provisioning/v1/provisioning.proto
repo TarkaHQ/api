@@ -44,10 +44,7 @@ service ProvisioningService {
 
   // ListModels returns active model aliases, optionally filtered by modality.
   rpc ListModels(ListModelsRequest) returns (ListModelsResponse) {
-    option (google.api.http) = {
-      get: "/control/v1/models"
-      additional_bindings: {get: "/v1/models"}
-    };
+    option (google.api.http) = {get: "/control/v1/models"};
   }
 
   // CreateInferenceService records desired state for a managed inference
@@ -56,10 +53,6 @@ service ProvisioningService {
     option (google.api.http) = {
       post: "/control/v1/inference-services"
       body: "*"
-      additional_bindings: {
-        post: "/v1/inference-services"
-        body: "*"
-      }
       additional_bindings: {
         post: "/control/v1/orgs/{org_id}/inference-services"
         body: "*"

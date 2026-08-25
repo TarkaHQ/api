@@ -4,8 +4,8 @@ Tarka versions its public API at two related levels:
 
 - Protobuf packages include a stability version, currently
   `tarka.provisioning.v1`.
-- Repository releases use semantic tags such as `v1.0.0` so consumers can pin
-  an immutable source and generated Go module revision.
+- Repository releases use semantic tags such as `v1.1.0` so consumers can pin
+  an immutable contract revision.
 
 Within a stable protobuf package, changes must remain wire-compatible and
 source-compatible wherever Protocol Buffers permits it. Safe changes are
@@ -29,5 +29,10 @@ Buf's `FILE` breaking policy enforces the mechanical portion of this contract.
 Reviewers remain responsible for semantic compatibility, including field
 meaning, validation, authentication, authorization, and HTTP behavior.
 
-Generated artifacts are released from the same commit as their source. Tags
-are immutable and must never be moved or recreated.
+The authored inference OpenAPI document follows the same compatibility rule:
+established paths, methods, required inputs, response shapes, and authentication
+semantics are not removed or narrowed within `v1`. Additive optional fields are
+permitted. An incompatible inference design requires a new HTTP version.
+
+The generated control OpenAPI artifact is released from the same commit as its
+protobuf source. Tags are immutable and must never be moved or recreated.

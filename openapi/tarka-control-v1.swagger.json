@@ -6,10 +6,12 @@
   },
   "tags": [
     {
-      "name": "ProvisioningService"
+      "name": "ProvisioningService",
+      "description": "ProvisioningService manages Tarka identities, organizations, API keys,\nquotas, metering, hosted Git, and desired-state compute resources."
     },
     {
-      "name": "SandboxService"
+      "name": "SandboxService",
+      "description": "SandboxService exposes deliberately narrow code execution. It does not\naccept container images, commands, ports, mounts, shell sessions, browsers,\nor persistent volumes."
     }
   ],
   "consumes": [
@@ -504,7 +506,7 @@
     "/control/v1/orgs/{org_id}/inference-services": {
       "post": {
         "summary": "CreateInferenceService records desired state for a managed inference\nservice. Reusing an organization, resource type, and name updates it.",
-        "operationId": "ProvisioningService_CreateInferenceService3",
+        "operationId": "ProvisioningService_CreateInferenceService2",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -1152,72 +1154,6 @@
             "name": "org_id",
             "in": "path",
             "required": true,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "ProvisioningService"
-        ]
-      }
-    },
-    "/v1/inference-services": {
-      "post": {
-        "summary": "CreateInferenceService records desired state for a managed inference\nservice. Reusing an organization, resource type, and name updates it.",
-        "operationId": "ProvisioningService_CreateInferenceService2",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1ProvisionedResource"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "description": "CreateInferenceServiceRequest defines desired state for an inference service.",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/v1CreateInferenceServiceRequest"
-            }
-          }
-        ],
-        "tags": [
-          "ProvisioningService"
-        ]
-      }
-    },
-    "/v1/models": {
-      "get": {
-        "summary": "ListModels returns active model aliases, optionally filtered by modality.",
-        "operationId": "ProvisioningService_ListModels2",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1ListModelsResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "modality",
-            "description": "modality is an exact modality filter; empty returns every active model.",
-            "in": "query",
-            "required": false,
             "type": "string"
           }
         ],

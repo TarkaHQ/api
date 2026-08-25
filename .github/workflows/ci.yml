@@ -26,11 +26,6 @@ jobs:
         with:
           version: 1.57.2
           github_token: ${{ github.token }}
-      - name: Set up Go
-        uses: actions/setup-go@v7
-        with:
-          go-version-file: go.mod
-          cache-dependency-path: go.sum
       - name: Check protobuf formatting and lint
         run: |
           buf format --diff --exit-code
@@ -38,9 +33,9 @@ jobs:
       - name: Check backward compatibility
         if: github.event_name == 'pull_request'
         run: buf breaking --against "${{ github.server_url }}/${{ github.repository }}.git#branch=main"
-      - name: Regenerate bindings and OpenAPI
+      - name: Regenerate control OpenAPI
         run: buf generate
-      - name: Check generated files are committed
-        run: git diff --exit-code -- gen openapi
-      - name: Compile generated Go module
-        run: go test ./...
+      - name: Check generated control OpenAPI is committed
+        run: git diff --exit-code -- openapi/tarka-control-v1.swagger.json
+      - name: Validate OpenAPI contracts
+        run: python3 scripts/validate_openapi.py

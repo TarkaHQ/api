@@ -10,5 +10,5 @@
 ## Verification
 
 - [ ] `make verify` or `make verify-docker`
-- [ ] Generated Go and OpenAPI changes were reviewed.
+- [ ] Generated control OpenAPI and authored inference OpenAPI changes were reviewed.
 - [ ] Authentication, authorization, rollout, and SDK effects are documented.

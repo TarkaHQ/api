@@ -1,0 +1,133 @@
+#!/usr/bin/env python3
+"""Validate the repository's public OpenAPI contract invariants."""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from typing import Any
+
+
+ROOT = Path(__file__).resolve().parents[1]
+CONTROL_PATH = ROOT / "openapi" / "tarka-control-v1.swagger.json"
+INFERENCE_PATH = ROOT / "openapi" / "tarka-inference-v1.openapi.json"
+
+
+def load(path: Path) -> dict[str, Any]:
+    with path.open(encoding="utf-8") as handle:
+        document = json.load(handle)
+    if not isinstance(document, dict):
+        raise ValueError(f"{path}: document root must be an object")
+    return document
+
+
+def resolve_pointer(document: dict[str, Any], reference: str, source: Path) -> None:
+    if not reference.startswith("#/"):
+        raise ValueError(f"{source}: only local references are allowed: {reference}")
+    value: Any = document
+    for raw_part in reference[2:].split("/"):
+        part = raw_part.replace("~1", "/").replace("~0", "~")
+        if not isinstance(value, dict) or part not in value:
+            raise ValueError(f"{source}: unresolved reference: {reference}")
+        value = value[part]
+
+
+def walk_references(value: Any, document: dict[str, Any], source: Path) -> None:
+    if isinstance(value, dict):
+        for key, child in value.items():
+            if key == "$ref":
+                if not isinstance(child, str):
+                    raise ValueError(f"{source}: $ref must be a string")
+                resolve_pointer(document, child, source)
+            else:
+                walk_references(child, document, source)
+    elif isinstance(value, list):
+        for child in value:
+            walk_references(child, document, source)
+
+
+def operation_ids(document: dict[str, Any], source: Path) -> set[str]:
+    identifiers: set[str] = set()
+    for route, path_item in document.get("paths", {}).items():
+        if not isinstance(route, str) or not route.startswith("/"):
+            raise ValueError(f"{source}: invalid route: {route!r}")
+        if not isinstance(path_item, dict):
+            raise ValueError(f"{source}: path item for {route} must be an object")
+        for method, operation in path_item.items():
+            if method.lower() not in {
+                "get",
+                "put",
+                "post",
+                "delete",
+                "options",
+                "head",
+                "patch",
+                "trace",
+            }:
+                continue
+            if not isinstance(operation, dict):
+                raise ValueError(f"{source}: {method.upper()} {route} must be an object")
+            identifier = operation.get("operationId")
+            if not isinstance(identifier, str) or not identifier:
+                raise ValueError(f"{source}: {method.upper()} {route} has no operationId")
+            if identifier in identifiers:
+                raise ValueError(f"{source}: duplicate operationId: {identifier}")
+            identifiers.add(identifier)
+    return identifiers
+
+
+def validate_control(document: dict[str, Any]) -> None:
+    if document.get("swagger") != "2.0":
+        raise ValueError(f"{CONTROL_PATH}: expected Swagger 2.0")
+    routes = document.get("paths")
+    if not isinstance(routes, dict) or not routes:
+        raise ValueError(f"{CONTROL_PATH}: no routes")
+    unexpected = sorted(route for route in routes if not route.startswith("/control/v1/"))
+    if unexpected:
+        raise ValueError(
+            f"{CONTROL_PATH}: inference routes must not be generated from the control API: "
+            + ", ".join(unexpected)
+        )
+
+
+def validate_inference(document: dict[str, Any]) -> None:
+    if document.get("openapi") != "3.1.0":
+        raise ValueError(f"{INFERENCE_PATH}: expected OpenAPI 3.1.0")
+    expected = {
+        "/v1/models": {"get"},
+        "/v1/chat/completions": {"post"},
+    }
+    routes = document.get("paths")
+    if not isinstance(routes, dict):
+        raise ValueError(f"{INFERENCE_PATH}: paths must be an object")
+    actual = {
+        route: {
+            method.lower()
+            for method in path_item
+            if method.lower()
+            in {"get", "put", "post", "delete", "options", "head", "patch", "trace"}
+        }
+        for route, path_item in routes.items()
+    }
+    if actual != expected:
+        raise ValueError(
+            f"{INFERENCE_PATH}: stable endpoint set changed; expected {expected}, got {actual}"
+        )
+    schemes = document.get("components", {}).get("securitySchemes", {})
+    if "bearerAuth" not in schemes:
+        raise ValueError(f"{INFERENCE_PATH}: bearerAuth security scheme is required")
+
+
+def main() -> None:
+    control = load(CONTROL_PATH)
+    inference = load(INFERENCE_PATH)
+    validate_control(control)
+    validate_inference(inference)
+    for source, document in ((CONTROL_PATH, control), (INFERENCE_PATH, inference)):
+        operation_ids(document, source)
+        walk_references(document, document, source)
+    print("validated control and inference OpenAPI contracts")
+
+
+if __name__ == "__main__":
+    main()

@@ -8,16 +8,18 @@ that could affect existing clients.
 ## Development workflow
 
 1. Branch from `main`.
-2. Edit only authoritative files under `proto/`.
+2. Edit authoritative files under `proto/` or the inference contract under
+   `openapi/tarka-inference-v1.openapi.json`.
 3. Run `make verify` (or `make verify-docker`).
-4. Review changes under `gen/` and `openapi/` for unintended behavior.
+4. Review the generated control OpenAPI diff and any authored inference
+   OpenAPI changes for unintended behavior.
 5. Describe compatibility, authentication, authorization, REST, and rollout
    effects in the pull request.
 
-Pull requests must pass formatting, lint, generation-drift, Go compilation, and
-Buf breaking-change checks. New public messages, fields, enum values, services,
-and RPCs should have comments that explain their semantics rather than merely
-restate their names.
+Pull requests must pass protobuf formatting, lint, generation-drift, OpenAPI
+validation, and Buf breaking-change checks. New public messages, fields, enum
+values, services, RPCs, paths, and schemas should explain their semantics rather
+than merely restate their names.
 
 ## Contract rules
 
@@ -26,8 +28,9 @@ fields. Reserve the number and name of anything removed. Prefer additive
 changes to the current stable package, and introduce a new versioned package
 for deliberately incompatible designs.
 
-Generated files must be produced by the pinned plugins in `buf.gen.yaml` and
-must not be edited manually.
+The generated control Swagger document must be produced by the pinned plugin in
+`buf.gen.yaml` and must not be edited manually. Do not commit generated client
+or server code in any language.
 
 ## Security
 
