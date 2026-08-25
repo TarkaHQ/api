@@ -1,0 +1,359 @@
+// Copyright 2026 Tarka
+// SPDX-License-Identifier: Apache-2.0
+
+syntax = "proto3";
+
+package tarka.inference.v2;
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option csharp_namespace = "Tarka.Inference.V2";
+option go_package = "github.com/TarkaHQ/api/gen/go/tarka/inference/v2;inferencev2";
+option java_multiple_files = true;
+option java_outer_classname = "InferenceProto";
+option java_package = "com.tarka.inference.v2";
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    title: "Tarka Inference API"
+    version: "2.0"
+  }
+  schemes: HTTPS
+  consumes: "application/json"
+  produces: "application/json"
+  security_definitions: {
+    security: {
+      key: "bearerAuth"
+      value: {
+        type: TYPE_API_KEY
+        in: IN_HEADER
+        name: "Authorization"
+        description: "Bearer API key"
+      }
+    }
+  }
+  security: {
+    security_requirement: {
+      key: "bearerAuth"
+      value: {}
+    }
+  }
+};
+
+// InferenceService exposes OpenAI-compatible inference and Tarka utility RPCs.
+// REST bindings use /v2 while /v1 remains an independent compatibility surface.
+service InferenceService {
+  rpc ListModels(ListModelsRequest) returns (ListModelsResponse) {
+    option (google.api.http) = {get: "/v2/models"};
+  }
+  rpc RetrieveModel(RetrieveModelRequest) returns (Model) {
+    option (google.api.http) = {get: "/v2/models/{model}"};
+  }
+  rpc CreateChatCompletion(ChatCompletionRequest) returns (ChatCompletion) {
+    option (google.api.http) = {
+      post: "/v2/chat/completions"
+      body: "*"
+    };
+  }
+  rpc StreamChatCompletion(ChatCompletionRequest) returns (stream ChatCompletionChunk) {}
+  rpc CreateOCR(OCRRequest) returns (OCRResponse) {
+    option (google.api.http) = {
+      post: "/v2/ocr"
+      body: "*"
+    };
+  }
+  rpc StreamOCR(OCRRequest) returns (stream OCRChunk) {}
+  rpc CreateTranscription(AudioTranscriptionRequest) returns (AudioTextResponse) {
+    option (google.api.http) = {
+      post: "/v2/audio/transcriptions"
+      body: "*"
+    };
+  }
+  rpc CreateTranslation(AudioTranslationRequest) returns (AudioTextResponse) {
+    option (google.api.http) = {
+      post: "/v2/audio/translations"
+      body: "*"
+    };
+  }
+  rpc CreateSpeech(SpeechRequest) returns (stream AudioChunk) {
+    option (google.api.http) = {
+      post: "/v2/audio/speech"
+      body: "*"
+    };
+  }
+  rpc CreateVoiceClone(VoiceCloneRequest) returns (VoiceClone) {
+    option (google.api.http) = {
+      post: "/v2/audio/voice-clones"
+      body: "*"
+    };
+  }
+  rpc GetVoiceClone(GetVoiceCloneRequest) returns (VoiceClone) {
+    option (google.api.http) = {get: "/v2/audio/voice-clones/{voice_id}"};
+  }
+  rpc DeleteVoiceClone(DeleteVoiceCloneRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/v2/audio/voice-clones/{voice_id}"};
+  }
+}
+
+message ListModelsRequest {}
+
+message RetrieveModelRequest {
+  string model = 1;
+}
+
+message ListModelsResponse {
+  string object = 1;
+  repeated Model data = 2;
+}
+
+message Model {
+  string id = 1;
+  string object = 2;
+  int64 created = 3;
+  string owned_by = 4;
+}
+
+message ChatCompletionRequest {
+  string model = 1;
+  repeated ChatMessage messages = 2;
+  bool stream = 3;
+  optional int32 max_tokens = 4;
+  optional double temperature = 5;
+  optional double top_p = 6;
+  optional int32 top_k = 7;
+  optional double repeat_penalty = 8;
+  optional double presence_penalty = 9;
+  optional double frequency_penalty = 10;
+  google.protobuf.Value stop = 11;
+  optional int64 seed = 12;
+  string user = 13;
+  repeated Tool tools = 14;
+  google.protobuf.Value tool_choice = 15;
+  repeated FunctionDefinition functions = 16;
+  google.protobuf.Value function_call = 17;
+  optional int32 n = 18;
+  optional int32 max_completion_tokens = 19;
+  google.protobuf.Struct response_format = 20;
+  optional bool logprobs = 21;
+  optional int32 top_logprobs = 22;
+  map<string, double> logit_bias = 23;
+  optional bool parallel_tool_calls = 24;
+  StreamOptions stream_options = 25;
+  repeated string modalities = 26;
+  google.protobuf.Struct audio = 27;
+  google.protobuf.Struct prediction = 28;
+  string reasoning_effort = 29;
+  string service_tier = 30;
+  optional bool store = 31;
+  google.protobuf.Struct metadata = 32;
+  google.protobuf.Struct extra_body = 33;
+}
+
+message ChatMessage {
+  string role = 1;
+  google.protobuf.Value content = 2;
+  string name = 3;
+  repeated ToolCall tool_calls = 4;
+  string tool_call_id = 5;
+  google.protobuf.Struct function_call = 6;
+  string refusal = 7;
+  google.protobuf.Struct audio = 8;
+}
+
+message Tool {
+  string type = 1;
+  FunctionDefinition function = 2;
+  google.protobuf.Struct custom = 3;
+}
+
+message FunctionDefinition {
+  string name = 1;
+  string description = 2;
+  google.protobuf.Struct parameters = 3;
+  optional bool strict = 4;
+}
+
+message ToolCall {
+  string id = 1;
+  string type = 2;
+  FunctionCall function = 3;
+  google.protobuf.Struct custom = 4;
+}
+
+message FunctionCall {
+  string name = 1;
+  string arguments = 2;
+}
+
+message StreamOptions {
+  optional bool include_usage = 1;
+  optional bool include_obfuscation = 2;
+}
+
+message ChatCompletion {
+  string id = 1;
+  string object = 2;
+  int64 created = 3;
+  string model = 4;
+  repeated ChatChoice choices = 5;
+  Usage usage = 6;
+  string system_fingerprint = 7;
+  string service_tier = 8;
+  google.protobuf.Struct extensions = 9;
+}
+
+message ChatChoice {
+  int32 index = 1;
+  ChatMessage message = 2;
+  string finish_reason = 3;
+  google.protobuf.Struct logprobs = 4;
+}
+
+message ChatCompletionChunk {
+  string id = 1;
+  string object = 2;
+  int64 created = 3;
+  string model = 4;
+  repeated ChatChunkChoice choices = 5;
+  Usage usage = 6;
+  string system_fingerprint = 7;
+  string service_tier = 8;
+  google.protobuf.Struct extensions = 9;
+}
+
+message ChatChunkChoice {
+  int32 index = 1;
+  ChatDelta delta = 2;
+  string finish_reason = 3;
+  google.protobuf.Struct logprobs = 4;
+}
+
+message ChatDelta {
+  string role = 1;
+  google.protobuf.Value content = 2;
+  repeated ToolCall tool_calls = 3;
+  string refusal = 4;
+  google.protobuf.Struct audio = 5;
+}
+
+message Usage {
+  int64 prompt_tokens = 1;
+  int64 completion_tokens = 2;
+  int64 total_tokens = 3;
+  int64 cost_microcents = 4;
+  google.protobuf.Struct prompt_tokens_details = 5;
+  google.protobuf.Struct completion_tokens_details = 6;
+}
+
+message OCRRequest {
+  string model = 1;
+  string image = 2;
+  repeated string images = 3;
+  string prompt = 4;
+  bool stream = 5;
+  optional int32 max_tokens = 6;
+  optional double temperature = 7;
+  google.protobuf.Struct extra_body = 8;
+}
+
+message OCRResponse {
+  string id = 1;
+  string object = 2;
+  int64 created = 3;
+  string model = 4;
+  string text = 5;
+  Usage usage = 6;
+  google.protobuf.Struct extensions = 7;
+}
+
+message OCRChunk {
+  string id = 1;
+  string object = 2;
+  int64 created = 3;
+  string model = 4;
+  string text = 5;
+  Usage usage = 6;
+  google.protobuf.Struct extensions = 7;
+}
+
+message AudioTranscriptionRequest {
+  bytes file = 1;
+  string filename = 2;
+  string content_type = 3;
+  string model = 4;
+  string language = 5;
+  string prompt = 6;
+  string response_format = 7;
+  optional double temperature = 8;
+  repeated string timestamp_granularities = 9;
+  google.protobuf.Struct extra_body = 10;
+}
+
+message AudioTranslationRequest {
+  bytes file = 1;
+  string filename = 2;
+  string content_type = 3;
+  string model = 4;
+  string prompt = 5;
+  string response_format = 6;
+  optional double temperature = 7;
+  repeated string timestamp_granularities = 8;
+  google.protobuf.Struct extra_body = 9;
+}
+
+message AudioTextResponse {
+  string text = 1;
+  string task = 2;
+  string language = 3;
+  double duration = 4;
+  repeated google.protobuf.Struct words = 5;
+  repeated google.protobuf.Struct segments = 6;
+  google.protobuf.Struct extensions = 7;
+}
+
+message SpeechRequest {
+  string model = 1;
+  string input = 2;
+  string voice = 3;
+  string response_format = 4;
+  optional double speed = 5;
+  string instructions = 6;
+  string stream_format = 7;
+  google.protobuf.Struct extra_body = 8;
+}
+
+message AudioChunk {
+  bytes data = 1;
+  string content_type = 2;
+}
+
+message VoiceCloneRequest {
+  string model = 1;
+  string name = 2;
+  bytes sample = 3;
+  string filename = 4;
+  string content_type = 5;
+  string consent_signed_by = 6;
+  string consent_date = 7;
+  google.protobuf.Struct extra_body = 8;
+}
+
+message VoiceClone {
+  string id = 1;
+  string object = 2;
+  int64 created = 3;
+  string model = 4;
+  string name = 5;
+  string status = 6;
+  google.protobuf.Struct extensions = 7;
+}
+
+message GetVoiceCloneRequest {
+  string voice_id = 1;
+}
+
+message DeleteVoiceCloneRequest {
+  string voice_id = 1;
+}

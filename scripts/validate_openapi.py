@@ -11,6 +11,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 CONTROL_PATH = ROOT / "openapi" / "tarka-control-v1.swagger.json"
 INFERENCE_PATH = ROOT / "openapi" / "tarka-inference-v1.openapi.json"
+INFERENCE_V2_PATH = ROOT / "openapi" / "tarka-inference-v2.swagger.json"
 
 
 def load(path: Path) -> dict[str, Any]:
@@ -118,15 +119,69 @@ def validate_inference(document: dict[str, Any]) -> None:
         raise ValueError(f"{INFERENCE_PATH}: bearerAuth security scheme is required")
 
 
+def validate_inference_v2(document: dict[str, Any]) -> None:
+    if document.get("swagger") != "2.0":
+        raise ValueError(f"{INFERENCE_V2_PATH}: expected Swagger 2.0")
+    expected = {
+        "/v2/models": {"get"},
+        "/v2/models/{model}": {"get"},
+        "/v2/chat/completions": {"post"},
+        "/v2/ocr": {"post"},
+        "/v2/audio/transcriptions": {"post"},
+        "/v2/audio/translations": {"post"},
+        "/v2/audio/speech": {"post"},
+        "/v2/audio/voice-clones": {"post"},
+        "/v2/audio/voice-clones/{voice_id}": {"get", "delete"},
+    }
+    routes = document.get("paths")
+    if not isinstance(routes, dict):
+        raise ValueError(f"{INFERENCE_V2_PATH}: paths must be an object")
+    actual = {
+        route: {
+            method.lower()
+            for method in path_item
+            if method.lower()
+            in {"get", "put", "post", "delete", "options", "head", "patch", "trace"}
+        }
+        for route, path_item in routes.items()
+    }
+    if actual != expected:
+        raise ValueError(
+            f"{INFERENCE_V2_PATH}: endpoint set changed; expected {expected}, got {actual}"
+        )
+    schemes = document.get("securityDefinitions", {})
+    bearer = schemes.get("bearerAuth", {})
+    if bearer.get("name") != "Authorization" or bearer.get("in") != "header":
+        raise ValueError(f"{INFERENCE_V2_PATH}: bearerAuth security definition is required")
+    definitions = document.get("definitions", {})
+    required = {
+        "v2ChatCompletionRequest",
+        "v2OCRRequest",
+        "v2AudioTranscriptionRequest",
+        "v2AudioTranslationRequest",
+        "v2SpeechRequest",
+        "v2VoiceCloneRequest",
+    }
+    missing = sorted(required - definitions.keys())
+    if missing:
+        raise ValueError(f"{INFERENCE_V2_PATH}: missing request definitions: {missing}")
+
+
 def main() -> None:
     control = load(CONTROL_PATH)
     inference = load(INFERENCE_PATH)
+    inference_v2 = load(INFERENCE_V2_PATH)
     validate_control(control)
     validate_inference(inference)
-    for source, document in ((CONTROL_PATH, control), (INFERENCE_PATH, inference)):
+    validate_inference_v2(inference_v2)
+    for source, document in (
+        (CONTROL_PATH, control),
+        (INFERENCE_PATH, inference),
+        (INFERENCE_V2_PATH, inference_v2),
+    ):
         operation_ids(document, source)
         walk_references(document, document, source)
-    print("validated control and inference OpenAPI contracts")
+    print("validated control and v1/v2 inference OpenAPI contracts")
 
 
 if __name__ == "__main__":

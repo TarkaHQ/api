@@ -3,7 +3,18 @@ clean: false
 plugins:
   - remote: buf.build/grpc-ecosystem/openapiv2:v2.30.0
     out: openapi
+    types:
+      - tarka.provisioning.v1.ProvisioningService
+      - tarka.provisioning.v1.SandboxService
     opt:
       - allow_merge=true
       - merge_file_name=tarka-control-v1
+      - json_names_for_fields=false
+  - remote: buf.build/grpc-ecosystem/openapiv2:v2.30.0
+    out: openapi
+    types:
+      - tarka.inference.v2.InferenceService
+    opt:
+      - allow_merge=true
+      - merge_file_name=tarka-inference-v2
       - json_names_for_fields=false
