@@ -1,0 +1,564 @@
+// Copyright 2026 Tarka
+// SPDX-License-Identifier: Apache-2.0
+
+syntax = "proto3";
+
+package tarka.provisioning.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
+option csharp_namespace = "Tarka.Provisioning.V1";
+option go_package = "github.com/TarkaHQ/api/gen/go/tarka/provisioning/v1;provisioningv1";
+option java_multiple_files = true;
+option java_outer_classname = "ProvisioningProto";
+option java_package = "com.tarka.provisioning.v1";
+
+// ProvisioningService manages Tarka identities, organizations, API keys,
+// quotas, metering, hosted Git, and desired-state compute resources.
+service ProvisioningService {
+  // GetCurrentUser returns the authenticated identity and its active
+  // organization memberships.
+  rpc GetCurrentUser(GetCurrentUserRequest) returns (CurrentUser) {
+    option (google.api.http) = {get: "/control/v1/me"};
+  }
+
+  // BootstrapCurrentUser idempotently creates an initial organization when the
+  // authenticated identity does not yet belong to one.
+  rpc BootstrapCurrentUser(BootstrapCurrentUserRequest) returns (CurrentUser) {
+    option (google.api.http) = {
+      post: "/control/v1/me/bootstrap"
+      body: "*"
+    };
+  }
+
+  // EnsureHostedGitAccess provisions or reconciles the authenticated user's
+  // hosted Git identity.
+  rpc EnsureHostedGitAccess(EnsureHostedGitAccessRequest) returns (HostedGitAccess) {
+    option (google.api.http) = {
+      post: "/control/v1/me/git-access"
+      body: "*"
+    };
+  }
+
+  // ListModels returns active model aliases, optionally filtered by modality.
+  rpc ListModels(ListModelsRequest) returns (ListModelsResponse) {
+    option (google.api.http) = {
+      get: "/control/v1/models"
+      additional_bindings: {get: "/v1/models"}
+    };
+  }
+
+  // CreateInferenceService records desired state for a managed inference
+  // service. Reusing an organization, resource type, and name updates it.
+  rpc CreateInferenceService(CreateInferenceServiceRequest) returns (ProvisionedResource) {
+    option (google.api.http) = {
+      post: "/control/v1/inference-services"
+      body: "*"
+      additional_bindings: {
+        post: "/v1/inference-services"
+        body: "*"
+      }
+      additional_bindings: {
+        post: "/control/v1/orgs/{org_id}/inference-services"
+        body: "*"
+      }
+    };
+  }
+
+  // CreateAgentHost records desired state for a managed agent container.
+  rpc CreateAgentHost(CreateAgentHostRequest) returns (ProvisionedResource) {
+    option (google.api.http) = {
+      post: "/control/v1/orgs/{org_id}/agent-hosts"
+      body: "*"
+    };
+  }
+
+  // CreateJob records desired state for a managed finite-duration job.
+  rpc CreateJob(CreateJobRequest) returns (ProvisionedResource) {
+    option (google.api.http) = {
+      post: "/control/v1/orgs/{org_id}/jobs"
+      body: "*"
+    };
+  }
+
+  // CreateApiKey creates a customer API key. Its plaintext secret is returned
+  // exactly once in the response.
+  rpc CreateApiKey(CreateApiKeyRequest) returns (CreateApiKeyResponse) {
+    option (google.api.http) = {
+      post: "/control/v1/orgs/{org_id}/api-keys"
+      body: "*"
+    };
+  }
+
+  // ListApiKeys returns redacted API-key metadata for an organization.
+  rpc ListApiKeys(ListApiKeysRequest) returns (ListApiKeysResponse) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/api-keys"};
+  }
+
+  // RevokeApiKey permanently disables an API key.
+  rpc RevokeApiKey(RevokeApiKeyRequest) returns (RevokeApiKeyResponse) {
+    option (google.api.http) = {
+      post: "/control/v1/orgs/{org_id}/api-keys/{api_key_id}:revoke"
+      body: "*"
+    };
+  }
+
+  // GetOrg returns an active organization visible to the caller.
+  rpc GetOrg(GetOrgRequest) returns (Org) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}"};
+  }
+
+  // UpdateOrg changes mutable organization metadata.
+  rpc UpdateOrg(UpdateOrgRequest) returns (Org) {
+    option (google.api.http) = {
+      patch: "/control/v1/orgs/{org_id}"
+      body: "*"
+    };
+  }
+
+  // GetQuotaPolicy returns an organization's effective inference quota policy.
+  rpc GetQuotaPolicy(GetQuotaPolicyRequest) returns (QuotaPolicy) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/quota-policy"};
+  }
+
+  // UpdateQuotaPolicy replaces an organization's inference quota policy.
+  rpc UpdateQuotaPolicy(UpdateQuotaPolicyRequest) returns (QuotaPolicy) {
+    option (google.api.http) = {
+      put: "/control/v1/orgs/{org_id}/quota-policy"
+      body: "*"
+    };
+  }
+
+  // ListUsageEvents returns the organization's newest metered requests.
+  rpc ListUsageEvents(ListUsageEventsRequest) returns (ListUsageEventsResponse) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/usage/events"};
+  }
+
+  // GetUsageSummary aggregates the organization's current UTC calendar month.
+  rpc GetUsageSummary(GetUsageSummaryRequest) returns (UsageSummary) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/usage/summary"};
+  }
+
+  // ListProvisionedResources returns desired-state resources, optionally
+  // filtered by resource type.
+  rpc ListProvisionedResources(ListProvisionedResourcesRequest) returns (ListProvisionedResourcesResponse) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/resources"};
+  }
+
+  // GetProvisionedResource returns one desired-state resource by identifier.
+  rpc GetProvisionedResource(GetProvisionedResourceRequest) returns (ProvisionedResource) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/resources/{resource_id}"};
+  }
+
+  // CreateGitRepository creates a private, LFS-enabled hosted Git repository.
+  rpc CreateGitRepository(CreateGitRepositoryRequest) returns (GitRepository) {
+    option (google.api.http) = {
+      post: "/control/v1/orgs/{org_id}/git-repositories"
+      body: "*"
+    };
+  }
+
+  // ListGitRepositories returns hosted Git repositories in an organization.
+  rpc ListGitRepositories(ListGitRepositoriesRequest) returns (ListGitRepositoriesResponse) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/git-repositories"};
+  }
+
+  // DeleteGitRepository deletes a hosted Git repository and records its final
+  // state.
+  rpc DeleteGitRepository(DeleteGitRepositoryRequest) returns (GitRepository) {
+    option (google.api.http) = {delete: "/control/v1/orgs/{org_id}/git-repositories/{repository_id}"};
+  }
+}
+
+// GetCurrentUserRequest has no parameters; identity comes from authentication.
+message GetCurrentUserRequest {}
+
+// BootstrapCurrentUserRequest customizes the first organization created for an
+// identity. An empty org_name lets the server derive a display name.
+message BootstrapCurrentUserRequest {
+  // org_name is the initial organization's human-readable name.
+  string org_name = 1;
+}
+
+// EnsureHostedGitAccessRequest has no parameters; identity comes from
+// authentication.
+message EnsureHostedGitAccessRequest {}
+
+// HostedGitAccess describes the caller's hosted Git identity.
+message HostedGitAccess {
+  // status is the reconciliation state of hosted Git access.
+  string status = 1;
+  // forgejo_username is the stable username on Tarka's hosted Git service.
+  string forgejo_username = 2;
+  // web_url opens the hosted Git user interface.
+  string web_url = 3;
+}
+
+// CurrentUser is the authenticated platform identity and its active
+// organization memberships.
+message CurrentUser {
+  // user_id is the stable platform identity identifier.
+  string user_id = 1;
+  // email is the identity's current email address, when available.
+  string email = 2;
+  // orgs contains active organizations in membership creation order.
+  repeated Org orgs = 3;
+  // default_org_id is the first active organization, or empty when none exists.
+  string default_org_id = 4;
+}
+
+// Org is an organization as visible to the authenticated caller.
+message Org {
+  // id is the immutable organization identifier.
+  string id = 1;
+  // slug is the immutable URL-safe organization name.
+  string slug = 2;
+  // name is the mutable human-readable organization name.
+  string name = 3;
+  // status is the organization's lifecycle state.
+  string status = 4;
+  // role is the caller's role in this organization.
+  string role = 5;
+  // created_at is the organization creation time.
+  google.protobuf.Timestamp created_at = 6;
+}
+
+// ListModelsRequest selects active models by modality.
+message ListModelsRequest {
+  // modality is an exact modality filter; empty returns every active model.
+  string modality = 1;
+}
+
+// ListModelsResponse contains the active model catalog.
+message ListModelsResponse {
+  repeated Model models = 1;
+}
+
+// Model describes a stable Tarka model alias and its metering metadata.
+message Model {
+  // id is the immutable model-registry identifier.
+  string id = 1;
+  // model_alias is the stable customer-facing identifier used in requests.
+  string model_alias = 2;
+  // display_name is a human-readable model name.
+  string display_name = 3;
+  // backend identifies the serving implementation.
+  string backend = 4;
+  // modality classifies the model's input/output family.
+  string modality = 5;
+  // status is the catalog lifecycle state.
+  string status = 6;
+  // provider_slug identifies the upstream provider, when applicable.
+  string provider_slug = 7;
+  // upstream_model is the provider's model identifier, when applicable.
+  string upstream_model = 8;
+  // context_window is the maximum supported token context, when known.
+  int64 context_window = 9;
+  // price_input_microcents_per_million is the input-token price. One
+  // microcent is USD 0.00000001.
+  int64 price_input_microcents_per_million = 10;
+  // price_output_microcents_per_million is the output-token price. One
+  // microcent is USD 0.00000001.
+  int64 price_output_microcents_per_million = 11;
+  // capabilities contains model-specific, non-secret feature metadata.
+  google.protobuf.Struct capabilities = 12;
+}
+
+// CreateInferenceServiceRequest defines desired state for an inference service.
+message CreateInferenceServiceRequest {
+  string org_id = 1;
+  // name must be a DNS label and is unique per organization/resource type.
+  string name = 2;
+  // model_alias must refer to an active entry returned by ListModels.
+  string model_alias = 3;
+  // min_replicas is the non-negative lower autoscaling bound.
+  int32 min_replicas = 4;
+  // max_replicas is the non-negative upper autoscaling bound; zero means the
+  // platform default.
+  int32 max_replicas = 5;
+  // spec carries non-secret extension fields. Typed fields take precedence.
+  google.protobuf.Struct spec = 6;
+}
+
+// CreateAgentHostRequest defines desired state for an agent container.
+message CreateAgentHostRequest {
+  string org_id = 1;
+  // name must be a DNS label and is unique per organization/resource type.
+  string name = 2;
+  // image is a container image reference; embedded credentials are forbidden.
+  string image = 3;
+  // container_port is the service port; zero selects the platform default.
+  int32 container_port = 4;
+  int32 min_replicas = 5;
+  // max_replicas is the upper bound; zero selects the platform default.
+  int32 max_replicas = 6;
+  // spec carries non-secret extension fields. Typed fields take precedence.
+  google.protobuf.Struct spec = 7;
+}
+
+// CreateJobRequest defines desired state for a finite-duration container job.
+message CreateJobRequest {
+  string org_id = 1;
+  // name must be a DNS label and is unique per organization/resource type.
+  string name = 2;
+  // image is a container image reference; embedded credentials are forbidden.
+  string image = 3;
+  // command is the argv executed in the container without shell expansion.
+  repeated string command = 4;
+  // timeout_seconds is the execution limit; zero selects the platform default.
+  int32 timeout_seconds = 5;
+  // spec carries non-secret extension fields. Typed fields take precedence.
+  google.protobuf.Struct spec = 6;
+}
+
+// ProvisionedResource is the recorded desired and observed state for a managed
+// resource.
+message ProvisionedResource {
+  string id = 1;
+  string org_id = 2;
+  // resource_type is a stable machine-readable type such as
+  // "inference_service", "agent", or "job".
+  string resource_type = 3;
+  string name = 4;
+  // status is the lifecycle state reported by the platform.
+  string status = 5;
+  // namespace is the backing workload namespace, once assigned.
+  string namespace = 6;
+  // external_url is the public workload URL, once assigned.
+  string external_url = 7;
+  // spec is the normalized desired state and contains no credentials.
+  google.protobuf.Struct spec = 8;
+  // status_detail contains non-secret provider/controller status metadata.
+  google.protobuf.Struct status_detail = 9;
+  google.protobuf.Timestamp created_at = 10;
+  google.protobuf.Timestamp updated_at = 11;
+}
+
+// CreateApiKeyRequest creates an organization-scoped customer credential.
+message CreateApiKeyRequest {
+  string org_id = 1;
+  // label is an optional human-readable purpose for the credential.
+  string label = 2;
+  // allowed_model_aliases narrows model access. Empty uses the organization
+  // policy rather than overriding it.
+  repeated string allowed_model_aliases = 3;
+  // scopes grants product capabilities such as "sandboxes".
+  repeated string scopes = 4;
+}
+
+// CreateApiKeyResponse contains metadata plus the one-time plaintext secret.
+message CreateApiKeyResponse {
+  ApiKey api_key = 1;
+  // plaintext_key is returned only at creation and cannot be recovered later.
+  string plaintext_key = 2;
+}
+
+// ListApiKeysRequest selects one organization.
+message ListApiKeysRequest {
+  string org_id = 1;
+}
+
+// ListApiKeysResponse contains redacted credential metadata.
+message ListApiKeysResponse {
+  repeated ApiKey api_keys = 1;
+}
+
+// RevokeApiKeyRequest permanently revokes one organization credential.
+message RevokeApiKeyRequest {
+  string org_id = 1;
+  string api_key_id = 2;
+  // revoked_reason is optional operator-visible context and contains no secret.
+  string revoked_reason = 3;
+}
+
+// RevokeApiKeyResponse contains the credential's final metadata.
+message RevokeApiKeyResponse {
+  ApiKey api_key = 1;
+}
+
+// ApiKey is redacted metadata for a customer credential.
+message ApiKey {
+  string id = 1;
+  string org_id = 2;
+  // user_id identifies the identity that created the credential.
+  string user_id = 3;
+  string label = 4;
+  // kind distinguishes customer and future managed credential classes.
+  string kind = 5;
+  // key_prefix is safe to display and cannot authenticate a request.
+  string key_prefix = 6;
+  string status = 7;
+  repeated string allowed_model_aliases = 8;
+  google.protobuf.Timestamp created_at = 9;
+  google.protobuf.Timestamp revoked_at = 10;
+  string revoked_reason = 11;
+  google.protobuf.Timestamp last_used_at = 12;
+  repeated string scopes = 13;
+}
+
+// GetOrgRequest selects an organization visible to the caller.
+message GetOrgRequest {
+  string org_id = 1;
+}
+
+// UpdateOrgRequest replaces mutable organization metadata.
+message UpdateOrgRequest {
+  string org_id = 1;
+  // name is a non-empty human-readable name of at most 120 characters.
+  string name = 2;
+}
+
+// GetQuotaPolicyRequest selects an organization visible to the caller.
+message GetQuotaPolicyRequest {
+  string org_id = 1;
+}
+
+// UpdateQuotaPolicyRequest replaces the organization's inference policy.
+message UpdateQuotaPolicyRequest {
+  string org_id = 1;
+  // max_concurrent_requests is unlimited when absent.
+  optional int32 max_concurrent_requests = 2;
+  // allowed_model_aliases is required when allow_all_models is false.
+  repeated string allowed_model_aliases = 3;
+  bool allow_all_models = 4;
+  // monthly_request_budget is unlimited when absent.
+  optional int64 monthly_request_budget = 5;
+  // monthly_token_budget is unlimited when absent.
+  optional int64 monthly_token_budget = 6;
+}
+
+// QuotaPolicy is the effective inference policy for an organization.
+message QuotaPolicy {
+  string org_id = 1;
+  // max_concurrent_requests is unlimited when absent.
+  optional int32 max_concurrent_requests = 2;
+  repeated string allowed_model_aliases = 3;
+  bool allow_all_models = 4;
+  // monthly_request_budget is unlimited when absent.
+  optional int64 monthly_request_budget = 5;
+  // monthly_token_budget is unlimited when absent.
+  optional int64 monthly_token_budget = 6;
+  google.protobuf.Timestamp updated_at = 7;
+}
+
+// ListUsageEventsRequest selects recent metering records.
+message ListUsageEventsRequest {
+  string org_id = 1;
+  // limit defaults to 25 and is capped at 100.
+  int32 limit = 2;
+}
+
+// ListUsageEventsResponse contains records in newest-first order.
+message ListUsageEventsResponse {
+  repeated UsageEvent usage_events = 1;
+}
+
+// UsageEvent is one metered inference request.
+message UsageEvent {
+  int64 id = 1;
+  // request_id correlates the event with the originating request.
+  string request_id = 2;
+  // model is the customer-facing Tarka alias.
+  string model = 3;
+  string provider_slug = 4;
+  string provider_model = 5;
+  int64 prompt_tokens = 6;
+  int64 completion_tokens = 7;
+  int64 total_tokens = 8;
+  int32 status_code = 9;
+  int32 latency_ms = 10;
+  string request_type = 11;
+  // error_code is empty for a successful request.
+  string error_code = 12;
+  // cost_microcents uses true microcents: one unit is USD 0.00000001.
+  int64 cost_microcents = 13;
+  google.protobuf.Timestamp created_at = 14;
+}
+
+// GetUsageSummaryRequest selects an organization visible to the caller.
+message GetUsageSummaryRequest {
+  string org_id = 1;
+}
+
+// UsageSummary aggregates metering over a half-open UTC time interval.
+message UsageSummary {
+  string org_id = 1;
+  // period_start is inclusive.
+  google.protobuf.Timestamp period_start = 2;
+  // period_end is exclusive.
+  google.protobuf.Timestamp period_end = 3;
+  int64 request_count = 4;
+  int64 prompt_tokens = 5;
+  int64 completion_tokens = 6;
+  int64 total_tokens = 7;
+  // cost_microcents uses true microcents: one unit is USD 0.00000001.
+  int64 cost_microcents = 8;
+  int64 error_count = 9;
+  int64 average_latency_ms = 10;
+}
+
+// ListProvisionedResourcesRequest selects organization desired-state records.
+message ListProvisionedResourcesRequest {
+  string org_id = 1;
+  // resource_type is an exact filter; empty returns every supported type.
+  string resource_type = 2;
+}
+
+// ListProvisionedResourcesResponse contains desired-state resources in
+// newest-first order.
+message ListProvisionedResourcesResponse {
+  repeated ProvisionedResource resources = 1;
+}
+
+// GetProvisionedResourceRequest selects one organization resource.
+message GetProvisionedResourceRequest {
+  string org_id = 1;
+  string resource_id = 2;
+}
+
+// CreateGitRepositoryRequest defines a private hosted Git repository.
+message CreateGitRepositoryRequest {
+  string org_id = 1;
+  // name is the URL-safe repository name within the organization.
+  string name = 2;
+  string description = 3;
+  // initialize creates the first commit when true.
+  bool initialize = 4;
+  // default_branch is used when initialize is true; empty selects the platform
+  // default.
+  string default_branch = 5;
+}
+
+// ListGitRepositoriesRequest selects one organization.
+message ListGitRepositoriesRequest {
+  string org_id = 1;
+}
+
+// ListGitRepositoriesResponse contains hosted Git repository metadata.
+message ListGitRepositoriesResponse {
+  repeated GitRepository repositories = 1;
+}
+
+// DeleteGitRepositoryRequest selects one organization repository.
+message DeleteGitRepositoryRequest {
+  string org_id = 1;
+  string repository_id = 2;
+}
+
+// GitRepository describes a private Tarka-hosted Git repository.
+message GitRepository {
+  string id = 1;
+  string org_id = 2;
+  string name = 3;
+  // status is the repository lifecycle/reconciliation state.
+  string status = 4;
+  string web_url = 5;
+  string ssh_clone_url = 6;
+  string https_clone_url = 7;
+  // lfs_enabled is true when Git LFS support is enforced.
+  bool lfs_enabled = 8;
+  google.protobuf.Timestamp created_at = 9;
+  google.protobuf.Timestamp updated_at = 10;
+}

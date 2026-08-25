@@ -1,0 +1,2322 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "tarka/provisioning/v1/provisioning.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "ProvisioningService"
+    },
+    {
+      "name": "SandboxService"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/control/v1/inference-services": {
+      "post": {
+        "summary": "CreateInferenceService records desired state for a managed inference\nservice. Reusing an organization, resource type, and name updates it.",
+        "operationId": "ProvisioningService_CreateInferenceService",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ProvisionedResource"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "description": "CreateInferenceServiceRequest defines desired state for an inference service.",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateInferenceServiceRequest"
+            }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/me": {
+      "get": {
+        "summary": "GetCurrentUser returns the authenticated identity and its active\norganization memberships.",
+        "operationId": "ProvisioningService_GetCurrentUser",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CurrentUser"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/me/bootstrap": {
+      "post": {
+        "summary": "BootstrapCurrentUser idempotently creates an initial organization when the\nauthenticated identity does not yet belong to one.",
+        "operationId": "ProvisioningService_BootstrapCurrentUser",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CurrentUser"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "description": "BootstrapCurrentUserRequest customizes the first organization created for an\nidentity. An empty org_name lets the server derive a display name.",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1BootstrapCurrentUserRequest"
+            }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/me/git-access": {
+      "post": {
+        "summary": "EnsureHostedGitAccess provisions or reconciles the authenticated user's\nhosted Git identity.",
+        "operationId": "ProvisioningService_EnsureHostedGitAccess",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1HostedGitAccess"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "description": "EnsureHostedGitAccessRequest has no parameters; identity comes from\nauthentication.",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1EnsureHostedGitAccessRequest"
+            }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/models": {
+      "get": {
+        "summary": "ListModels returns active model aliases, optionally filtered by modality.",
+        "operationId": "ProvisioningService_ListModels",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListModelsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "modality",
+            "description": "modality is an exact modality filter; empty returns every active model.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}": {
+      "get": {
+        "summary": "GetOrg returns an active organization visible to the caller.",
+        "operationId": "ProvisioningService_GetOrg",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Org"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      },
+      "patch": {
+        "summary": "UpdateOrg changes mutable organization metadata.",
+        "operationId": "ProvisioningService_UpdateOrg",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Org"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProvisioningServiceUpdateOrgBody"
+            }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/agent-hosts": {
+      "post": {
+        "summary": "CreateAgentHost records desired state for a managed agent container.",
+        "operationId": "ProvisioningService_CreateAgentHost",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ProvisionedResource"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProvisioningServiceCreateAgentHostBody"
+            }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/api-keys": {
+      "get": {
+        "summary": "ListApiKeys returns redacted API-key metadata for an organization.",
+        "operationId": "ProvisioningService_ListApiKeys",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListApiKeysResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      },
+      "post": {
+        "summary": "CreateApiKey creates a customer API key. Its plaintext secret is returned\nexactly once in the response.",
+        "operationId": "ProvisioningService_CreateApiKey",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CreateApiKeyResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProvisioningServiceCreateApiKeyBody"
+            }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/api-keys/{api_key_id}:revoke": {
+      "post": {
+        "summary": "RevokeApiKey permanently disables an API key.",
+        "operationId": "ProvisioningService_RevokeApiKey",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1RevokeApiKeyResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "api_key_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProvisioningServiceRevokeApiKeyBody"
+            }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/git-repositories": {
+      "get": {
+        "summary": "ListGitRepositories returns hosted Git repositories in an organization.",
+        "operationId": "ProvisioningService_ListGitRepositories",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListGitRepositoriesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      },
+      "post": {
+        "summary": "CreateGitRepository creates a private, LFS-enabled hosted Git repository.",
+        "operationId": "ProvisioningService_CreateGitRepository",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GitRepository"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProvisioningServiceCreateGitRepositoryBody"
+            }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/git-repositories/{repository_id}": {
+      "delete": {
+        "summary": "DeleteGitRepository deletes a hosted Git repository and records its final\nstate.",
+        "operationId": "ProvisioningService_DeleteGitRepository",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GitRepository"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "repository_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/inference-services": {
+      "post": {
+        "summary": "CreateInferenceService records desired state for a managed inference\nservice. Reusing an organization, resource type, and name updates it.",
+        "operationId": "ProvisioningService_CreateInferenceService3",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ProvisionedResource"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProvisioningServiceCreateInferenceServiceBody"
+            }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/jobs": {
+      "post": {
+        "summary": "CreateJob records desired state for a managed finite-duration job.",
+        "operationId": "ProvisioningService_CreateJob",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ProvisionedResource"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProvisioningServiceCreateJobBody"
+            }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/quota-policy": {
+      "get": {
+        "summary": "GetQuotaPolicy returns an organization's effective inference quota policy.",
+        "operationId": "ProvisioningService_GetQuotaPolicy",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1QuotaPolicy"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      },
+      "put": {
+        "summary": "UpdateQuotaPolicy replaces an organization's inference quota policy.",
+        "operationId": "ProvisioningService_UpdateQuotaPolicy",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1QuotaPolicy"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProvisioningServiceUpdateQuotaPolicyBody"
+            }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/resources": {
+      "get": {
+        "summary": "ListProvisionedResources returns desired-state resources, optionally\nfiltered by resource type.",
+        "operationId": "ProvisioningService_ListProvisionedResources",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListProvisionedResourcesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "resource_type",
+            "description": "resource_type is an exact filter; empty returns every supported type.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/resources/{resource_id}": {
+      "get": {
+        "summary": "GetProvisionedResource returns one desired-state resource by identifier.",
+        "operationId": "ProvisioningService_GetProvisionedResource",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ProvisionedResource"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "resource_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/sandbox-templates": {
+      "get": {
+        "summary": "ListSandboxTemplates returns built-in and organization-owned templates\nvisible to the caller.",
+        "operationId": "SandboxService_ListSandboxTemplates",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListSandboxTemplatesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "SandboxService"
+        ]
+      },
+      "post": {
+        "summary": "CreateSandboxTemplate builds an immutable dependency revision and\nidempotently returns the resulting template.",
+        "operationId": "SandboxService_CreateSandboxTemplate",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1SandboxTemplate"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/SandboxServiceCreateSandboxTemplateBody"
+            }
+          }
+        ],
+        "tags": [
+          "SandboxService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/sandbox-templates/{template_id}": {
+      "get": {
+        "summary": "GetSandboxTemplate returns a template by identifier.",
+        "operationId": "SandboxService_GetSandboxTemplate",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1SandboxTemplate"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "SandboxService"
+        ]
+      },
+      "delete": {
+        "summary": "DeleteSandboxTemplate retires a template that has no active sandboxes.",
+        "operationId": "SandboxService_DeleteSandboxTemplate",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1SandboxTemplate"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "SandboxService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/sandboxes": {
+      "get": {
+        "summary": "ListSandboxes returns non-deleted sandboxes for an organization.",
+        "operationId": "SandboxService_ListSandboxes",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListSandboxesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "SandboxService"
+        ]
+      },
+      "post": {
+        "summary": "CreateSandbox starts an isolated sandbox from a ready template.",
+        "operationId": "SandboxService_CreateSandbox",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CodeSandbox"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/SandboxServiceCreateSandboxBody"
+            }
+          }
+        ],
+        "tags": [
+          "SandboxService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/sandboxes/{sandbox_id}": {
+      "get": {
+        "summary": "GetSandbox returns a sandbox by identifier.",
+        "operationId": "SandboxService_GetSandbox",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CodeSandbox"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "sandbox_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "SandboxService"
+        ]
+      },
+      "delete": {
+        "summary": "DeleteSandbox stops and deletes a sandbox. Repeated deletion is safe.",
+        "operationId": "SandboxService_DeleteSandbox",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CodeSandbox"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "sandbox_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "SandboxService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/sandboxes/{sandbox_id}/executions/{execution_id}": {
+      "get": {
+        "summary": "GetExecution returns execution status and retained output.",
+        "operationId": "SandboxService_GetExecution",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Execution"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "sandbox_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "execution_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "SandboxService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/sandboxes/{sandbox_id}:execute": {
+      "post": {
+        "summary": "Execute runs one source-code payload in a ready sandbox.",
+        "operationId": "SandboxService_Execute",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Execution"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "sandbox_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/SandboxServiceExecuteBody"
+            }
+          }
+        ],
+        "tags": [
+          "SandboxService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/usage/events": {
+      "get": {
+        "summary": "ListUsageEvents returns the organization's newest metered requests.",
+        "operationId": "ProvisioningService_ListUsageEvents",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListUsageEventsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "limit",
+            "description": "limit defaults to 25 and is capped at 100.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/usage/summary": {
+      "get": {
+        "summary": "GetUsageSummary aggregates the organization's current UTC calendar month.",
+        "operationId": "ProvisioningService_GetUsageSummary",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1UsageSummary"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/v1/inference-services": {
+      "post": {
+        "summary": "CreateInferenceService records desired state for a managed inference\nservice. Reusing an organization, resource type, and name updates it.",
+        "operationId": "ProvisioningService_CreateInferenceService2",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ProvisionedResource"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "description": "CreateInferenceServiceRequest defines desired state for an inference service.",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateInferenceServiceRequest"
+            }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/v1/models": {
+      "get": {
+        "summary": "ListModels returns active model aliases, optionally filtered by modality.",
+        "operationId": "ProvisioningService_ListModels2",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListModelsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "modality",
+            "description": "modality is an exact modality filter; empty returns every active model.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "ProvisioningServiceCreateAgentHostBody": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "name must be a DNS label and is unique per organization/resource type."
+        },
+        "image": {
+          "type": "string",
+          "description": "image is a container image reference; embedded credentials are forbidden."
+        },
+        "container_port": {
+          "type": "integer",
+          "format": "int32",
+          "description": "container_port is the service port; zero selects the platform default."
+        },
+        "min_replicas": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "max_replicas": {
+          "type": "integer",
+          "format": "int32",
+          "description": "max_replicas is the upper bound; zero selects the platform default."
+        },
+        "spec": {
+          "type": "object",
+          "description": "spec carries non-secret extension fields. Typed fields take precedence."
+        }
+      },
+      "description": "CreateAgentHostRequest defines desired state for an agent container."
+    },
+    "ProvisioningServiceCreateApiKeyBody": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string",
+          "description": "label is an optional human-readable purpose for the credential."
+        },
+        "allowed_model_aliases": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "allowed_model_aliases narrows model access. Empty uses the organization\npolicy rather than overriding it."
+        },
+        "scopes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "scopes grants product capabilities such as \"sandboxes\"."
+        }
+      },
+      "description": "CreateApiKeyRequest creates an organization-scoped customer credential."
+    },
+    "ProvisioningServiceCreateGitRepositoryBody": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "name is the URL-safe repository name within the organization."
+        },
+        "description": {
+          "type": "string"
+        },
+        "initialize": {
+          "type": "boolean",
+          "description": "initialize creates the first commit when true."
+        },
+        "default_branch": {
+          "type": "string",
+          "description": "default_branch is used when initialize is true; empty selects the platform\ndefault."
+        }
+      },
+      "description": "CreateGitRepositoryRequest defines a private hosted Git repository."
+    },
+    "ProvisioningServiceCreateInferenceServiceBody": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "name must be a DNS label and is unique per organization/resource type."
+        },
+        "model_alias": {
+          "type": "string",
+          "description": "model_alias must refer to an active entry returned by ListModels."
+        },
+        "min_replicas": {
+          "type": "integer",
+          "format": "int32",
+          "description": "min_replicas is the non-negative lower autoscaling bound."
+        },
+        "max_replicas": {
+          "type": "integer",
+          "format": "int32",
+          "description": "max_replicas is the non-negative upper autoscaling bound; zero means the\nplatform default."
+        },
+        "spec": {
+          "type": "object",
+          "description": "spec carries non-secret extension fields. Typed fields take precedence."
+        }
+      },
+      "description": "CreateInferenceServiceRequest defines desired state for an inference service."
+    },
+    "ProvisioningServiceCreateJobBody": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "name must be a DNS label and is unique per organization/resource type."
+        },
+        "image": {
+          "type": "string",
+          "description": "image is a container image reference; embedded credentials are forbidden."
+        },
+        "command": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "command is the argv executed in the container without shell expansion."
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "format": "int32",
+          "description": "timeout_seconds is the execution limit; zero selects the platform default."
+        },
+        "spec": {
+          "type": "object",
+          "description": "spec carries non-secret extension fields. Typed fields take precedence."
+        }
+      },
+      "description": "CreateJobRequest defines desired state for a finite-duration container job."
+    },
+    "ProvisioningServiceRevokeApiKeyBody": {
+      "type": "object",
+      "properties": {
+        "revoked_reason": {
+          "type": "string",
+          "description": "revoked_reason is optional operator-visible context and contains no secret."
+        }
+      },
+      "description": "RevokeApiKeyRequest permanently revokes one organization credential."
+    },
+    "ProvisioningServiceUpdateOrgBody": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "name is a non-empty human-readable name of at most 120 characters."
+        }
+      },
+      "description": "UpdateOrgRequest replaces mutable organization metadata."
+    },
+    "ProvisioningServiceUpdateQuotaPolicyBody": {
+      "type": "object",
+      "properties": {
+        "max_concurrent_requests": {
+          "type": "integer",
+          "format": "int32",
+          "description": "max_concurrent_requests is unlimited when absent."
+        },
+        "allowed_model_aliases": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "allowed_model_aliases is required when allow_all_models is false."
+        },
+        "allow_all_models": {
+          "type": "boolean"
+        },
+        "monthly_request_budget": {
+          "type": "string",
+          "format": "int64",
+          "description": "monthly_request_budget is unlimited when absent."
+        },
+        "monthly_token_budget": {
+          "type": "string",
+          "format": "int64",
+          "description": "monthly_token_budget is unlimited when absent."
+        }
+      },
+      "description": "UpdateQuotaPolicyRequest replaces the organization's inference policy."
+    },
+    "SandboxServiceCreateSandboxBody": {
+      "type": "object",
+      "properties": {
+        "template": {
+          "type": "string",
+          "description": "template accepts a visible template identifier or alias."
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "format": "int32",
+          "description": "timeout_seconds is the sandbox lifetime within platform bounds."
+        },
+        "idempotency_key": {
+          "type": "string",
+          "description": "idempotency_key safely retries this mutation for 24 hours. The same key\ncannot be reused with different request content."
+        }
+      },
+      "description": "CreateCodeSandboxRequest starts a sandbox from a ready template."
+    },
+    "SandboxServiceCreateSandboxTemplateBody": {
+      "type": "object",
+      "properties": {
+        "alias": {
+          "type": "string",
+          "description": "alias is an organization-scoped, URL-safe template name."
+        },
+        "display_name": {
+          "type": "string"
+        },
+        "base_template_alias": {
+          "type": "string",
+          "description": "base_template_alias selects a supported built-in Python or Node base."
+        },
+        "requirements_txt": {
+          "type": "string"
+        },
+        "package_json": {
+          "type": "string"
+        },
+        "pyproject_toml": {
+          "type": "string"
+        },
+        "idempotency_key": {
+          "type": "string",
+          "description": "idempotency_key safely retries this mutation for 24 hours. The same key\ncannot be reused with different request content."
+        }
+      },
+      "description": "CreateSandboxTemplateRequest creates one dependency-pinned template."
+    },
+    "SandboxServiceExecuteBody": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "code is interpreted according to the sandbox template's runtime."
+        },
+        "stdin": {
+          "type": "string",
+          "description": "stdin is supplied verbatim to the program's standard input."
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "format": "int32",
+          "description": "timeout_seconds is the execution limit within platform bounds."
+        },
+        "idempotency_key": {
+          "type": "string",
+          "description": "idempotency_key safely retries this mutation for 24 hours. The same key\ncannot be reused with different request content."
+        }
+      },
+      "description": "ExecuteRequest runs source code in an existing ready sandbox."
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "protobufNullValue": {
+      "type": "string",
+      "enum": [
+        "NULL_VALUE"
+      ],
+      "default": "NULL_VALUE",
+      "description": "`NullValue` is a singleton enumeration to represent the null value for the\n`Value` type union.\n\nThe JSON representation for `NullValue` is JSON `null`.\n\n - NULL_VALUE: Null value."
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "v1ApiKey": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "org_id": {
+          "type": "string"
+        },
+        "user_id": {
+          "type": "string",
+          "description": "user_id identifies the identity that created the credential."
+        },
+        "label": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string",
+          "description": "kind distinguishes customer and future managed credential classes."
+        },
+        "key_prefix": {
+          "type": "string",
+          "description": "key_prefix is safe to display and cannot authenticate a request."
+        },
+        "status": {
+          "type": "string"
+        },
+        "allowed_model_aliases": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "revoked_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "revoked_reason": {
+          "type": "string"
+        },
+        "last_used_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "scopes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "ApiKey is redacted metadata for a customer credential."
+    },
+    "v1BootstrapCurrentUserRequest": {
+      "type": "object",
+      "properties": {
+        "org_name": {
+          "type": "string",
+          "description": "org_name is the initial organization's human-readable name."
+        }
+      },
+      "description": "BootstrapCurrentUserRequest customizes the first organization created for an\nidentity. An empty org_name lets the server derive a display name."
+    },
+    "v1CodeSandbox": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "org_id": {
+          "type": "string"
+        },
+        "template_id": {
+          "type": "string"
+        },
+        "template_alias": {
+          "type": "string"
+        },
+        "runtime": {
+          "$ref": "#/definitions/v1SandboxRuntime"
+        },
+        "status": {
+          "$ref": "#/definitions/v1CodeSandboxStatus"
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "format": "int32",
+          "description": "timeout_seconds is the requested maximum sandbox lifetime."
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "expires_at is the enforced sandbox lifetime deadline."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "ready_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "stopped_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "failure_code": {
+          "type": "string",
+          "description": "failure_code is a stable machine-readable lifecycle failure code."
+        }
+      },
+      "description": "CodeSandbox is an isolated, time-bounded execution environment."
+    },
+    "v1CodeSandboxStatus": {
+      "type": "string",
+      "enum": [
+        "CODE_SANDBOX_STATUS_UNSPECIFIED",
+        "CODE_SANDBOX_STATUS_STARTING",
+        "CODE_SANDBOX_STATUS_READY",
+        "CODE_SANDBOX_STATUS_BUSY",
+        "CODE_SANDBOX_STATUS_STOPPING",
+        "CODE_SANDBOX_STATUS_STOPPED",
+        "CODE_SANDBOX_STATUS_FAILED",
+        "CODE_SANDBOX_STATUS_EXPIRED",
+        "CODE_SANDBOX_STATUS_DELETED"
+      ],
+      "default": "CODE_SANDBOX_STATUS_UNSPECIFIED",
+      "description": "CodeSandboxStatus is the lifecycle of an isolated sandbox instance."
+    },
+    "v1CreateApiKeyResponse": {
+      "type": "object",
+      "properties": {
+        "api_key": {
+          "$ref": "#/definitions/v1ApiKey"
+        },
+        "plaintext_key": {
+          "type": "string",
+          "description": "plaintext_key is returned only at creation and cannot be recovered later."
+        }
+      },
+      "description": "CreateApiKeyResponse contains metadata plus the one-time plaintext secret."
+    },
+    "v1CreateInferenceServiceRequest": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string",
+          "description": "name must be a DNS label and is unique per organization/resource type."
+        },
+        "model_alias": {
+          "type": "string",
+          "description": "model_alias must refer to an active entry returned by ListModels."
+        },
+        "min_replicas": {
+          "type": "integer",
+          "format": "int32",
+          "description": "min_replicas is the non-negative lower autoscaling bound."
+        },
+        "max_replicas": {
+          "type": "integer",
+          "format": "int32",
+          "description": "max_replicas is the non-negative upper autoscaling bound; zero means the\nplatform default."
+        },
+        "spec": {
+          "type": "object",
+          "description": "spec carries non-secret extension fields. Typed fields take precedence."
+        }
+      },
+      "description": "CreateInferenceServiceRequest defines desired state for an inference service."
+    },
+    "v1CurrentUser": {
+      "type": "object",
+      "properties": {
+        "user_id": {
+          "type": "string",
+          "description": "user_id is the stable platform identity identifier."
+        },
+        "email": {
+          "type": "string",
+          "description": "email is the identity's current email address, when available."
+        },
+        "orgs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Org"
+          },
+          "description": "orgs contains active organizations in membership creation order."
+        },
+        "default_org_id": {
+          "type": "string",
+          "description": "default_org_id is the first active organization, or empty when none exists."
+        }
+      },
+      "description": "CurrentUser is the authenticated platform identity and its active\norganization memberships."
+    },
+    "v1EnsureHostedGitAccessRequest": {
+      "type": "object",
+      "description": "EnsureHostedGitAccessRequest has no parameters; identity comes from\nauthentication."
+    },
+    "v1Execution": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "sandbox_id": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/v1ExecutionStatus"
+        },
+        "stdout": {
+          "type": "string",
+          "description": "stdout is empty after its retention deadline."
+        },
+        "stderr": {
+          "type": "string",
+          "description": "stderr is empty after its retention deadline."
+        },
+        "exit_code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "duration_ms": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "output_truncated": {
+          "type": "boolean",
+          "description": "output_truncated indicates that stdout or stderr exceeded platform limits."
+        },
+        "error_code": {
+          "type": "string",
+          "description": "error_code is a stable machine-readable platform/runtime failure code."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "completed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "output_expires_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "output_expires_at is the output retention deadline. Execution metadata\nremains available after output expires."
+        }
+      },
+      "description": "Execution is one source-code run and its retained output."
+    },
+    "v1ExecutionStatus": {
+      "type": "string",
+      "enum": [
+        "EXECUTION_STATUS_UNSPECIFIED",
+        "EXECUTION_STATUS_RUNNING",
+        "EXECUTION_STATUS_SUCCEEDED",
+        "EXECUTION_STATUS_FAILED",
+        "EXECUTION_STATUS_TIMED_OUT",
+        "EXECUTION_STATUS_CANCELLED"
+      ],
+      "default": "EXECUTION_STATUS_UNSPECIFIED",
+      "description": "ExecutionStatus is the terminal or in-progress state of one execution."
+    },
+    "v1GitRepository": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "org_id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "description": "status is the repository lifecycle/reconciliation state."
+        },
+        "web_url": {
+          "type": "string"
+        },
+        "ssh_clone_url": {
+          "type": "string"
+        },
+        "https_clone_url": {
+          "type": "string"
+        },
+        "lfs_enabled": {
+          "type": "boolean",
+          "description": "lfs_enabled is true when Git LFS support is enforced."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "description": "GitRepository describes a private Tarka-hosted Git repository."
+    },
+    "v1HostedGitAccess": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "description": "status is the reconciliation state of hosted Git access."
+        },
+        "forgejo_username": {
+          "type": "string",
+          "description": "forgejo_username is the stable username on Tarka's hosted Git service."
+        },
+        "web_url": {
+          "type": "string",
+          "description": "web_url opens the hosted Git user interface."
+        }
+      },
+      "description": "HostedGitAccess describes the caller's hosted Git identity."
+    },
+    "v1ListApiKeysResponse": {
+      "type": "object",
+      "properties": {
+        "api_keys": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1ApiKey"
+          }
+        }
+      },
+      "description": "ListApiKeysResponse contains redacted credential metadata."
+    },
+    "v1ListGitRepositoriesResponse": {
+      "type": "object",
+      "properties": {
+        "repositories": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1GitRepository"
+          }
+        }
+      },
+      "description": "ListGitRepositoriesResponse contains hosted Git repository metadata."
+    },
+    "v1ListModelsResponse": {
+      "type": "object",
+      "properties": {
+        "models": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Model"
+          }
+        }
+      },
+      "description": "ListModelsResponse contains the active model catalog."
+    },
+    "v1ListProvisionedResourcesResponse": {
+      "type": "object",
+      "properties": {
+        "resources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1ProvisionedResource"
+          }
+        }
+      },
+      "description": "ListProvisionedResourcesResponse contains desired-state resources in\nnewest-first order."
+    },
+    "v1ListSandboxTemplatesResponse": {
+      "type": "object",
+      "properties": {
+        "templates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1SandboxTemplate"
+          }
+        }
+      },
+      "description": "ListSandboxTemplatesResponse contains visible reusable templates."
+    },
+    "v1ListSandboxesResponse": {
+      "type": "object",
+      "properties": {
+        "sandboxes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1CodeSandbox"
+          }
+        }
+      },
+      "description": "ListSandboxesResponse contains non-deleted sandboxes in newest-first order."
+    },
+    "v1ListUsageEventsResponse": {
+      "type": "object",
+      "properties": {
+        "usage_events": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1UsageEvent"
+          }
+        }
+      },
+      "description": "ListUsageEventsResponse contains records in newest-first order."
+    },
+    "v1Model": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "id is the immutable model-registry identifier."
+        },
+        "model_alias": {
+          "type": "string",
+          "description": "model_alias is the stable customer-facing identifier used in requests."
+        },
+        "display_name": {
+          "type": "string",
+          "description": "display_name is a human-readable model name."
+        },
+        "backend": {
+          "type": "string",
+          "description": "backend identifies the serving implementation."
+        },
+        "modality": {
+          "type": "string",
+          "description": "modality classifies the model's input/output family."
+        },
+        "status": {
+          "type": "string",
+          "description": "status is the catalog lifecycle state."
+        },
+        "provider_slug": {
+          "type": "string",
+          "description": "provider_slug identifies the upstream provider, when applicable."
+        },
+        "upstream_model": {
+          "type": "string",
+          "description": "upstream_model is the provider's model identifier, when applicable."
+        },
+        "context_window": {
+          "type": "string",
+          "format": "int64",
+          "description": "context_window is the maximum supported token context, when known."
+        },
+        "price_input_microcents_per_million": {
+          "type": "string",
+          "format": "int64",
+          "description": "price_input_microcents_per_million is the input-token price. One\nmicrocent is USD 0.00000001."
+        },
+        "price_output_microcents_per_million": {
+          "type": "string",
+          "format": "int64",
+          "description": "price_output_microcents_per_million is the output-token price. One\nmicrocent is USD 0.00000001."
+        },
+        "capabilities": {
+          "type": "object",
+          "description": "capabilities contains model-specific, non-secret feature metadata."
+        }
+      },
+      "description": "Model describes a stable Tarka model alias and its metering metadata."
+    },
+    "v1Org": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "id is the immutable organization identifier."
+        },
+        "slug": {
+          "type": "string",
+          "description": "slug is the immutable URL-safe organization name."
+        },
+        "name": {
+          "type": "string",
+          "description": "name is the mutable human-readable organization name."
+        },
+        "status": {
+          "type": "string",
+          "description": "status is the organization's lifecycle state."
+        },
+        "role": {
+          "type": "string",
+          "description": "role is the caller's role in this organization."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "created_at is the organization creation time."
+        }
+      },
+      "description": "Org is an organization as visible to the authenticated caller."
+    },
+    "v1ProvisionedResource": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "org_id": {
+          "type": "string"
+        },
+        "resource_type": {
+          "type": "string",
+          "description": "resource_type is a stable machine-readable type such as\n\"inference_service\", \"agent\", or \"job\"."
+        },
+        "name": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "description": "status is the lifecycle state reported by the platform."
+        },
+        "namespace": {
+          "type": "string",
+          "description": "namespace is the backing workload namespace, once assigned."
+        },
+        "external_url": {
+          "type": "string",
+          "description": "external_url is the public workload URL, once assigned."
+        },
+        "spec": {
+          "type": "object",
+          "description": "spec is the normalized desired state and contains no credentials."
+        },
+        "status_detail": {
+          "type": "object",
+          "description": "status_detail contains non-secret provider/controller status metadata."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "description": "ProvisionedResource is the recorded desired and observed state for a managed\nresource."
+    },
+    "v1QuotaPolicy": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "max_concurrent_requests": {
+          "type": "integer",
+          "format": "int32",
+          "description": "max_concurrent_requests is unlimited when absent."
+        },
+        "allowed_model_aliases": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "allow_all_models": {
+          "type": "boolean"
+        },
+        "monthly_request_budget": {
+          "type": "string",
+          "format": "int64",
+          "description": "monthly_request_budget is unlimited when absent."
+        },
+        "monthly_token_budget": {
+          "type": "string",
+          "format": "int64",
+          "description": "monthly_token_budget is unlimited when absent."
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "description": "QuotaPolicy is the effective inference policy for an organization."
+    },
+    "v1RevokeApiKeyResponse": {
+      "type": "object",
+      "properties": {
+        "api_key": {
+          "$ref": "#/definitions/v1ApiKey"
+        }
+      },
+      "description": "RevokeApiKeyResponse contains the credential's final metadata."
+    },
+    "v1SandboxRuntime": {
+      "type": "string",
+      "enum": [
+        "SANDBOX_RUNTIME_UNSPECIFIED",
+        "SANDBOX_RUNTIME_PYTHON",
+        "SANDBOX_RUNTIME_NODE"
+      ],
+      "default": "SANDBOX_RUNTIME_UNSPECIFIED",
+      "description": "SandboxRuntime is a supported source-code runtime family.\n\n - SANDBOX_RUNTIME_UNSPECIFIED: SANDBOX_RUNTIME_UNSPECIFIED is invalid for creation."
+    },
+    "v1SandboxTemplate": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "id is the immutable template identifier."
+        },
+        "org_id": {
+          "type": "string",
+          "description": "org_id is empty for a platform built-in template."
+        },
+        "alias": {
+          "type": "string",
+          "description": "alias is the stable organization-scoped or built-in template name."
+        },
+        "display_name": {
+          "type": "string"
+        },
+        "runtime": {
+          "$ref": "#/definitions/v1SandboxRuntime"
+        },
+        "runtime_version": {
+          "type": "string",
+          "description": "runtime_version is the resolved interpreter/runtime version."
+        },
+        "base_template_alias": {
+          "type": "string",
+          "description": "base_template_alias identifies the built-in base used for this template."
+        },
+        "is_builtin": {
+          "type": "boolean"
+        },
+        "status": {
+          "$ref": "#/definitions/v1SandboxTemplateStatus"
+        },
+        "dependency_file_type": {
+          "type": "string",
+          "description": "dependency_file_type identifies the selected dependency manifest format."
+        },
+        "dependency_manifest_sha256": {
+          "type": "string",
+          "description": "dependency_manifest_sha256 is the normalized manifest digest."
+        },
+        "image_digest": {
+          "type": "string",
+          "description": "image_digest is the immutable built image digest once ready."
+        },
+        "build_error_code": {
+          "type": "string",
+          "description": "build_error_code is a stable machine-readable failure code."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "description": "SandboxTemplate is a reusable runtime plus an immutable dependency revision."
+    },
+    "v1SandboxTemplateStatus": {
+      "type": "string",
+      "enum": [
+        "SANDBOX_TEMPLATE_STATUS_UNSPECIFIED",
+        "SANDBOX_TEMPLATE_STATUS_PENDING",
+        "SANDBOX_TEMPLATE_STATUS_BUILDING",
+        "SANDBOX_TEMPLATE_STATUS_READY",
+        "SANDBOX_TEMPLATE_STATUS_FAILED",
+        "SANDBOX_TEMPLATE_STATUS_DELETING",
+        "SANDBOX_TEMPLATE_STATUS_DELETED"
+      ],
+      "default": "SANDBOX_TEMPLATE_STATUS_UNSPECIFIED",
+      "description": "SandboxTemplateStatus is the lifecycle of a reusable sandbox template."
+    },
+    "v1UsageEvent": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "int64"
+        },
+        "request_id": {
+          "type": "string",
+          "description": "request_id correlates the event with the originating request."
+        },
+        "model": {
+          "type": "string",
+          "description": "model is the customer-facing Tarka alias."
+        },
+        "provider_slug": {
+          "type": "string"
+        },
+        "provider_model": {
+          "type": "string"
+        },
+        "prompt_tokens": {
+          "type": "string",
+          "format": "int64"
+        },
+        "completion_tokens": {
+          "type": "string",
+          "format": "int64"
+        },
+        "total_tokens": {
+          "type": "string",
+          "format": "int64"
+        },
+        "status_code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "latency_ms": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "request_type": {
+          "type": "string"
+        },
+        "error_code": {
+          "type": "string",
+          "description": "error_code is empty for a successful request."
+        },
+        "cost_microcents": {
+          "type": "string",
+          "format": "int64",
+          "description": "cost_microcents uses true microcents: one unit is USD 0.00000001."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "description": "UsageEvent is one metered inference request."
+    },
+    "v1UsageSummary": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "period_start": {
+          "type": "string",
+          "format": "date-time",
+          "description": "period_start is inclusive."
+        },
+        "period_end": {
+          "type": "string",
+          "format": "date-time",
+          "description": "period_end is exclusive."
+        },
+        "request_count": {
+          "type": "string",
+          "format": "int64"
+        },
+        "prompt_tokens": {
+          "type": "string",
+          "format": "int64"
+        },
+        "completion_tokens": {
+          "type": "string",
+          "format": "int64"
+        },
+        "total_tokens": {
+          "type": "string",
+          "format": "int64"
+        },
+        "cost_microcents": {
+          "type": "string",
+          "format": "int64",
+          "description": "cost_microcents uses true microcents: one unit is USD 0.00000001."
+        },
+        "error_count": {
+          "type": "string",
+          "format": "int64"
+        },
+        "average_latency_ms": {
+          "type": "string",
+          "format": "int64"
+        }
+      },
+      "description": "UsageSummary aggregates metering over a half-open UTC time interval."
+    }
+  }
+}

@@ -1,0 +1,290 @@
+// Copyright 2026 Tarka
+// SPDX-License-Identifier: Apache-2.0
+
+syntax = "proto3";
+
+package tarka.provisioning.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+
+option csharp_namespace = "Tarka.Provisioning.V1";
+option go_package = "github.com/TarkaHQ/api/gen/go/tarka/provisioning/v1;provisioningv1";
+option java_multiple_files = true;
+option java_outer_classname = "SandboxProto";
+option java_package = "com.tarka.provisioning.v1";
+
+// SandboxService exposes deliberately narrow code execution. It does not
+// accept container images, commands, ports, mounts, shell sessions, browsers,
+// or persistent volumes.
+service SandboxService {
+  // ListSandboxTemplates returns built-in and organization-owned templates
+  // visible to the caller.
+  rpc ListSandboxTemplates(ListSandboxTemplatesRequest) returns (ListSandboxTemplatesResponse) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/sandbox-templates"};
+  }
+
+  // CreateSandboxTemplate builds an immutable dependency revision and
+  // idempotently returns the resulting template.
+  rpc CreateSandboxTemplate(CreateSandboxTemplateRequest) returns (SandboxTemplate) {
+    option (google.api.http) = {
+      post: "/control/v1/orgs/{org_id}/sandbox-templates"
+      body: "*"
+    };
+  }
+
+  // GetSandboxTemplate returns a template by identifier.
+  rpc GetSandboxTemplate(GetSandboxTemplateRequest) returns (SandboxTemplate) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/sandbox-templates/{template_id}"};
+  }
+
+  // DeleteSandboxTemplate retires a template that has no active sandboxes.
+  rpc DeleteSandboxTemplate(DeleteSandboxTemplateRequest) returns (SandboxTemplate) {
+    option (google.api.http) = {delete: "/control/v1/orgs/{org_id}/sandbox-templates/{template_id}"};
+  }
+
+  // ListSandboxes returns non-deleted sandboxes for an organization.
+  rpc ListSandboxes(ListSandboxesRequest) returns (ListSandboxesResponse) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/sandboxes"};
+  }
+
+  // CreateSandbox starts an isolated sandbox from a ready template.
+  rpc CreateSandbox(CreateCodeSandboxRequest) returns (CodeSandbox) {
+    option (google.api.http) = {
+      post: "/control/v1/orgs/{org_id}/sandboxes"
+      body: "*"
+    };
+  }
+
+  // GetSandbox returns a sandbox by identifier.
+  rpc GetSandbox(GetCodeSandboxRequest) returns (CodeSandbox) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/sandboxes/{sandbox_id}"};
+  }
+
+  // DeleteSandbox stops and deletes a sandbox. Repeated deletion is safe.
+  rpc DeleteSandbox(DeleteCodeSandboxRequest) returns (CodeSandbox) {
+    option (google.api.http) = {delete: "/control/v1/orgs/{org_id}/sandboxes/{sandbox_id}"};
+  }
+
+  // Execute runs one source-code payload in a ready sandbox.
+  rpc Execute(ExecuteRequest) returns (Execution) {
+    option (google.api.http) = {
+      post: "/control/v1/orgs/{org_id}/sandboxes/{sandbox_id}:execute"
+      body: "*"
+    };
+  }
+
+  // GetExecution returns execution status and retained output.
+  rpc GetExecution(GetExecutionRequest) returns (Execution) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/sandboxes/{sandbox_id}/executions/{execution_id}"};
+  }
+}
+
+// SandboxRuntime is a supported source-code runtime family.
+enum SandboxRuntime {
+  // SANDBOX_RUNTIME_UNSPECIFIED is invalid for creation.
+  SANDBOX_RUNTIME_UNSPECIFIED = 0;
+  SANDBOX_RUNTIME_PYTHON = 1;
+  SANDBOX_RUNTIME_NODE = 2;
+}
+
+// SandboxTemplateStatus is the lifecycle of a reusable sandbox template.
+enum SandboxTemplateStatus {
+  SANDBOX_TEMPLATE_STATUS_UNSPECIFIED = 0;
+  SANDBOX_TEMPLATE_STATUS_PENDING = 1;
+  SANDBOX_TEMPLATE_STATUS_BUILDING = 2;
+  SANDBOX_TEMPLATE_STATUS_READY = 3;
+  SANDBOX_TEMPLATE_STATUS_FAILED = 4;
+  SANDBOX_TEMPLATE_STATUS_DELETING = 5;
+  SANDBOX_TEMPLATE_STATUS_DELETED = 6;
+}
+
+// CodeSandboxStatus is the lifecycle of an isolated sandbox instance.
+enum CodeSandboxStatus {
+  CODE_SANDBOX_STATUS_UNSPECIFIED = 0;
+  CODE_SANDBOX_STATUS_STARTING = 1;
+  CODE_SANDBOX_STATUS_READY = 2;
+  CODE_SANDBOX_STATUS_BUSY = 3;
+  CODE_SANDBOX_STATUS_STOPPING = 4;
+  CODE_SANDBOX_STATUS_STOPPED = 5;
+  CODE_SANDBOX_STATUS_FAILED = 6;
+  CODE_SANDBOX_STATUS_EXPIRED = 7;
+  CODE_SANDBOX_STATUS_DELETED = 8;
+}
+
+// ExecutionStatus is the terminal or in-progress state of one execution.
+enum ExecutionStatus {
+  EXECUTION_STATUS_UNSPECIFIED = 0;
+  EXECUTION_STATUS_RUNNING = 1;
+  EXECUTION_STATUS_SUCCEEDED = 2;
+  EXECUTION_STATUS_FAILED = 3;
+  EXECUTION_STATUS_TIMED_OUT = 4;
+  EXECUTION_STATUS_CANCELLED = 5;
+}
+
+// SandboxTemplate is a reusable runtime plus an immutable dependency revision.
+message SandboxTemplate {
+  // id is the immutable template identifier.
+  string id = 1;
+  // org_id is empty for a platform built-in template.
+  string org_id = 2;
+  // alias is the stable organization-scoped or built-in template name.
+  string alias = 3;
+  string display_name = 4;
+  SandboxRuntime runtime = 5;
+  // runtime_version is the resolved interpreter/runtime version.
+  string runtime_version = 6;
+  // base_template_alias identifies the built-in base used for this template.
+  string base_template_alias = 7;
+  bool is_builtin = 8;
+  SandboxTemplateStatus status = 9;
+  // dependency_file_type identifies the selected dependency manifest format.
+  string dependency_file_type = 10;
+  // dependency_manifest_sha256 is the normalized manifest digest.
+  string dependency_manifest_sha256 = 11;
+  // image_digest is the immutable built image digest once ready.
+  string image_digest = 12;
+  // build_error_code is a stable machine-readable failure code.
+  string build_error_code = 13;
+  google.protobuf.Timestamp created_at = 14;
+  google.protobuf.Timestamp updated_at = 15;
+}
+
+// ListSandboxTemplatesRequest selects an organization. Results also include
+// visible platform built-ins.
+message ListSandboxTemplatesRequest {
+  string org_id = 1;
+}
+
+// ListSandboxTemplatesResponse contains visible reusable templates.
+message ListSandboxTemplatesResponse {
+  repeated SandboxTemplate templates = 1;
+}
+
+// CreateSandboxTemplateRequest creates one dependency-pinned template.
+message CreateSandboxTemplateRequest {
+  string org_id = 1;
+  // alias is an organization-scoped, URL-safe template name.
+  string alias = 2;
+  string display_name = 3;
+  // base_template_alias selects a supported built-in Python or Node base.
+  string base_template_alias = 4;
+  // dependency_file supplies exactly one supported dependency manifest.
+  oneof dependency_file {
+    string requirements_txt = 5;
+    string package_json = 6;
+    string pyproject_toml = 7;
+  }
+  // idempotency_key safely retries this mutation for 24 hours. The same key
+  // cannot be reused with different request content.
+  string idempotency_key = 8;
+}
+
+// GetSandboxTemplateRequest selects one organization-visible template.
+message GetSandboxTemplateRequest {
+  string org_id = 1;
+  string template_id = 2;
+}
+
+// DeleteSandboxTemplateRequest selects an organization-owned template.
+message DeleteSandboxTemplateRequest {
+  string org_id = 1;
+  string template_id = 2;
+}
+
+// CodeSandbox is an isolated, time-bounded execution environment.
+message CodeSandbox {
+  string id = 1;
+  string org_id = 2;
+  string template_id = 3;
+  string template_alias = 4;
+  SandboxRuntime runtime = 5;
+  CodeSandboxStatus status = 6;
+  // timeout_seconds is the requested maximum sandbox lifetime.
+  int32 timeout_seconds = 7;
+  // expires_at is the enforced sandbox lifetime deadline.
+  google.protobuf.Timestamp expires_at = 8;
+  google.protobuf.Timestamp created_at = 9;
+  google.protobuf.Timestamp ready_at = 10;
+  google.protobuf.Timestamp stopped_at = 11;
+  // failure_code is a stable machine-readable lifecycle failure code.
+  string failure_code = 12;
+}
+
+// ListSandboxesRequest selects one organization.
+message ListSandboxesRequest {
+  string org_id = 1;
+}
+
+// ListSandboxesResponse contains non-deleted sandboxes in newest-first order.
+message ListSandboxesResponse {
+  repeated CodeSandbox sandboxes = 1;
+}
+
+// CreateCodeSandboxRequest starts a sandbox from a ready template.
+message CreateCodeSandboxRequest {
+  string org_id = 1;
+  // template accepts a visible template identifier or alias.
+  string template = 2;
+  // timeout_seconds is the sandbox lifetime within platform bounds.
+  int32 timeout_seconds = 3;
+  // idempotency_key safely retries this mutation for 24 hours. The same key
+  // cannot be reused with different request content.
+  string idempotency_key = 4;
+}
+
+// GetCodeSandboxRequest selects one organization sandbox.
+message GetCodeSandboxRequest {
+  string org_id = 1;
+  string sandbox_id = 2;
+}
+
+// DeleteCodeSandboxRequest selects one organization sandbox to stop and delete.
+message DeleteCodeSandboxRequest {
+  string org_id = 1;
+  string sandbox_id = 2;
+}
+
+// ExecuteRequest runs source code in an existing ready sandbox.
+message ExecuteRequest {
+  string org_id = 1;
+  string sandbox_id = 2;
+  // code is interpreted according to the sandbox template's runtime.
+  string code = 3;
+  // stdin is supplied verbatim to the program's standard input.
+  string stdin = 4;
+  // timeout_seconds is the execution limit within platform bounds.
+  int32 timeout_seconds = 5;
+  // idempotency_key safely retries this mutation for 24 hours. The same key
+  // cannot be reused with different request content.
+  string idempotency_key = 6;
+}
+
+// GetExecutionRequest selects one execution within an organization sandbox.
+message GetExecutionRequest {
+  string org_id = 1;
+  string sandbox_id = 2;
+  string execution_id = 3;
+}
+
+// Execution is one source-code run and its retained output.
+message Execution {
+  string id = 1;
+  string sandbox_id = 2;
+  ExecutionStatus status = 3;
+  // stdout is empty after its retention deadline.
+  string stdout = 4;
+  // stderr is empty after its retention deadline.
+  string stderr = 5;
+  int32 exit_code = 6;
+  int32 duration_ms = 7;
+  // output_truncated indicates that stdout or stderr exceeded platform limits.
+  bool output_truncated = 8;
+  // error_code is a stable machine-readable platform/runtime failure code.
+  string error_code = 9;
+  google.protobuf.Timestamp created_at = 10;
+  google.protobuf.Timestamp completed_at = 11;
+  // output_expires_at is the output retention deadline. Execution metadata
+  // remains available after output expires.
+  google.protobuf.Timestamp output_expires_at = 12;
+}

@@ -1,0 +1,46 @@
+name: Contract
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: contract-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up Buf
+        uses: bufbuild/buf-setup-action@v1
+        with:
+          version: 1.57.2
+          github_token: ${{ github.token }}
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+      - name: Check protobuf formatting and lint
+        run: |
+          buf format --diff --exit-code
+          buf lint
+      - name: Check backward compatibility
+        if: github.event_name == 'pull_request'
+        run: buf breaking --against "${{ github.server_url }}/${{ github.repository }}.git#branch=main"
+      - name: Regenerate bindings and OpenAPI
+        run: buf generate
+      - name: Check generated files are committed
+        run: git diff --exit-code -- gen openapi
+      - name: Compile generated Go module
+        run: go test ./...
