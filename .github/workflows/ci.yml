@@ -27,6 +27,8 @@ jobs:
         with:
           version: 1.57.2
           github_token: ${{ github.token }}
+      - name: Enforce the contract-only public boundary
+        run: python3 scripts/check_public_boundary.py
       - name: Check protobuf formatting and lint
         run: |
           buf format --diff --exit-code

@@ -16,6 +16,9 @@ business rules, authentication and authorization implementation, persistence,
 controllers, gateway hooks, runtime code, container definitions, and deployment
 manifests remain in Tarka's private infrastructure repository. Generated
 bindings used by Tarka are produced inside that private build.
+CI enforces this boundary and rejects generated language sources, application
+dependency manifests, service/runtime directories, container definitions,
+deployment manifests, and repository dependencies.
 
 ## Repository layout
 
