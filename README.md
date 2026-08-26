@@ -89,7 +89,7 @@ Install [Buf](https://buf.build/docs/installation), clone a tagged release, and
 use a generation template for your language:
 
 ```bash
-git clone --branch v1.2.0 --depth 1 https://github.com/TarkaHQ/api.git tarka-api
+git clone --branch v1.3.0 --depth 1 https://github.com/TarkaHQ/api.git tarka-api
 cd tarka-api
 buf lint
 buf build

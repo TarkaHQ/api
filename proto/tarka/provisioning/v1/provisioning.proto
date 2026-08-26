@@ -591,6 +591,9 @@ message StorageBucket {
   bool versioning_enabled = 7;
   google.protobuf.Timestamp created_at = 8;
   google.protobuf.Timestamp updated_at = 9;
+  // s3_bucket_name is the globally unique bucket identifier to send to S3
+  // data-plane clients. name remains the organization-local display name.
+  string s3_bucket_name = 10;
 }
 
 // CreateStorageCredentialRequest creates one access key scoped to a bucket.

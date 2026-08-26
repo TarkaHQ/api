@@ -2487,6 +2487,10 @@
         "updated_at": {
           "type": "string",
           "format": "date-time"
+        },
+        "s3_bucket_name": {
+          "type": "string",
+          "description": "s3_bucket_name is the globally unique bucket identifier to send to S3\ndata-plane clients. name remains the organization-local display name."
         }
       },
       "description": "StorageBucket describes a private Tarka-managed S3-compatible bucket."
