@@ -7,7 +7,7 @@
   "tags": [
     {
       "name": "ProvisioningService",
-      "description": "ProvisioningService manages Tarka identities, organizations, API keys,\nquotas, metering, hosted Git, and desired-state compute resources."
+      "description": "ProvisioningService manages Tarka identities, organizations, API keys,\nquotas, metering, object storage, hosted Git, and desired-state compute\nresources."
     },
     {
       "name": "SandboxService",
@@ -1092,6 +1092,242 @@
         ]
       }
     },
+    "/control/v1/orgs/{org_id}/storage/buckets": {
+      "get": {
+        "summary": "ListStorageBuckets returns object-storage buckets in an organization.",
+        "operationId": "ProvisioningService_ListStorageBuckets",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListStorageBucketsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      },
+      "post": {
+        "summary": "CreateStorageBucket provisions a private, versioned S3-compatible bucket.",
+        "operationId": "ProvisioningService_CreateStorageBucket",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1StorageBucket"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProvisioningServiceCreateStorageBucketBody"
+            }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/storage/buckets/{bucket_id}": {
+      "delete": {
+        "summary": "DeleteStorageBucket permanently deletes an empty object-storage bucket.",
+        "operationId": "ProvisioningService_DeleteStorageBucket",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1StorageBucket"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "bucket_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/storage/buckets/{bucket_id}/credentials": {
+      "get": {
+        "summary": "ListStorageCredentials returns redacted credential metadata for a bucket.",
+        "operationId": "ProvisioningService_ListStorageCredentials",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListStorageCredentialsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "bucket_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      },
+      "post": {
+        "summary": "CreateStorageCredential creates credentials scoped to one bucket. The\nsecret_access_key is returned exactly once in the response.",
+        "operationId": "ProvisioningService_CreateStorageCredential",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CreateStorageCredentialResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "bucket_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProvisioningServiceCreateStorageCredentialBody"
+            }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/storage/buckets/{bucket_id}/credentials/{credential_id}:revoke": {
+      "post": {
+        "summary": "RevokeStorageCredential permanently disables a storage credential.",
+        "operationId": "ProvisioningService_RevokeStorageCredential",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1StorageCredential"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "bucket_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "credential_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProvisioningServiceRevokeStorageCredentialBody"
+            }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
     "/control/v1/orgs/{org_id}/usage/events": {
       "get": {
         "summary": "ListUsageEvents returns the organization's newest metered requests.",
@@ -1299,6 +1535,26 @@
       },
       "description": "CreateJobRequest defines desired state for a finite-duration container job."
     },
+    "ProvisioningServiceCreateStorageBucketBody": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "name is the customer-visible, URL-safe bucket name within the\norganization. Tarka maps it to a globally unique physical bucket."
+        }
+      },
+      "description": "CreateStorageBucketRequest defines a private S3-compatible bucket."
+    },
+    "ProvisioningServiceCreateStorageCredentialBody": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string",
+          "description": "label helps operators distinguish credentials without exposing secrets."
+        }
+      },
+      "description": "CreateStorageCredentialRequest creates one access key scoped to a bucket."
+    },
     "ProvisioningServiceRevokeApiKeyBody": {
       "type": "object",
       "properties": {
@@ -1308,6 +1564,10 @@
         }
       },
       "description": "RevokeApiKeyRequest permanently revokes one organization credential."
+    },
+    "ProvisioningServiceRevokeStorageCredentialBody": {
+      "type": "object",
+      "description": "RevokeStorageCredentialRequest selects one bucket credential."
     },
     "ProvisioningServiceUpdateOrgBody": {
       "type": "object",
@@ -1635,6 +1895,27 @@
       },
       "description": "CreateInferenceServiceRequest defines desired state for an inference service."
     },
+    "v1CreateStorageCredentialResponse": {
+      "type": "object",
+      "properties": {
+        "credential": {
+          "$ref": "#/definitions/v1StorageCredential"
+        },
+        "access_key_id": {
+          "type": "string"
+        },
+        "secret_access_key": {
+          "type": "string"
+        },
+        "endpoint": {
+          "type": "string"
+        },
+        "region": {
+          "type": "string"
+        }
+      },
+      "description": "CreateStorageCredentialResponse includes the plaintext credential once.\nTarka does not persist secret_access_key and cannot return it again."
+    },
     "v1CurrentUser": {
       "type": "object",
       "properties": {
@@ -1865,6 +2146,32 @@
         }
       },
       "description": "ListSandboxesResponse contains non-deleted sandboxes in newest-first order."
+    },
+    "v1ListStorageBucketsResponse": {
+      "type": "object",
+      "properties": {
+        "buckets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1StorageBucket"
+          }
+        }
+      },
+      "description": "ListStorageBucketsResponse contains object-storage bucket metadata."
+    },
+    "v1ListStorageCredentialsResponse": {
+      "type": "object",
+      "properties": {
+        "credentials": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1StorageCredential"
+          }
+        }
+      },
+      "description": "ListStorageCredentialsResponse contains redacted storage credentials."
     },
     "v1ListUsageEventsResponse": {
       "type": "object",
@@ -2145,6 +2452,78 @@
       ],
       "default": "SANDBOX_TEMPLATE_STATUS_UNSPECIFIED",
       "description": "SandboxTemplateStatus is the lifecycle of a reusable sandbox template."
+    },
+    "v1StorageBucket": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "org_id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string",
+          "description": "name is the customer-visible name, unique within the organization."
+        },
+        "status": {
+          "type": "string",
+          "description": "status is the bucket lifecycle/reconciliation state."
+        },
+        "endpoint": {
+          "type": "string",
+          "description": "endpoint is the public S3-compatible API endpoint."
+        },
+        "region": {
+          "type": "string"
+        },
+        "versioning_enabled": {
+          "type": "boolean"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "description": "StorageBucket describes a private Tarka-managed S3-compatible bucket."
+    },
+    "v1StorageCredential": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "org_id": {
+          "type": "string"
+        },
+        "bucket_id": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "access_key_prefix": {
+          "type": "string",
+          "description": "access_key_prefix is safe to display and identify in the console."
+        },
+        "status": {
+          "type": "string",
+          "description": "status is active or revoked."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "revoked_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "description": "StorageCredential is redacted metadata for a bucket-scoped S3 access key."
     },
     "v1UsageEvent": {
       "type": "object",

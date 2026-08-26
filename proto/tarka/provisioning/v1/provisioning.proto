@@ -16,7 +16,8 @@ option java_outer_classname = "ProvisioningProto";
 option java_package = "com.tarka.provisioning.v1";
 
 // ProvisioningService manages Tarka identities, organizations, API keys,
-// quotas, metering, hosted Git, and desired-state compute resources.
+// quotas, metering, object storage, hosted Git, and desired-state compute
+// resources.
 service ProvisioningService {
   // GetCurrentUser returns the authenticated identity and its active
   // organization memberships.
@@ -143,6 +144,46 @@ service ProvisioningService {
   // GetProvisionedResource returns one desired-state resource by identifier.
   rpc GetProvisionedResource(GetProvisionedResourceRequest) returns (ProvisionedResource) {
     option (google.api.http) = {get: "/control/v1/orgs/{org_id}/resources/{resource_id}"};
+  }
+
+  // CreateStorageBucket provisions a private, versioned S3-compatible bucket.
+  rpc CreateStorageBucket(CreateStorageBucketRequest) returns (StorageBucket) {
+    option (google.api.http) = {
+      post: "/control/v1/orgs/{org_id}/storage/buckets"
+      body: "*"
+    };
+  }
+
+  // ListStorageBuckets returns object-storage buckets in an organization.
+  rpc ListStorageBuckets(ListStorageBucketsRequest) returns (ListStorageBucketsResponse) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/storage/buckets"};
+  }
+
+  // DeleteStorageBucket permanently deletes an empty object-storage bucket.
+  rpc DeleteStorageBucket(DeleteStorageBucketRequest) returns (StorageBucket) {
+    option (google.api.http) = {delete: "/control/v1/orgs/{org_id}/storage/buckets/{bucket_id}"};
+  }
+
+  // CreateStorageCredential creates credentials scoped to one bucket. The
+  // secret_access_key is returned exactly once in the response.
+  rpc CreateStorageCredential(CreateStorageCredentialRequest) returns (CreateStorageCredentialResponse) {
+    option (google.api.http) = {
+      post: "/control/v1/orgs/{org_id}/storage/buckets/{bucket_id}/credentials"
+      body: "*"
+    };
+  }
+
+  // ListStorageCredentials returns redacted credential metadata for a bucket.
+  rpc ListStorageCredentials(ListStorageCredentialsRequest) returns (ListStorageCredentialsResponse) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/storage/buckets/{bucket_id}/credentials"};
+  }
+
+  // RevokeStorageCredential permanently disables a storage credential.
+  rpc RevokeStorageCredential(RevokeStorageCredentialRequest) returns (StorageCredential) {
+    option (google.api.http) = {
+      post: "/control/v1/orgs/{org_id}/storage/buckets/{bucket_id}/credentials/{credential_id}:revoke"
+      body: "*"
+    };
   }
 
   // CreateGitRepository creates a private, LFS-enabled hosted Git repository.
@@ -509,6 +550,97 @@ message ListProvisionedResourcesResponse {
 message GetProvisionedResourceRequest {
   string org_id = 1;
   string resource_id = 2;
+}
+
+// CreateStorageBucketRequest defines a private S3-compatible bucket.
+message CreateStorageBucketRequest {
+  string org_id = 1;
+  // name is the customer-visible, URL-safe bucket name within the
+  // organization. Tarka maps it to a globally unique physical bucket.
+  string name = 2;
+}
+
+// ListStorageBucketsRequest selects one organization.
+message ListStorageBucketsRequest {
+  string org_id = 1;
+}
+
+// ListStorageBucketsResponse contains object-storage bucket metadata.
+message ListStorageBucketsResponse {
+  repeated StorageBucket buckets = 1;
+}
+
+// DeleteStorageBucketRequest selects one organization bucket. The bucket must
+// be empty before it can be deleted.
+message DeleteStorageBucketRequest {
+  string org_id = 1;
+  string bucket_id = 2;
+}
+
+// StorageBucket describes a private Tarka-managed S3-compatible bucket.
+message StorageBucket {
+  string id = 1;
+  string org_id = 2;
+  // name is the customer-visible name, unique within the organization.
+  string name = 3;
+  // status is the bucket lifecycle/reconciliation state.
+  string status = 4;
+  // endpoint is the public S3-compatible API endpoint.
+  string endpoint = 5;
+  string region = 6;
+  bool versioning_enabled = 7;
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp updated_at = 9;
+}
+
+// CreateStorageCredentialRequest creates one access key scoped to a bucket.
+message CreateStorageCredentialRequest {
+  string org_id = 1;
+  string bucket_id = 2;
+  // label helps operators distinguish credentials without exposing secrets.
+  string label = 3;
+}
+
+// CreateStorageCredentialResponse includes the plaintext credential once.
+// Tarka does not persist secret_access_key and cannot return it again.
+message CreateStorageCredentialResponse {
+  StorageCredential credential = 1;
+  string access_key_id = 2;
+  string secret_access_key = 3;
+  string endpoint = 4;
+  string region = 5;
+}
+
+// ListStorageCredentialsRequest selects one organization bucket.
+message ListStorageCredentialsRequest {
+  string org_id = 1;
+  string bucket_id = 2;
+}
+
+// ListStorageCredentialsResponse contains redacted storage credentials.
+message ListStorageCredentialsResponse {
+  repeated StorageCredential credentials = 1;
+}
+
+// RevokeStorageCredentialRequest selects one bucket credential.
+message RevokeStorageCredentialRequest {
+  string org_id = 1;
+  string bucket_id = 2;
+  string credential_id = 3;
+}
+
+// StorageCredential is redacted metadata for a bucket-scoped S3 access key.
+message StorageCredential {
+  string id = 1;
+  string org_id = 2;
+  string bucket_id = 3;
+  string label = 4;
+  // access_key_prefix is safe to display and identify in the console.
+  string access_key_prefix = 5;
+  // status is active or revoked.
+  string status = 6;
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp revoked_at = 8;
 }
 
 // CreateGitRepositoryRequest defines a private hosted Git repository.

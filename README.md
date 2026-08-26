@@ -37,7 +37,7 @@ is authoritative for the separate `/v1` compatibility surface.
 ## API families
 
 - The gRPC-first control API manages accounts, organizations, keys, quotas,
-  usage, hosted Git, sandboxes, and desired-state resources. Its REST
+  usage, object storage, hosted Git, sandboxes, and desired-state resources. Its REST
   transcoding routes live under `/control/v1`.
 - The inference API is a deliberately scoped OpenAI-compatible HTTP API at
   `https://tarka.rest/v1`. Its currently guaranteed endpoints are
@@ -89,7 +89,7 @@ Install [Buf](https://buf.build/docs/installation), clone a tagged release, and
 use a generation template for your language:
 
 ```bash
-git clone --branch v1.1.0 --depth 1 https://github.com/TarkaHQ/api.git tarka-api
+git clone --branch v1.2.0 --depth 1 https://github.com/TarkaHQ/api.git tarka-api
 cd tarka-api
 buf lint
 buf build
