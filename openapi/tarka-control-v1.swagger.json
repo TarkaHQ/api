@@ -178,6 +178,40 @@
         ]
       }
     },
+    "/control/v1/orgs": {
+      "post": {
+        "summary": "CreateOrg creates an additional organization and makes the authenticated\nidentity its owner.",
+        "operationId": "ProvisioningService_CreateOrg",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Org"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "description": "CreateOrgRequest creates an additional organization for the authenticated\nidentity. The caller becomes its owner.",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateOrgRequest"
+            }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
     "/control/v1/orgs/{org_id}": {
       "get": {
         "summary": "GetOrg returns an active organization visible to the caller.",
@@ -574,6 +608,37 @@
             "schema": {
               "$ref": "#/definitions/ProvisioningServiceCreateJobBody"
             }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/members": {
+      "get": {
+        "summary": "ListOrgMembers returns active and inactive memberships visible to an\norganization member.",
+        "operationId": "ProvisioningService_ListOrgMembers",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListOrgMembersResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
           }
         ],
         "tags": [
@@ -1895,6 +1960,20 @@
       },
       "description": "CreateInferenceServiceRequest defines desired state for an inference service."
     },
+    "v1CreateOrgRequest": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "name is a non-empty human-readable name of at most 120 characters."
+        },
+        "slug": {
+          "type": "string",
+          "description": "slug is an optional immutable URL-safe identifier. When empty, the server\nallocates one from the name. Explicit slugs must be globally unique."
+        }
+      },
+      "description": "CreateOrgRequest creates an additional organization for the authenticated\nidentity. The caller becomes its owner."
+    },
     "v1CreateStorageCredentialResponse": {
       "type": "object",
       "properties": {
@@ -2108,6 +2187,19 @@
       },
       "description": "ListModelsResponse contains the active model catalog."
     },
+    "v1ListOrgMembersResponse": {
+      "type": "object",
+      "properties": {
+        "members": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1OrgMember"
+          }
+        }
+      },
+      "description": "ListOrgMembersResponse contains memberships in creation order."
+    },
     "v1ListProvisionedResourcesResponse": {
       "type": "object",
       "properties": {
@@ -2273,6 +2365,28 @@
         }
       },
       "description": "Org is an organization as visible to the authenticated caller."
+    },
+    "v1OrgMember": {
+      "type": "object",
+      "properties": {
+        "user_id": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "description": "OrgMember describes one identity's access to an organization. Email is\nincluded so organization members can identify collaborators in the console."
     },
     "v1ProvisionedResource": {
       "type": "object",

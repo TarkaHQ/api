@@ -34,6 +34,15 @@ service ProvisioningService {
     };
   }
 
+  // CreateOrg creates an additional organization and makes the authenticated
+  // identity its owner.
+  rpc CreateOrg(CreateOrgRequest) returns (Org) {
+    option (google.api.http) = {
+      post: "/control/v1/orgs"
+      body: "*"
+    };
+  }
+
   // EnsureHostedGitAccess provisions or reconciles the authenticated user's
   // hosted Git identity.
   rpc EnsureHostedGitAccess(EnsureHostedGitAccessRequest) returns (HostedGitAccess) {
@@ -110,6 +119,12 @@ service ProvisioningService {
       patch: "/control/v1/orgs/{org_id}"
       body: "*"
     };
+  }
+
+  // ListOrgMembers returns active and inactive memberships visible to an
+  // organization member.
+  rpc ListOrgMembers(ListOrgMembersRequest) returns (ListOrgMembersResponse) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/members"};
   }
 
   // GetQuotaPolicy returns an organization's effective inference quota policy.
@@ -216,6 +231,16 @@ message BootstrapCurrentUserRequest {
   string org_name = 1;
 }
 
+// CreateOrgRequest creates an additional organization for the authenticated
+// identity. The caller becomes its owner.
+message CreateOrgRequest {
+  // name is a non-empty human-readable name of at most 120 characters.
+  string name = 1;
+  // slug is an optional immutable URL-safe identifier. When empty, the server
+  // allocates one from the name. Explicit slugs must be globally unique.
+  string slug = 2;
+}
+
 // EnsureHostedGitAccessRequest has no parameters; identity comes from
 // authentication.
 message EnsureHostedGitAccessRequest {}
@@ -257,6 +282,26 @@ message Org {
   string role = 5;
   // created_at is the organization creation time.
   google.protobuf.Timestamp created_at = 6;
+}
+
+// OrgMember describes one identity's access to an organization. Email is
+// included so organization members can identify collaborators in the console.
+message OrgMember {
+  string user_id = 1;
+  string email = 2;
+  string role = 3;
+  string status = 4;
+  google.protobuf.Timestamp created_at = 5;
+}
+
+// ListOrgMembersRequest selects one organization visible to the caller.
+message ListOrgMembersRequest {
+  string org_id = 1;
+}
+
+// ListOrgMembersResponse contains memberships in creation order.
+message ListOrgMembersResponse {
+  repeated OrgMember members = 1;
 }
 
 // ListModelsRequest selects active models by modality.
