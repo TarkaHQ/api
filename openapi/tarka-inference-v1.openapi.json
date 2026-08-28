@@ -751,13 +751,13 @@
           },
           "image": {
             "type": "string",
-            "description": "A data URL or HTTPS image URL."
+            "description": "A base64 value or base64 data URL. Remote URLs are not accepted."
           },
           "images": {
             "type": "array",
             "minItems": 1,
             "items": {"type": "string"},
-            "description": "Data URLs or HTTPS image URLs."
+            "description": "Base64 values or base64 data URLs. Remote URLs are not accepted."
           },
           "prompt": {"type": "string"},
           "stream": {"type": "boolean", "default": false},
