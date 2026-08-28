@@ -3,7 +3,7 @@
 Tarka versions its public API at two related levels:
 
 - Protobuf packages include a stability version, currently
-  `tarka.provisioning.v1`.
+  `tarka.provisioning.v1` and `tarka.inference.v2`.
 - Repository releases use semantic tags such as `v1.1.0` so consumers can pin
   an immutable contract revision.
 

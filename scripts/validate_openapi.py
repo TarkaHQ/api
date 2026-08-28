@@ -98,6 +98,12 @@ def validate_inference(document: dict[str, Any]) -> None:
     expected = {
         "/v1/models": {"get"},
         "/v1/chat/completions": {"post"},
+        "/v1/ocr": {"post"},
+        "/v1/audio/transcriptions": {"post"},
+        "/v1/audio/translations": {"post"},
+        "/v1/audio/speech": {"post"},
+        "/v1/audio/voice-clones": {"post"},
+        "/v1/audio/voice-clones/{voice_id}": {"get", "delete"},
     }
     routes = document.get("paths")
     if not isinstance(routes, dict):
@@ -118,6 +124,13 @@ def validate_inference(document: dict[str, Any]) -> None:
     schemes = document.get("components", {}).get("securitySchemes", {})
     if "bearerAuth" not in schemes:
         raise ValueError(f"{INFERENCE_PATH}: bearerAuth security scheme is required")
+    for route in ("/v1/audio/transcriptions", "/v1/audio/translations", "/v1/audio/voice-clones"):
+        content = routes[route]["post"]["requestBody"]["content"]
+        if "multipart/form-data" not in content:
+            raise ValueError(f"{INFERENCE_PATH}: {route} must be multipart")
+    speech_content = routes["/v1/audio/speech"]["post"]["responses"]["200"]["content"]
+    if not any(value.get("schema", {}).get("format") == "binary" for value in speech_content.values()):
+        raise ValueError(f"{INFERENCE_PATH}: speech response must be binary")
 
 
 def validate_inference_v2(document: dict[str, Any]) -> None:

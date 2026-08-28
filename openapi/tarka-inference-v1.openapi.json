@@ -28,6 +28,18 @@
     {
       "name": "Chat Completions",
       "description": "Create OpenAI-compatible chat completions and token streams."
+    },
+    {
+      "name": "OCR",
+      "description": "Extract text from one or more images."
+    },
+    {
+      "name": "Audio",
+      "description": "Transcribe, translate, and synthesize audio."
+    },
+    {
+      "name": "Voice Cloning",
+      "description": "Create and manage consent-backed cloned voices for supported speech models."
     }
   ],
   "paths": {
@@ -111,6 +123,204 @@
           "500": {
             "$ref": "#/components/responses/InternalError"
           }
+        }
+      }
+    },
+    "/v1/ocr": {
+      "post": {
+        "operationId": "createOCR",
+        "summary": "Extract text from images",
+        "description": "Runs an OCR model over a data URL or remote image URL. When stream is true, returns OCR chunks as server-sent events terminated by data: [DONE].",
+        "tags": ["OCR"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {"$ref": "#/components/schemas/OCRRequest"}
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "An OCR result or OCR event stream.",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/OCRResponse"}
+              },
+              "text/event-stream": {
+                "schema": {"type": "string"}
+              }
+            }
+          },
+          "400": {"$ref": "#/components/responses/BadRequest"},
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"$ref": "#/components/responses/Forbidden"},
+          "429": {"$ref": "#/components/responses/RateLimited"},
+          "500": {"$ref": "#/components/responses/InternalError"}
+        }
+      }
+    },
+    "/v1/audio/transcriptions": {
+      "post": {
+        "operationId": "createTranscription",
+        "summary": "Transcribe audio",
+        "description": "Transcribes a multipart audio upload. The selected model determines supported languages and duration limits.",
+        "tags": ["Audio"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {"$ref": "#/components/schemas/TranscriptionRequest"}
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The transcription in the requested format.",
+            "content": {
+              "application/json": {"schema": {"$ref": "#/components/schemas/AudioTextResponse"}},
+              "text/plain": {"schema": {"type": "string"}},
+              "application/x-subrip": {"schema": {"type": "string"}},
+              "text/vtt": {"schema": {"type": "string"}}
+            }
+          },
+          "400": {"$ref": "#/components/responses/BadRequest"},
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"$ref": "#/components/responses/Forbidden"},
+          "429": {"$ref": "#/components/responses/RateLimited"},
+          "500": {"$ref": "#/components/responses/InternalError"}
+        }
+      }
+    },
+    "/v1/audio/translations": {
+      "post": {
+        "operationId": "createTranslation",
+        "summary": "Translate audio to English",
+        "description": "Transcribes and translates a multipart audio upload to English using a compatible speech model.",
+        "tags": ["Audio"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {"$ref": "#/components/schemas/TranslationRequest"}
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The translation in the requested format.",
+            "content": {
+              "application/json": {"schema": {"$ref": "#/components/schemas/AudioTextResponse"}},
+              "text/plain": {"schema": {"type": "string"}},
+              "application/x-subrip": {"schema": {"type": "string"}},
+              "text/vtt": {"schema": {"type": "string"}}
+            }
+          },
+          "400": {"$ref": "#/components/responses/BadRequest"},
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"$ref": "#/components/responses/Forbidden"},
+          "429": {"$ref": "#/components/responses/RateLimited"},
+          "500": {"$ref": "#/components/responses/InternalError"}
+        }
+      }
+    },
+    "/v1/audio/speech": {
+      "post": {
+        "operationId": "createSpeech",
+        "summary": "Generate speech",
+        "description": "Synthesizes speech and returns audio bytes. The voice value is either a predefined voice supported by the selected model or a voice clone identifier created for that model.",
+        "tags": ["Audio"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {"$ref": "#/components/schemas/SpeechRequest"}
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Generated audio in the requested format.",
+            "content": {
+              "audio/mpeg": {"schema": {"type": "string", "format": "binary"}},
+              "audio/ogg": {"schema": {"type": "string", "format": "binary"}},
+              "audio/aac": {"schema": {"type": "string", "format": "binary"}},
+              "audio/flac": {"schema": {"type": "string", "format": "binary"}},
+              "audio/wav": {"schema": {"type": "string", "format": "binary"}},
+              "audio/L16": {"schema": {"type": "string", "format": "binary"}}
+            }
+          },
+          "400": {"$ref": "#/components/responses/BadRequest"},
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"$ref": "#/components/responses/Forbidden"},
+          "429": {"$ref": "#/components/responses/RateLimited"},
+          "500": {"$ref": "#/components/responses/InternalError"}
+        }
+      }
+    },
+    "/v1/audio/voice-clones": {
+      "post": {
+        "operationId": "createVoiceClone",
+        "summary": "Create a voice clone",
+        "description": "Creates a tenant-scoped voice from a reference sample for a model that advertises voice cloning. A signatory and consent date are required and retained privately for abuse prevention.",
+        "tags": ["Voice Cloning"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {"$ref": "#/components/schemas/VoiceCloneRequest"}
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "The voice clone was accepted.",
+            "content": {
+              "application/json": {"schema": {"$ref": "#/components/schemas/VoiceClone"}}
+            }
+          },
+          "400": {"$ref": "#/components/responses/BadRequest"},
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"$ref": "#/components/responses/Forbidden"},
+          "429": {"$ref": "#/components/responses/RateLimited"},
+          "500": {"$ref": "#/components/responses/InternalError"}
+        }
+      }
+    },
+    "/v1/audio/voice-clones/{voice_id}": {
+      "parameters": [
+        {
+          "name": "voice_id",
+          "in": "path",
+          "required": true,
+          "schema": {"type": "string"}
+        }
+      ],
+      "get": {
+        "operationId": "getVoiceClone",
+        "summary": "Retrieve a voice clone",
+        "tags": ["Voice Cloning"],
+        "responses": {
+          "200": {
+            "description": "The tenant-scoped voice clone.",
+            "content": {
+              "application/json": {"schema": {"$ref": "#/components/schemas/VoiceClone"}}
+            }
+          },
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"$ref": "#/components/responses/Forbidden"},
+          "500": {"$ref": "#/components/responses/InternalError"}
+        }
+      },
+      "delete": {
+        "operationId": "deleteVoiceClone",
+        "summary": "Delete a voice clone",
+        "tags": ["Voice Cloning"],
+        "responses": {
+          "204": {"description": "The voice clone was deleted."},
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"$ref": "#/components/responses/Forbidden"},
+          "500": {"$ref": "#/components/responses/InternalError"}
         }
       }
     }
@@ -523,6 +733,154 @@
               {"$ref": "#/components/schemas/CompletionUsage"},
               {"type": "null"}
             ]
+          }
+        }
+      },
+      "OCRRequest": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["model"],
+        "anyOf": [
+          {"required": ["image"]},
+          {"required": ["images"]}
+        ],
+        "properties": {
+          "model": {
+            "type": "string",
+            "description": "An OCR model alias."
+          },
+          "image": {
+            "type": "string",
+            "description": "A data URL or HTTPS image URL."
+          },
+          "images": {
+            "type": "array",
+            "minItems": 1,
+            "items": {"type": "string"},
+            "description": "Data URLs or HTTPS image URLs."
+          },
+          "prompt": {"type": "string"},
+          "stream": {"type": "boolean", "default": false},
+          "max_tokens": {"type": "integer", "minimum": 1},
+          "temperature": {"type": "number", "minimum": 0, "default": 0}
+        }
+      },
+      "OCRResponse": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["id", "object", "created", "model", "text"],
+        "properties": {
+          "id": {"type": "string"},
+          "object": {"type": "string"},
+          "created": {"type": "integer", "format": "int64"},
+          "model": {"type": "string"},
+          "text": {"type": "string"},
+          "usage": {"$ref": "#/components/schemas/CompletionUsage"}
+        }
+      },
+      "TranscriptionRequest": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["file", "model"],
+        "properties": {
+          "file": {"type": "string", "format": "binary"},
+          "model": {"type": "string", "description": "A speech-to-text model alias."},
+          "language": {"type": "string", "description": "An ISO-639-1 language code when supported."},
+          "prompt": {"type": "string"},
+          "response_format": {
+            "type": "string",
+            "enum": ["json", "text", "srt", "verbose_json", "vtt"],
+            "default": "json"
+          },
+          "temperature": {"type": "number", "minimum": 0},
+          "timestamp_granularities[]": {
+            "type": "array",
+            "items": {"type": "string", "enum": ["segment", "word"]}
+          }
+        }
+      },
+      "TranslationRequest": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["file", "model"],
+        "properties": {
+          "file": {"type": "string", "format": "binary"},
+          "model": {"type": "string", "description": "A speech model that supports translation."},
+          "prompt": {"type": "string"},
+          "response_format": {
+            "type": "string",
+            "enum": ["json", "text", "srt", "verbose_json", "vtt"],
+            "default": "json"
+          },
+          "temperature": {"type": "number", "minimum": 0},
+          "timestamp_granularities[]": {
+            "type": "array",
+            "items": {"type": "string", "enum": ["segment", "word"]}
+          }
+        }
+      },
+      "AudioTextResponse": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["text"],
+        "properties": {
+          "text": {"type": "string"},
+          "task": {"type": "string"},
+          "language": {"type": "string"},
+          "duration": {"type": "number", "minimum": 0},
+          "words": {
+            "type": "array",
+            "items": {"type": "object", "additionalProperties": true}
+          },
+          "segments": {
+            "type": "array",
+            "items": {"type": "object", "additionalProperties": true}
+          }
+        }
+      },
+      "SpeechRequest": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["model", "input", "voice"],
+        "properties": {
+          "model": {"type": "string", "description": "A text-to-speech model alias."},
+          "input": {"type": "string", "minLength": 1},
+          "voice": {"type": "string", "minLength": 1},
+          "response_format": {
+            "type": "string",
+            "enum": ["mp3", "opus", "aac", "flac", "wav", "pcm"],
+            "default": "mp3"
+          },
+          "speed": {"type": "number", "minimum": 0.25, "maximum": 4, "default": 1},
+          "instructions": {"type": "string"},
+          "stream_format": {"type": "string"}
+        }
+      },
+      "VoiceCloneRequest": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["model", "name", "sample", "consent_signed_by", "consent_date"],
+        "properties": {
+          "model": {"type": "string", "description": "A speech model that supports voice cloning."},
+          "name": {"type": "string", "minLength": 1},
+          "sample": {"type": "string", "format": "binary"},
+          "consent_signed_by": {"type": "string", "minLength": 1},
+          "consent_date": {"type": "string", "format": "date"}
+        }
+      },
+      "VoiceClone": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["id", "object", "created", "model", "name", "status"],
+        "properties": {
+          "id": {"type": "string"},
+          "object": {"type": "string", "const": "voice.clone"},
+          "created": {"type": "integer", "format": "int64"},
+          "model": {"type": "string"},
+          "name": {"type": "string"},
+          "status": {
+            "type": "string",
+            "enum": ["pending", "processing", "ready", "failed"]
           }
         }
       },

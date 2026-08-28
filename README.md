@@ -24,15 +24,20 @@ deployment manifests, and repository dependencies.
 
 | Path | Purpose |
 | --- | --- |
-| `proto/tarka/provisioning/v1` | Authoritative protobuf and gRPC definitions |
+| `proto/tarka/provisioning/v1` | Authoritative control-plane protobuf and gRPC definitions |
+| `proto/tarka/inference/v2` | Authoritative inference protobuf and gRPC definitions |
 | `openapi/tarka-control-v1.swagger.json` | Generated OpenAPI v2 description of the control API's REST transcoding surface |
 | `openapi/tarka-inference-v1.openapi.json` | Authored OpenAPI 3.1 contract for the supported OpenAI-compatible inference surface |
+| `openapi/tarka-inference-v2.openapi.json` | Authored OpenAPI 3.1 contract for the v2 inference REST transport |
+| `openapi/tarka-inference-v2.swagger.json` | Generated OpenAPI v2 description of protobuf-bound v2 inference methods |
 | `buf.yaml` | Buf module, lint, dependency, and compatibility policy |
 | `buf.gen.yaml` | Pinned generator for the derived control OpenAPI document |
 
-Never edit `openapi/tarka-control-v1.swagger.json` by hand; it is derived from
-the protobuf annotations and CI rejects drift. The inference OpenAPI document
-is authoritative for the separate `/v1` compatibility surface.
+Never edit either generated Swagger document by hand; they are derived from
+protobuf annotations and CI rejects drift. The authored inference OpenAPI
+documents define the exact HTTP wire contracts for `/v1` and `/v2`, including
+multipart uploads and byte-stream responses that protobuf transcoding alone
+cannot describe precisely.
 
 ## API families
 
@@ -40,21 +45,25 @@ is authoritative for the separate `/v1` compatibility surface.
   usage, object storage, hosted Git, sandboxes, and desired-state resources. Its REST
   transcoding routes live under `/control/v1`.
 - The inference API is a deliberately scoped OpenAI-compatible HTTP API at
-  `https://tarka.rest/v1`. Its currently guaranteed endpoints are
-  `GET /v1/models` and `POST /v1/chat/completions`, including SSE streaming.
+  `https://tarka.rest/v1`. It supports models, chat completions, OCR,
+  transcription, translation, speech generation, and consent-backed voice
+  cloning through the endpoints in `tarka-inference-v1.openapi.json`.
+- The v2 inference API exposes the same model operations as native gRPC at
+  `grpc.tarka.rest:443` and as REST at `https://tarka.rest/v2`. The v2 protobuf
+  package is the source for generated clients; the authored v2 OpenAPI document
+  defines its REST upload and streaming transports.
 
-The inference surface is REST-native for compatibility with existing OpenAI
-clients; it is not represented as a Tarka gRPC service. Tarka's official SDKs
-will compose generated gRPC control clients with the inference compatibility
-client behind one supported interface.
+The `/v1` surface remains REST-native for compatibility with existing OpenAI
+clients. New native clients should use `tarka.inference.v2.InferenceService`
+when gRPC is available.
 
 ## Connect to the APIs
 
-The service endpoint is `tarka.rest:443` over TLS. Authentication metadata
-uses the standard `authorization: Bearer <token>` key. Control-plane RPCs use a
-Tarka account access token. Customer keys beginning with `tk_live_` are accepted
-only by product RPCs for which the key has an explicit scope; currently that is
-the `SandboxService` with the `sandboxes` scope.
+The REST endpoint is `tarka.rest:443` and the native gRPC endpoint is
+`grpc.tarka.rest:443`, both over TLS. Authentication metadata uses the standard
+`authorization: Bearer <token>` key. Control-plane RPCs use a Tarka account
+access token. Customer keys beginning with `tk_live_` are accepted by inference
+and by product RPCs for which the key has an explicit scope.
 
 The control REST gateway is rooted at `https://tarka.rest`. It accepts the
 same `Authorization: Bearer <token>` header and uses protobuf field names in
@@ -113,7 +122,8 @@ types are supplied by the Protocol Buffers toolchain.
 
 You can also use `protoc` directly. Add `proto/` and the Google API common
 protos to its include paths, then compile the files under
-`proto/tarka/provisioning/v1` with your language's gRPC plugin.
+`proto/tarka/provisioning/v1` and `proto/tarka/inference/v2` with your
+language's gRPC plugin.
 
 ## Local development
 
