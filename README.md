@@ -48,10 +48,13 @@ cannot describe precisely.
   `https://tarka.rest/v1`. It supports models, chat completions, OCR,
   transcription, translation, speech generation, and consent-backed voice
   cloning through the endpoints in `tarka-inference-v1.openapi.json`.
+  OCR is available both through the dedicated `POST /v1/ocr` endpoint and
+  through multimodal `POST /v1/chat/completions` requests.
 - The v2 inference API exposes the same model operations as native gRPC at
   `grpc.tarka.rest:443` and as REST at `https://tarka.rest/v2`. The v2 protobuf
   package is the source for generated clients; the authored v2 OpenAPI document
-  defines its REST upload and streaming transports.
+  defines its REST upload and streaming transports. REST clients can use either
+  `POST /v2/ocr` or multimodal `POST /v2/chat/completions` for OCR.
 
 The `/v1` surface remains REST-native for compatibility with existing OpenAI
 clients. New native clients should use `tarka.inference.v2.InferenceService`
@@ -83,10 +86,33 @@ client = OpenAI(
 )
 
 completion = client.chat.completions.create(
-    model="scalabs/himalaya-q8",
+    model="himalaya-q8",
     messages=[{"role": "user", "content": "Reply with READY."}],
 )
 ```
+
+For OCR through the same OpenAI-compatible method, select an OCR model and send
+an inline image as a standard multimodal content part:
+
+```python
+completion = client.chat.completions.create(
+    model="glm-ocr-nepali",
+    messages=[{
+        "role": "user",
+        "content": [
+            {"type": "text", "text": "Extract all text from this image."},
+            {
+                "type": "image_url",
+                "image_url": {"url": "data:image/png;base64,..."},
+            },
+        ],
+    }],
+)
+```
+
+OCR images must be inline base64 values or base64 data URLs. Remote image URLs
+are rejected. OCR requests require a customer key with the `utilities` scope,
+including requests sent through `/chat/completions`.
 
 Tarka implements the subset documented in
 `openapi/tarka-inference-v1.openapi.json`; OpenAI endpoints absent from that

@@ -76,7 +76,7 @@
       "post": {
         "operationId": "createChatCompletion",
         "summary": "Create a chat completion",
-        "description": "Creates a complete JSON response or, when stream is true, an SSE stream of chat.completion.chunk events terminated by data: [DONE]. Tools, multimodal content, structured output, and deterministic seeds are model-specific capabilities.",
+        "description": "Creates a complete JSON response or, when stream is true, an SSE stream of chat.completion.chunk events terminated by data: [DONE]. Selecting an OCR model enables OCR through the same endpoint: send standard text and image_url content parts with inline base64 data URLs. Remote image URLs are not accepted. OCR requests require utilities scope. Tools, other multimodal content, structured output, and deterministic seeds are model-specific capabilities.",
         "tags": ["Chat Completions"],
         "requestBody": {
           "required": true,
@@ -130,7 +130,7 @@
       "post": {
         "operationId": "createOCR",
         "summary": "Extract text from images",
-        "description": "Runs an OCR model over a data URL or remote image URL. When stream is true, returns OCR chunks as server-sent events terminated by data: [DONE].",
+        "description": "Runs an OCR model over an inline base64 value or base64 data URL. Remote image URLs are not accepted. When stream is true, returns OCR chunks as server-sent events terminated by data: [DONE].",
         "tags": ["OCR"],
         "requestBody": {
           "required": true,
