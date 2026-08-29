@@ -43,58 +43,154 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
 };
 
 // InferenceService exposes OpenAI-compatible inference and Tarka utility RPCs.
-// REST bindings use /v2 while /v1 remains an independent compatibility surface.
+// REST /v1 is the canonical compatibility surface. REST /v2 bindings remain as
+// deprecated migration aliases; the native gRPC package stays versioned as v2.
 service InferenceService {
   rpc ListModels(ListModelsRequest) returns (ListModelsResponse) {
-    option (google.api.http) = {get: "/v2/models"};
+    option (google.api.http) = {
+      get: "/v1/models"
+      additional_bindings: {get: "/v2/models"}
+    };
   }
   rpc RetrieveModel(RetrieveModelRequest) returns (Model) {
-    option (google.api.http) = {get: "/v2/models/{model}"};
+    option (google.api.http) = {
+      get: "/v1/models/{model}"
+      additional_bindings: {get: "/v2/models/{model}"}
+    };
   }
   rpc CreateChatCompletion(ChatCompletionRequest) returns (ChatCompletion) {
     option (google.api.http) = {
-      post: "/v2/chat/completions"
+      post: "/v1/chat/completions"
       body: "*"
+      additional_bindings: {
+        post: "/v2/chat/completions"
+        body: "*"
+      }
     };
   }
   rpc StreamChatCompletion(ChatCompletionRequest) returns (stream ChatCompletionChunk) {}
+
+  // The OpenAI JSON RPCs preserve the complete compatibility payload while
+  // still traversing the same authenticated gRPC service as typed callers.
+  // The REST gateway unwraps body and data at the HTTP boundary.
+  rpc CreateOpenAIChatCompletion(OpenAIRequest) returns (OpenAIResponse) {}
+  rpc StreamOpenAIChatCompletion(OpenAIRequest) returns (stream OpenAIStreamEvent) {}
+  rpc CreateResponse(OpenAIRequest) returns (OpenAIResponse) {
+    option (google.api.http) = {
+      post: "/v1/responses"
+      body: "*"
+      additional_bindings: {
+        post: "/v2/responses"
+        body: "*"
+      }
+    };
+  }
+  rpc StreamResponse(OpenAIRequest) returns (stream OpenAIStreamEvent) {}
+  rpc RetrieveResponse(ResponseIDRequest) returns (OpenAIResponse) {
+    option (google.api.http) = {
+      get: "/v1/responses/{response_id}"
+      additional_bindings: {get: "/v2/responses/{response_id}"}
+    };
+  }
+  rpc DeleteResponse(ResponseIDRequest) returns (OpenAIResponse) {
+    option (google.api.http) = {
+      delete: "/v1/responses/{response_id}"
+      additional_bindings: {delete: "/v2/responses/{response_id}"}
+    };
+  }
+  rpc CancelResponse(ResponseIDRequest) returns (OpenAIResponse) {
+    option (google.api.http) = {
+      post: "/v1/responses/{response_id}/cancel"
+      body: "*"
+      additional_bindings: {
+        post: "/v2/responses/{response_id}/cancel"
+        body: "*"
+      }
+    };
+  }
   rpc CreateOCR(OCRRequest) returns (OCRResponse) {
     option (google.api.http) = {
-      post: "/v2/ocr"
+      post: "/v1/ocr"
       body: "*"
+      additional_bindings: {
+        post: "/v2/ocr"
+        body: "*"
+      }
     };
   }
   rpc StreamOCR(OCRRequest) returns (stream OCRChunk) {}
   rpc CreateTranscription(AudioTranscriptionRequest) returns (AudioTextResponse) {
     option (google.api.http) = {
-      post: "/v2/audio/transcriptions"
+      post: "/v1/audio/transcriptions"
       body: "*"
+      additional_bindings: {
+        post: "/v2/audio/transcriptions"
+        body: "*"
+      }
     };
   }
   rpc CreateTranslation(AudioTranslationRequest) returns (AudioTextResponse) {
     option (google.api.http) = {
-      post: "/v2/audio/translations"
+      post: "/v1/audio/translations"
       body: "*"
+      additional_bindings: {
+        post: "/v2/audio/translations"
+        body: "*"
+      }
     };
   }
   rpc CreateSpeech(SpeechRequest) returns (stream AudioChunk) {
     option (google.api.http) = {
-      post: "/v2/audio/speech"
+      post: "/v1/audio/speech"
       body: "*"
+      additional_bindings: {
+        post: "/v2/audio/speech"
+        body: "*"
+      }
     };
   }
   rpc CreateVoiceClone(VoiceCloneRequest) returns (VoiceClone) {
     option (google.api.http) = {
-      post: "/v2/audio/voice-clones"
+      post: "/v1/audio/voice-clones"
       body: "*"
+      additional_bindings: {
+        post: "/v2/audio/voice-clones"
+        body: "*"
+      }
     };
   }
   rpc GetVoiceClone(GetVoiceCloneRequest) returns (VoiceClone) {
-    option (google.api.http) = {get: "/v2/audio/voice-clones/{voice_id}"};
+    option (google.api.http) = {
+      get: "/v1/audio/voice-clones/{voice_id}"
+      additional_bindings: {get: "/v2/audio/voice-clones/{voice_id}"}
+    };
   }
   rpc DeleteVoiceClone(DeleteVoiceCloneRequest) returns (google.protobuf.Empty) {
-    option (google.api.http) = {delete: "/v2/audio/voice-clones/{voice_id}"};
+    option (google.api.http) = {
+      delete: "/v1/audio/voice-clones/{voice_id}"
+      additional_bindings: {delete: "/v2/audio/voice-clones/{voice_id}"}
+    };
   }
+}
+
+// OpenAIRequest and OpenAIResponse intentionally carry opaque JSON objects.
+// This keeps the compatibility boundary forward-compatible as OpenAI adds
+// request and response union variants without weakening the typed Tarka RPCs.
+message OpenAIRequest {
+  google.protobuf.Struct body = 1;
+}
+
+message OpenAIResponse {
+  google.protobuf.Struct body = 1;
+}
+
+message OpenAIStreamEvent {
+  string type = 1;
+  google.protobuf.Struct data = 2;
+}
+
+message ResponseIDRequest {
+  string response_id = 1;
 }
 
 message ListModelsRequest {}
@@ -113,6 +209,7 @@ message Model {
   string object = 2;
   int64 created = 3;
   string owned_by = 4;
+  optional string shutdown_date = 5;
 }
 
 message ChatCompletionRequest {
@@ -180,6 +277,7 @@ message ToolCall {
   string type = 2;
   FunctionCall function = 3;
   google.protobuf.Struct custom = 4;
+  optional int32 index = 5;
 }
 
 message FunctionCall {

@@ -97,7 +97,11 @@ def validate_inference(document: dict[str, Any]) -> None:
         raise ValueError(f"{INFERENCE_PATH}: expected OpenAPI 3.1.0")
     expected = {
         "/v1/models": {"get"},
+        "/v1/models/{model}": {"get"},
         "/v1/chat/completions": {"post"},
+        "/v1/responses": {"post"},
+        "/v1/responses/{response_id}": {"get", "delete"},
+        "/v1/responses/{response_id}/cancel": {"post"},
         "/v1/ocr": {"post"},
         "/v1/audio/transcriptions": {"post"},
         "/v1/audio/translations": {"post"},
@@ -136,10 +140,27 @@ def validate_inference(document: dict[str, Any]) -> None:
 def validate_inference_v2(document: dict[str, Any]) -> None:
     if document.get("swagger") != "2.0":
         raise ValueError(f"{INFERENCE_V2_PATH}: expected Swagger 2.0")
-    expected = {
+    expected_v1 = {
+        "/v1/models": {"get"},
+        "/v1/models/{model}": {"get"},
+        "/v1/chat/completions": {"post"},
+        "/v1/responses": {"post"},
+        "/v1/responses/{response_id}": {"get", "delete"},
+        "/v1/responses/{response_id}/cancel": {"post"},
+        "/v1/ocr": {"post"},
+        "/v1/audio/transcriptions": {"post"},
+        "/v1/audio/translations": {"post"},
+        "/v1/audio/speech": {"post"},
+        "/v1/audio/voice-clones": {"post"},
+        "/v1/audio/voice-clones/{voice_id}": {"get", "delete"},
+    }
+    expected_v2 = {
         "/v2/models": {"get"},
         "/v2/models/{model}": {"get"},
         "/v2/chat/completions": {"post"},
+        "/v2/responses": {"post"},
+        "/v2/responses/{response_id}": {"get", "delete"},
+        "/v2/responses/{response_id}/cancel": {"post"},
         "/v2/ocr": {"post"},
         "/v2/audio/transcriptions": {"post"},
         "/v2/audio/translations": {"post"},
@@ -147,6 +168,7 @@ def validate_inference_v2(document: dict[str, Any]) -> None:
         "/v2/audio/voice-clones": {"post"},
         "/v2/audio/voice-clones/{voice_id}": {"get", "delete"},
     }
+    expected = expected_v1 | expected_v2
     routes = document.get("paths")
     if not isinstance(routes, dict):
         raise ValueError(f"{INFERENCE_V2_PATH}: paths must be an object")
@@ -170,6 +192,8 @@ def validate_inference_v2(document: dict[str, Any]) -> None:
     definitions = document.get("definitions", {})
     required = {
         "v2ChatCompletionRequest",
+        "v2OpenAIRequest",
+        "v2OpenAIResponse",
         "v2OCRRequest",
         "v2AudioTranscriptionRequest",
         "v2AudioTranslationRequest",
@@ -188,6 +212,9 @@ def validate_inference_v2_openapi(document: dict[str, Any]) -> None:
         "/v2/models": {"get"},
         "/v2/models/{model}": {"get"},
         "/v2/chat/completions": {"post"},
+        "/v2/responses": {"post"},
+        "/v2/responses/{response_id}": {"get", "delete"},
+        "/v2/responses/{response_id}/cancel": {"post"},
         "/v2/ocr": {"post"},
         "/v2/audio/transcriptions": {"post"},
         "/v2/audio/translations": {"post"},

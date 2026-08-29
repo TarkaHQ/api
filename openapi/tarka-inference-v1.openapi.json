@@ -30,6 +30,10 @@
       "description": "Create OpenAI-compatible chat completions and token streams."
     },
     {
+      "name": "Responses",
+      "description": "Create and manage OpenAI-compatible model responses."
+    },
+    {
       "name": "OCR",
       "description": "Extract text from one or more images."
     },
@@ -69,6 +73,35 @@
           "500": {
             "$ref": "#/components/responses/InternalError"
           }
+        }
+      }
+    },
+    "/v1/models/{model}": {
+      "parameters": [
+        {
+          "name": "model",
+          "in": "path",
+          "required": true,
+          "schema": {"type": "string"}
+        }
+      ],
+      "get": {
+        "operationId": "retrieveModel",
+        "summary": "Retrieve a model",
+        "description": "Retrieves an available model alias visible to the authenticated Tarka key.",
+        "tags": ["Models"],
+        "responses": {
+          "200": {
+            "description": "The model record.",
+            "content": {
+              "application/json": {"schema": {"$ref": "#/components/schemas/Model"}}
+            }
+          },
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"$ref": "#/components/responses/Forbidden"},
+          "404": {"$ref": "#/components/responses/NotFound"},
+          "429": {"$ref": "#/components/responses/RateLimited"},
+          "500": {"$ref": "#/components/responses/InternalError"}
         }
       }
     },
@@ -123,6 +156,95 @@
           "500": {
             "$ref": "#/components/responses/InternalError"
           }
+        }
+      }
+    },
+    "/v1/responses": {
+      "post": {
+        "operationId": "createResponse",
+        "summary": "Create a model response",
+        "description": "Creates an OpenAI-compatible response from text, image, file, message, or tool-result input. Function and custom tools are supported according to the selected model. Unsupported hosted tool types fail with an explicit invalid-request error. When stream is true, the response is a typed SSE event stream.",
+        "tags": ["Responses"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {"schema": {"$ref": "#/components/schemas/ResponseCreateRequest"}}
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "A completed response or typed response event stream.",
+            "content": {
+              "application/json": {"schema": {"$ref": "#/components/schemas/Response"}},
+              "text/event-stream": {
+                "schema": {"type": "string"},
+                "x-sse-event-schema": {"$ref": "#/components/schemas/ResponseStreamEvent"}
+              }
+            }
+          },
+          "400": {"$ref": "#/components/responses/BadRequest"},
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"$ref": "#/components/responses/Forbidden"},
+          "404": {"$ref": "#/components/responses/NotFound"},
+          "429": {"$ref": "#/components/responses/RateLimited"},
+          "500": {"$ref": "#/components/responses/InternalError"}
+        }
+      }
+    },
+    "/v1/responses/{response_id}": {
+      "parameters": [
+        {
+          "name": "response_id",
+          "in": "path",
+          "required": true,
+          "schema": {"type": "string", "pattern": "^resp_[A-Za-z0-9_-]+$"}
+        }
+      ],
+      "get": {
+        "operationId": "retrieveResponse",
+        "summary": "Retrieve a stored response",
+        "tags": ["Responses"],
+        "responses": {
+          "200": {"description": "The stored response.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Response"}}}},
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"$ref": "#/components/responses/Forbidden"},
+          "404": {"$ref": "#/components/responses/NotFound"},
+          "500": {"$ref": "#/components/responses/InternalError"}
+        }
+      },
+      "delete": {
+        "operationId": "deleteResponse",
+        "summary": "Delete a stored response",
+        "tags": ["Responses"],
+        "responses": {
+          "200": {"description": "Deletion confirmation.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/DeletedResponse"}}}},
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"$ref": "#/components/responses/Forbidden"},
+          "404": {"$ref": "#/components/responses/NotFound"},
+          "500": {"$ref": "#/components/responses/InternalError"}
+        }
+      }
+    },
+    "/v1/responses/{response_id}/cancel": {
+      "parameters": [
+        {
+          "name": "response_id",
+          "in": "path",
+          "required": true,
+          "schema": {"type": "string", "pattern": "^resp_[A-Za-z0-9_-]+$"}
+        }
+      ],
+      "post": {
+        "operationId": "cancelResponse",
+        "summary": "Cancel an in-progress response",
+        "tags": ["Responses"],
+        "responses": {
+          "200": {"description": "The cancelled response.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Response"}}}},
+          "400": {"$ref": "#/components/responses/BadRequest"},
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"$ref": "#/components/responses/Forbidden"},
+          "404": {"$ref": "#/components/responses/NotFound"},
+          "500": {"$ref": "#/components/responses/InternalError"}
         }
       }
     },
@@ -364,6 +486,14 @@
           }
         }
       },
+      "NotFound": {
+        "description": "The requested model or stored resource does not exist for this key.",
+        "content": {
+          "application/json": {
+            "schema": {"$ref": "#/components/schemas/ErrorResponse"}
+          }
+        }
+      },
       "RateLimited": {
         "description": "The request exceeds an applicable concurrency, token, or spend limit.",
         "content": {
@@ -424,6 +554,11 @@
           "owned_by": {
             "type": "string",
             "description": "The organization or provider associated with the model."
+          },
+          "shutdown_date": {
+            "type": ["string", "null"],
+            "format": "date",
+            "description": "A published shutdown date, or null when none is announced."
           }
         }
       },
@@ -734,6 +869,106 @@
               {"type": "null"}
             ]
           }
+        }
+      },
+      "ResponseCreateRequest": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["model", "input"],
+        "properties": {
+          "model": {"type": "string", "description": "An alias returned by GET /v1/models."},
+          "input": {
+            "description": "Text or an ordered array of OpenAI-compatible response input items.",
+            "oneOf": [
+              {"type": "string"},
+              {"type": "array", "items": {"type": "object", "additionalProperties": true}}
+            ]
+          },
+          "instructions": {
+            "oneOf": [
+              {"type": "string"},
+              {"type": "array", "items": {"type": "object", "additionalProperties": true}}
+            ]
+          },
+          "max_output_tokens": {"type": "integer", "minimum": 1},
+          "metadata": {"type": "object", "additionalProperties": {"type": "string"}},
+          "parallel_tool_calls": {"type": "boolean"},
+          "previous_response_id": {"type": ["string", "null"]},
+          "reasoning": {"type": "object", "additionalProperties": true},
+          "store": {"type": "boolean", "default": true},
+          "stream": {"type": "boolean", "default": false},
+          "stream_options": {"type": "object", "additionalProperties": true},
+          "temperature": {"type": "number", "minimum": 0, "maximum": 2},
+          "text": {"type": "object", "additionalProperties": true},
+          "tool_choice": {
+            "oneOf": [
+              {"type": "string"},
+              {"type": "object", "additionalProperties": true}
+            ]
+          },
+          "tools": {"type": "array", "items": {"type": "object", "additionalProperties": true}},
+          "top_logprobs": {"type": "integer", "minimum": 0, "maximum": 20},
+          "top_p": {"type": "number", "minimum": 0, "maximum": 1},
+          "user": {"type": "string"}
+        }
+      },
+      "Response": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["id", "object", "created_at", "status", "model", "output"],
+        "properties": {
+          "id": {"type": "string"},
+          "object": {"type": "string", "const": "response"},
+          "created_at": {"type": "integer", "format": "int64"},
+          "completed_at": {"type": ["integer", "null"], "format": "int64"},
+          "status": {"type": "string", "enum": ["completed", "failed", "in_progress", "cancelled", "queued", "incomplete"]},
+          "error": {"type": ["object", "null"], "additionalProperties": true},
+          "incomplete_details": {"type": ["object", "null"], "additionalProperties": true},
+          "instructions": {},
+          "max_output_tokens": {"type": ["integer", "null"]},
+          "metadata": {"type": "object", "additionalProperties": {"type": "string"}},
+          "model": {"type": "string"},
+          "output": {"type": "array", "items": {"type": "object", "additionalProperties": true}},
+          "parallel_tool_calls": {"type": "boolean"},
+          "previous_response_id": {"type": ["string", "null"]},
+          "reasoning": {"type": ["object", "null"], "additionalProperties": true},
+          "store": {"type": "boolean"},
+          "temperature": {"type": ["number", "null"]},
+          "text": {"type": ["object", "null"], "additionalProperties": true},
+          "tool_choice": {},
+          "tools": {"type": "array", "items": {"type": "object", "additionalProperties": true}},
+          "top_p": {"type": ["number", "null"]},
+          "usage": {
+            "type": ["object", "null"],
+            "additionalProperties": true,
+            "properties": {
+              "input_tokens": {"type": "integer", "minimum": 0},
+              "output_tokens": {"type": "integer", "minimum": 0},
+              "total_tokens": {"type": "integer", "minimum": 0}
+            }
+          }
+        }
+      },
+      "ResponseStreamEvent": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["type", "sequence_number"],
+        "properties": {
+          "type": {"type": "string"},
+          "sequence_number": {"type": "integer", "minimum": 0},
+          "response": {"$ref": "#/components/schemas/Response"},
+          "delta": {},
+          "item": {"type": "object", "additionalProperties": true}
+        }
+      },
+      "DeletedResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "object", "deleted"],
+        "properties": {
+          "id": {"type": "string"},
+          "object": {"type": "string", "const": "response.deleted"},
+          "deleted": {"type": "boolean", "const": true}
         }
       },
       "OCRRequest": {
