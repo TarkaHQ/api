@@ -409,6 +409,7 @@ message AudioTextResponse {
   repeated google.protobuf.Struct words = 5;
   repeated google.protobuf.Struct segments = 6;
   google.protobuf.Struct extensions = 7;
+  google.protobuf.Struct usage = 8;
 }
 
 message SpeechRequest {

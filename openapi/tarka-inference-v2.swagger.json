@@ -985,6 +985,9 @@
         },
         "extensions": {
           "type": "object"
+        },
+        "usage": {
+          "type": "object"
         }
       }
     },

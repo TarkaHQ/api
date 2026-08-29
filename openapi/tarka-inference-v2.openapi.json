@@ -1070,7 +1070,8 @@
           "segments": {
             "type": "array",
             "items": {"type": "object", "additionalProperties": true}
-          }
+          },
+          "usage": {"type": "object", "additionalProperties": true}
         }
       },
       "SpeechRequest": {
@@ -1080,7 +1081,17 @@
         "properties": {
           "model": {"type": "string", "description": "A text-to-speech model alias."},
           "input": {"type": "string", "minLength": 1},
-          "voice": {"type": "string", "minLength": 1},
+          "voice": {
+            "oneOf": [
+              {"type": "string", "minLength": 1},
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["id"],
+                "properties": {"id": {"type": "string", "minLength": 1}}
+              }
+            ]
+          },
           "response_format": {
             "type": "string",
             "enum": ["mp3", "opus", "aac", "flac", "wav", "pcm"],
@@ -1088,7 +1099,7 @@
           },
           "speed": {"type": "number", "minimum": 0.25, "maximum": 4, "default": 1},
           "instructions": {"type": "string"},
-          "stream_format": {"type": "string"}
+          "stream_format": {"type": "string", "enum": ["audio", "sse"], "default": "audio"}
         }
       },
       "VoiceCloneRequest": {
