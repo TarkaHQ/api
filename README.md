@@ -28,8 +28,8 @@ deployment manifests, and repository dependencies.
 | `proto/tarka/inference/v2` | Authoritative inference protobuf and gRPC definitions |
 | `openapi/tarka-control-v1.swagger.json` | Generated OpenAPI v2 description of the control API's REST transcoding surface |
 | `openapi/tarka-inference-v1.openapi.json` | Authored OpenAPI 3.1 contract for the supported OpenAI-compatible inference surface |
-| `openapi/tarka-inference-v2.openapi.json` | Authored OpenAPI 3.1 contract for the v2 inference REST transport |
-| `openapi/tarka-inference-v2.swagger.json` | Generated OpenAPI v2 description of protobuf-bound v2 inference methods |
+| `openapi/tarka-inference-v2.openapi.json` | Authored OpenAPI 3.1 contract for the deprecated `/v2` REST alias |
+| `openapi/tarka-inference-v2.swagger.json` | Generated OpenAPI v2 description of protobuf-bound inference methods |
 | `buf.yaml` | Buf module, lint, dependency, and compatibility policy |
 | `buf.gen.yaml` | Pinned generator for the derived control OpenAPI document |
 
@@ -46,19 +46,21 @@ cannot describe precisely.
   transcoding routes live under `/control/v1`.
 - The inference API is a deliberately scoped OpenAI-compatible HTTP API at
   `https://tarka.rest/v1`. It supports models, chat completions, OCR,
-  transcription, translation, speech generation, and consent-backed voice
-  cloning through the endpoints in `tarka-inference-v1.openapi.json`.
+  Responses, transcription, translation, speech generation, and consent-backed
+  voice cloning through the endpoints in `tarka-inference-v1.openapi.json`.
   OCR is available both through the dedicated `POST /v1/ocr` endpoint and
   through multimodal `POST /v1/chat/completions` requests.
-- The v2 inference API exposes the same model operations as native gRPC at
-  `grpc.tarka.rest:443` and as REST at `https://tarka.rest/v2`. The v2 protobuf
-  package is the source for generated clients; the authored v2 OpenAPI document
-  defines its REST upload and streaming transports. REST clients can use either
-  `POST /v2/ocr` or multimodal `POST /v2/chat/completions` for OCR.
+- Every inference operation also has a native gRPC method at
+  `grpc.tarka.rest:443`. The REST gateway calls those same authenticated gRPC
+  methods, so REST and gRPC share authorization, model routing, metering,
+  persistence, and errors.
+- `/v2` is a deprecated compatibility alias for `/v1`. It is not a newer API
+  generation and advertises its deprecation in HTTP response headers.
 
-The `/v1` surface remains REST-native for compatibility with existing OpenAI
-clients. New native clients should use `tarka.inference.v2.InferenceService`
-when gRPC is available.
+The protobuf package remains `tarka.inference.v2` to preserve the already
+published gRPC wire contract. Its package number is independent of the
+canonical REST version. Native clients should use
+`tarka.inference.v2.InferenceService` when gRPC is available.
 
 ## Connect to the APIs
 
@@ -67,6 +69,10 @@ The REST endpoint is `tarka.rest:443` and the native gRPC endpoint is
 `authorization: Bearer <token>` key. Control-plane RPCs use a Tarka account
 access token. Customer keys beginning with `tk_live_` are accepted by inference
 and by product RPCs for which the key has an explicit scope.
+
+Inside a Tarka Agent Host, the same canonical REST API is available at
+`http://tarka/v1`. The host injects a short-lived scoped credential; callers
+must not copy that credential outside the host.
 
 The control REST gateway is rooted at `https://tarka.rest`. It accepts the
 same `Authorization: Bearer <token>` header and uses protobuf field names in
@@ -89,6 +95,16 @@ completion = client.chat.completions.create(
     model="himalaya-q8",
     messages=[{"role": "user", "content": "Reply with READY."}],
 )
+```
+
+The Responses API uses the same client and base URL:
+
+```python
+response = client.responses.create(
+    model="himalaya-q8",
+    input="Reply with READY.",
+)
+print(response.output_text)
 ```
 
 For OCR through the same OpenAI-compatible method, select an OCR model and send
