@@ -1,8 +1,9 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "tarka/provisioning/v1/provisioning.proto",
-    "version": "version not set"
+    "title": "Tarka Control API",
+    "description": "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management.",
+    "version": "1.4.0"
   },
   "tags": [
     {
@@ -13,6 +14,10 @@
       "name": "SandboxService",
       "description": "SandboxService exposes deliberately narrow code execution. It does not\naccept container images, commands, ports, mounts, shell sessions, browsers,\nor persistent volumes."
     }
+  ],
+  "host": "tarka.rest",
+  "schemes": [
+    "https"
   ],
   "consumes": [
     "application/json"
@@ -639,6 +644,89 @@
             "in": "path",
             "required": true,
             "type": "string"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/product-access-requests": {
+      "get": {
+        "summary": "ListProductAccessRequests returns recent requests submitted for an\norganization, optionally filtered by product.",
+        "operationId": "ProvisioningService_ListProductAccessRequests",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListProductAccessRequestsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "product",
+            "description": "product optionally filters by the canonical product identifier.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "limit",
+            "description": "limit defaults to 25 and is capped at 100.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      },
+      "post": {
+        "summary": "RequestProductAccess submits an organization-scoped request for a product\nthat is not yet generally self-service.",
+        "operationId": "ProvisioningService_RequestProductAccess",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ProductAccessRequest"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProvisioningServiceRequestProductAccessBody"
+            }
           }
         ],
         "tags": [
@@ -1620,6 +1708,29 @@
       },
       "description": "CreateStorageCredentialRequest creates one access key scoped to a bucket."
     },
+    "ProvisioningServiceRequestProductAccessBody": {
+      "type": "object",
+      "properties": {
+        "product": {
+          "type": "string",
+          "description": "product is one of inference, utilities, agents, jobs, sandboxes, storage,\nor git."
+        },
+        "product_detail": {
+          "type": "string",
+          "description": "product_detail identifies the requested tier or product variant when one\nexists, for example agent_hosts or job_runners."
+        },
+        "contact_email": {
+          "type": "string"
+        },
+        "company": {
+          "type": "string"
+        },
+        "use_case": {
+          "type": "string"
+        }
+      },
+      "description": "RequestProductAccessRequest submits interest in a product that requires an\nentitlement decision. The authenticated caller must be an active member of\norg_id. contact_email defaults to the authenticated account email."
+    },
     "ProvisioningServiceRevokeApiKeyBody": {
       "type": "object",
       "properties": {
@@ -2200,6 +2311,19 @@
       },
       "description": "ListOrgMembersResponse contains memberships in creation order."
     },
+    "v1ListProductAccessRequestsResponse": {
+      "type": "object",
+      "properties": {
+        "requests": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1ProductAccessRequest"
+          }
+        }
+      },
+      "description": "ListProductAccessRequestsResponse contains newest requests first."
+    },
     "v1ListProvisionedResourcesResponse": {
       "type": "object",
       "properties": {
@@ -2387,6 +2511,48 @@
         }
       },
       "description": "OrgMember describes one identity's access to an organization. Email is\nincluded so organization members can identify collaborators in the console."
+    },
+    "v1ProductAccessRequest": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "org_id": {
+          "type": "string"
+        },
+        "user_id": {
+          "type": "string"
+        },
+        "product": {
+          "type": "string"
+        },
+        "product_detail": {
+          "type": "string"
+        },
+        "contact_email": {
+          "type": "string"
+        },
+        "company": {
+          "type": "string"
+        },
+        "use_case": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "description": "status is draft, submitted, approved, live, or declined."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "description": "ProductAccessRequest is the durable status of one product-access request."
     },
     "v1ProvisionedResource": {
       "type": "object",
@@ -2751,5 +2917,18 @@
       },
       "description": "UsageSummary aggregates metering over a half-open UTC time interval."
     }
-  }
+  },
+  "securityDefinitions": {
+    "bearerAuth": {
+      "type": "apiKey",
+      "description": "Bearer Tarka account access token. Sandbox RPCs also accept a tk_live_ key with the sandboxes scope.",
+      "name": "Authorization",
+      "in": "header"
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ]
 }

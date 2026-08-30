@@ -8,12 +8,41 @@ package tarka.provisioning.v1;
 import "google/api/annotations.proto";
 import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
 option csharp_namespace = "Tarka.Provisioning.V1";
 option go_package = "github.com/TarkaHQ/api/gen/go/tarka/provisioning/v1;provisioningv1";
 option java_multiple_files = true;
 option java_outer_classname = "ProvisioningProto";
 option java_package = "com.tarka.provisioning.v1";
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    title: "Tarka Control API"
+    description: "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management."
+    version: "1.4.0"
+  }
+  host: "tarka.rest"
+  schemes: HTTPS
+  consumes: "application/json"
+  produces: "application/json"
+  security_definitions: {
+    security: {
+      key: "bearerAuth"
+      value: {
+        type: TYPE_API_KEY
+        in: IN_HEADER
+        name: "Authorization"
+        description: "Bearer Tarka account access token. Sandbox RPCs also accept a tk_live_ key with the sandboxes scope."
+      }
+    }
+  }
+  security: {
+    security_requirement: {
+      key: "bearerAuth"
+      value: {}
+    }
+  }
+};
 
 // ProvisioningService manages Tarka identities, organizations, API keys,
 // quotas, metering, object storage, hosted Git, and desired-state compute
@@ -41,6 +70,21 @@ service ProvisioningService {
       post: "/control/v1/orgs"
       body: "*"
     };
+  }
+
+  // RequestProductAccess submits an organization-scoped request for a product
+  // that is not yet generally self-service.
+  rpc RequestProductAccess(RequestProductAccessRequest) returns (ProductAccessRequest) {
+    option (google.api.http) = {
+      post: "/control/v1/orgs/{org_id}/product-access-requests"
+      body: "*"
+    };
+  }
+
+  // ListProductAccessRequests returns recent requests submitted for an
+  // organization, optionally filtered by product.
+  rpc ListProductAccessRequests(ListProductAccessRequestsRequest) returns (ListProductAccessRequestsResponse) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/product-access-requests"};
   }
 
   // EnsureHostedGitAccess provisions or reconciles the authenticated user's
@@ -239,6 +283,52 @@ message CreateOrgRequest {
   // slug is an optional immutable URL-safe identifier. When empty, the server
   // allocates one from the name. Explicit slugs must be globally unique.
   string slug = 2;
+}
+
+// RequestProductAccessRequest submits interest in a product that requires an
+// entitlement decision. The authenticated caller must be an active member of
+// org_id. contact_email defaults to the authenticated account email.
+message RequestProductAccessRequest {
+  string org_id = 1;
+  // product is one of inference, utilities, agents, jobs, sandboxes, storage,
+  // or git.
+  string product = 2;
+  // product_detail identifies the requested tier or product variant when one
+  // exists, for example agent_hosts or job_runners.
+  string product_detail = 3;
+  string contact_email = 4;
+  string company = 5;
+  string use_case = 6;
+}
+
+// ListProductAccessRequestsRequest selects recent organization requests.
+message ListProductAccessRequestsRequest {
+  string org_id = 1;
+  // product optionally filters by the canonical product identifier.
+  string product = 2;
+  // limit defaults to 25 and is capped at 100.
+  int32 limit = 3;
+}
+
+// ListProductAccessRequestsResponse contains newest requests first.
+message ListProductAccessRequestsResponse {
+  repeated ProductAccessRequest requests = 1;
+}
+
+// ProductAccessRequest is the durable status of one product-access request.
+message ProductAccessRequest {
+  string id = 1;
+  string org_id = 2;
+  string user_id = 3;
+  string product = 4;
+  string product_detail = 5;
+  string contact_email = 6;
+  string company = 7;
+  string use_case = 8;
+  // status is draft, submitted, approved, live, or declined.
+  string status = 9;
+  google.protobuf.Timestamp created_at = 10;
+  google.protobuf.Timestamp updated_at = 11;
 }
 
 // EnsureHostedGitAccessRequest has no parameters; identity comes from

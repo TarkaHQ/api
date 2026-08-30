@@ -67,18 +67,149 @@ canonical REST version. Native clients should use
 The REST endpoint is `tarka.rest:443` and the native gRPC endpoint is
 `grpc.tarka.rest:443`, both over TLS. Authentication metadata uses the standard
 `authorization: Bearer <token>` key. Control-plane RPCs use a Tarka account
-access token. Customer keys beginning with `tk_live_` are accepted by inference
-and by product RPCs for which the key has an explicit scope.
+access token. Customer keys beginning with `tk_live_` are accepted by the
+Inference API and, when they include the `sandboxes` scope, by SandboxService
+RPCs.
 
 Inside a Tarka Agent Host, the same canonical REST API is available at
 `http://tarka/v1`. The host injects a short-lived scoped credential; callers
 must not copy that credential outside the host.
 
-The control REST gateway is rooted at `https://tarka.rest`. It accepts the
-same `Authorization: Bearer <token>` header and uses protobuf field names in
-JSON. Requests with unknown JSON fields are rejected. Sandbox mutations accept
-an idempotency key either in their request message or through the
+The control REST gateway is rooted at `https://tarka.rest/control/v1`. It
+accepts `Authorization: Bearer <Tarka account access token>` and uses protobuf
+field names in JSON. A `tk_live_` inference key is not an account token and is
+rejected by ordinary Control API methods. Sandbox methods are the deliberate
+exception: they also accept a `tk_live_` key with the `sandboxes` scope.
+Requests with unknown JSON fields are rejected. Sandbox mutations accept an
+idempotency key either in their request message or through the
 `Idempotency-Key` HTTP/gRPC metadata header.
+
+## Control API
+
+The Control API is the automation surface behind customer workspace actions in
+the Tarka Console. Its contract is gRPC-first; every REST route below is a
+transcoding binding on the same protobuf method. JSON field names are
+`snake_case`, timestamps use RFC 3339, and 64-bit integers may be serialized as
+JSON strings by protobuf-aware clients.
+
+The API has three credential boundaries:
+
+| Credential | Accepted by | Purpose |
+| --- | --- | --- |
+| Tarka account access token | Every Control API method | Identity, organizations, credentials, policy, usage, and provisioning |
+| `tk_live_` key with `sandboxes` scope | SandboxService methods only | Organization-bound sandbox automation |
+| `tk_live_` key with `inference` or `utilities` scope | Inference API only | Runtime model requests, not control-plane administration |
+
+Account access must be approved, the organization must be active, and the
+caller must have an active organization membership. Read operations generally
+accept every organization role. Organization metadata and quota changes require
+an owner or admin. API-key, compute, storage, and repository mutations require
+an owner, admin, or operator. Product entitlements add a second gate for
+private-beta Agent Hosts, Batch Jobs, Sandboxes, Object Storage, and Hosted Git.
+
+### Identity, organizations, and access requests
+
+| Method | REST route | Ability |
+| --- | --- | --- |
+| `GetCurrentUser` | `GET /control/v1/me` | Return the account identity and every active organization membership |
+| `BootstrapCurrentUser` | `POST /control/v1/me/bootstrap` | Idempotently create the first organization when none exists |
+| `CreateOrg` | `POST /control/v1/orgs` | Create an additional organization and owner membership |
+| `GetOrg` | `GET /control/v1/orgs/{org_id}` | Read one visible organization |
+| `UpdateOrg` | `PATCH /control/v1/orgs/{org_id}` | Change an organization display name |
+| `ListOrgMembers` | `GET /control/v1/orgs/{org_id}/members` | List active and inactive memberships |
+| `RequestProductAccess` | `POST /control/v1/orgs/{org_id}/product-access-requests` | Submit a private-beta product request |
+| `ListProductAccessRequests` | `GET /control/v1/orgs/{org_id}/product-access-requests` | List recent requests, optionally filtered by product |
+
+Organization selection in the web console is browser state, not a server-side
+Control API resource. API callers select an organization by putting `org_id` in
+the route or request message.
+
+### Models, API keys, limits, usage, and resources
+
+| Method | REST route | Ability |
+| --- | --- | --- |
+| `ListModels` | `GET /control/v1/models` | List active model aliases, optionally filtered by `modality` |
+| `CreateApiKey` | `POST /control/v1/orgs/{org_id}/api-keys` | Create a scoped `tk_live_` key; plaintext is returned once |
+| `ListApiKeys` | `GET /control/v1/orgs/{org_id}/api-keys` | List redacted key metadata |
+| `RevokeApiKey` | `POST /control/v1/orgs/{org_id}/api-keys/{api_key_id}:revoke` | Permanently revoke a key |
+| `GetQuotaPolicy` | `GET /control/v1/orgs/{org_id}/quota-policy` | Read effective concurrency, request, token, and model policy |
+| `UpdateQuotaPolicy` | `PUT /control/v1/orgs/{org_id}/quota-policy` | Replace the organization quota policy |
+| `ListUsageEvents` | `GET /control/v1/orgs/{org_id}/usage/events` | Read newest metered requests; `limit` defaults to 25 and caps at 100 |
+| `GetUsageSummary` | `GET /control/v1/orgs/{org_id}/usage/summary` | Aggregate the current UTC calendar month |
+| `ListProvisionedResources` | `GET /control/v1/orgs/{org_id}/resources` | List desired-state resources, optionally by `resource_type` |
+| `GetProvisionedResource` | `GET /control/v1/orgs/{org_id}/resources/{resource_id}` | Read one desired-state resource and status detail |
+| `CreateInferenceService` | `POST /control/v1/orgs/{org_id}/inference-services` | Apply managed inference desired state |
+| `CreateAgentHost` | `POST /control/v1/orgs/{org_id}/agent-hosts` | Apply Agent Host desired state after beta approval |
+| `CreateJob` | `POST /control/v1/orgs/{org_id}/jobs` | Apply Batch Job desired state after beta approval |
+
+`CreateInferenceService`, `CreateAgentHost`, and `CreateJob` are desired-state
+apply operations: reusing an organization, resource type, and name replaces the
+stored spec and returns the same resource identity. Generic resource reads do
+not imply a generic delete operation. Product-specific lifecycle methods are
+published only when their behavior is implemented.
+
+### Object Storage and Hosted Git
+
+| Method | REST route | Ability |
+| --- | --- | --- |
+| `CreateStorageBucket` | `POST /control/v1/orgs/{org_id}/storage/buckets` | Provision a private, versioned bucket |
+| `ListStorageBuckets` | `GET /control/v1/orgs/{org_id}/storage/buckets` | List organization buckets |
+| `DeleteStorageBucket` | `DELETE /control/v1/orgs/{org_id}/storage/buckets/{bucket_id}` | Delete an empty bucket |
+| `CreateStorageCredential` | `POST /control/v1/orgs/{org_id}/storage/buckets/{bucket_id}/credentials` | Create a bucket-bound S3 access key and one-time secret |
+| `ListStorageCredentials` | `GET /control/v1/orgs/{org_id}/storage/buckets/{bucket_id}/credentials` | List redacted S3 credential metadata |
+| `RevokeStorageCredential` | `POST /control/v1/orgs/{org_id}/storage/buckets/{bucket_id}/credentials/{credential_id}:revoke` | Permanently revoke an S3 credential |
+| `EnsureHostedGitAccess` | `POST /control/v1/me/git-access` | Provision or reconcile the account's Hosted Git identity |
+| `CreateGitRepository` | `POST /control/v1/orgs/{org_id}/git-repositories` | Create a private, LFS-enabled repository |
+| `ListGitRepositories` | `GET /control/v1/orgs/{org_id}/git-repositories` | List repositories and clone URLs |
+| `DeleteGitRepository` | `DELETE /control/v1/orgs/{org_id}/git-repositories/{repository_id}` | Delete a repository and retain its final control-plane state |
+
+S3 credentials are separate from Tarka API keys. `access_key_id` and
+`secret_access_key` are returned together only at credential creation; later
+list operations return redacted metadata. Hosted Git data-plane authentication
+uses an SSH key or a Forgejo personal access token, not a `tk_live_` key.
+
+### Code Sandboxes
+
+| Method | REST route | Ability |
+| --- | --- | --- |
+| `ListSandboxTemplates` | `GET /control/v1/orgs/{org_id}/sandbox-templates` | List built-in and organization templates |
+| `CreateSandboxTemplate` | `POST /control/v1/orgs/{org_id}/sandbox-templates` | Build a dependency-pinned Python or Node.js template |
+| `GetSandboxTemplate` | `GET /control/v1/orgs/{org_id}/sandbox-templates/{template_id}` | Read template build state |
+| `DeleteSandboxTemplate` | `DELETE /control/v1/orgs/{org_id}/sandbox-templates/{template_id}` | Retire an unused custom template |
+| `ListSandboxes` | `GET /control/v1/orgs/{org_id}/sandboxes` | List non-deleted sandboxes |
+| `CreateSandbox` | `POST /control/v1/orgs/{org_id}/sandboxes` | Start a sandbox from a ready template |
+| `GetSandbox` | `GET /control/v1/orgs/{org_id}/sandboxes/{sandbox_id}` | Read sandbox lifecycle state |
+| `DeleteSandbox` | `DELETE /control/v1/orgs/{org_id}/sandboxes/{sandbox_id}` | Idempotently stop and delete a sandbox |
+| `Execute` | `POST /control/v1/orgs/{org_id}/sandboxes/{sandbox_id}:execute` | Execute one source-code payload |
+| `GetExecution` | `GET /control/v1/orgs/{org_id}/sandboxes/{sandbox_id}/executions/{execution_id}` | Read execution state and retained output |
+
+Sandbox template creation, sandbox creation, and execution accept
+`idempotency_key`; the same key and request body return the original resource
+for 24 hours. Reusing a key with different content is rejected. Execution
+stdout and stderr are retained for 15 minutes.
+
+### Errors
+
+REST authentication middleware returns a compact JSON body such as
+`{"error":"invalid_token"}`. Errors emitted after protobuf dispatch use the
+standard gRPC-Gateway status object. Stable error codes are documented in
+protobuf comments and implementation documentation; clients should branch on
+HTTP/gRPC status and the machine-readable message, not on prose.
+
+| HTTP | gRPC | Typical meaning |
+| --- | --- | --- |
+| `400` | `INVALID_ARGUMENT` | Invalid field, unknown scope, or validation limit |
+| `401` | `UNAUTHENTICATED` | Missing, expired, malformed, or unknown bearer token |
+| `403` | `PERMISSION_DENIED` | Account, membership, role, entitlement, scope, or organization mismatch |
+| `404` | `NOT_FOUND` | Visible resource does not exist |
+| `409` | `ALREADY_EXISTS`, `FAILED_PRECONDITION`, or `ABORTED` | Name conflict or lifecycle precondition |
+| `429` | `RESOURCE_EXHAUSTED` | Quota, rate, or cluster-capacity limit |
+| `503` | `UNAVAILABLE` | Required control dependency is unavailable |
+
+The complete field-level contract is in
+[`proto/tarka/provisioning/v1`](proto/tarka/provisioning/v1), and the generated
+REST description is
+[`openapi/tarka-control-v1.swagger.json`](openapi/tarka-control-v1.swagger.json).
 
 Existing OpenAI clients can call inference by changing only their base URL and
 key:
