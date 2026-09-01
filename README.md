@@ -98,20 +98,22 @@ The API has three credential boundaries:
 | --- | --- | --- |
 | Tarka account access token | Every Control API method | Identity, organizations, credentials, policy, usage, and provisioning |
 | `tk_live_` key with `sandboxes` scope | SandboxService methods only | Organization-bound sandbox automation |
-| `tk_live_` key with `inference` or `utilities` scope | Inference API only | Runtime model requests, not control-plane administration |
+| `tk_live_` key with `himalaya`, `inference`, or `utilities` scope | Inference API only | Runtime requests for HimalayaAI, general LLM, or utility model categories |
 
 Account access must be approved, the organization must be active, and the
 caller must have an active organization membership. Read operations generally
 accept every organization role. Organization metadata and quota changes require
 an owner or admin. API-key, compute, storage, and repository mutations require
 an owner, admin, or operator. Product entitlements add a second gate for
-private-beta Agent Hosts, Batch Jobs, Sandboxes, Object Storage, and Hosted Git.
+private-beta model categories, Agent Hosts, Batch Jobs, Sandboxes, Object
+Storage, and Hosted Git. A key scope cannot exceed its creator's current product
+entitlement, and removing that entitlement blocks existing model keys.
 
 ### Identity, organizations, and access requests
 
 | Method | REST route | Ability |
 | --- | --- | --- |
-| `GetCurrentUser` | `GET /control/v1/me` | Return the account identity and every active organization membership |
+| `GetCurrentUser` | `GET /control/v1/me` | Return the account identity, product entitlement decisions, and every active organization membership |
 | `BootstrapCurrentUser` | `POST /control/v1/me/bootstrap` | Idempotently create the first organization when none exists |
 | `CreateOrg` | `POST /control/v1/orgs` | Create an additional organization and owner membership |
 | `GetOrg` | `GET /control/v1/orgs/{org_id}` | Read one visible organization |
@@ -128,7 +130,7 @@ the route or request message.
 
 | Method | REST route | Ability |
 | --- | --- | --- |
-| `ListModels` | `GET /control/v1/models` | List active model aliases, optionally filtered by `modality` |
+| `ListModels` | `GET /control/v1/models` | List active model aliases with their server-owned `access_product`, optionally filtered by `modality` |
 | `CreateApiKey` | `POST /control/v1/orgs/{org_id}/api-keys` | Create a scoped `tk_live_` key; plaintext is returned once |
 | `ListApiKeys` | `GET /control/v1/orgs/{org_id}/api-keys` | List redacted key metadata |
 | `RevokeApiKey` | `POST /control/v1/orgs/{org_id}/api-keys/{api_key_id}:revoke` | Permanently revoke a key |

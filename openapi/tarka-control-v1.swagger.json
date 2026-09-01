@@ -3,7 +3,7 @@
   "info": {
     "title": "Tarka Control API",
     "description": "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management.",
-    "version": "1.4.0"
+    "version": "1.5.0"
   },
   "tags": [
     {
@@ -1604,7 +1604,7 @@
           "items": {
             "type": "string"
           },
-          "description": "scopes grants product capabilities such as \"sandboxes\"."
+          "description": "scopes grants product capabilities. Model scopes are \"himalaya\",\n\"inference\", and \"utilities\"; \"sandboxes\" grants code-sandbox access.\nEmpty preserves the historical \"inference\" default."
         }
       },
       "description": "CreateApiKeyRequest creates an organization-scoped customer credential."
@@ -2128,6 +2128,14 @@
         "default_org_id": {
           "type": "string",
           "description": "default_org_id is the first active organization, or empty when none exists."
+        },
+        "entitlements": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1ProductEntitlement"
+          },
+          "description": "entitlements contains the caller's current server-authoritative product\naccess decisions. API keys never grant access beyond these decisions."
         }
       },
       "description": "CurrentUser is the authenticated platform identity and its active\norganization memberships."
@@ -2455,6 +2463,10 @@
         "capabilities": {
           "type": "object",
           "description": "capabilities contains model-specific, non-secret feature metadata."
+        },
+        "access_product": {
+          "type": "string",
+          "description": "access_product is the server-authoritative API-key scope and user\nentitlement required to use this model: himalaya, inference, or utilities."
         }
       },
       "description": "Model describes a stable Tarka model alias and its metering metadata."
@@ -2553,6 +2565,25 @@
         }
       },
       "description": "ProductAccessRequest is the durable status of one product-access request."
+    },
+    "v1ProductEntitlement": {
+      "type": "object",
+      "properties": {
+        "product": {
+          "type": "string",
+          "description": "product is a canonical identifier such as \"himalaya\", \"inference\",\n\"utilities\", \"agents\", \"jobs\", \"sandboxes\", \"storage\", or \"git\"."
+        },
+        "status": {
+          "type": "string",
+          "description": "status is pending, approved, suspended, or revoked."
+        },
+        "approved_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "approved_at is populated when status is approved."
+        }
+      },
+      "description": "ProductEntitlement describes one user-level product access decision."
     },
     "v1ProvisionedResource": {
       "type": "object",
