@@ -3,7 +3,7 @@
   "info": {
     "title": "Tarka Control API",
     "description": "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management.",
-    "version": "1.5.0"
+    "version": "1.6.0"
   },
   "tags": [
     {
@@ -2575,12 +2575,17 @@
         },
         "status": {
           "type": "string",
-          "description": "status is pending, approved, suspended, or revoked."
+          "description": "status is pending, approved, expired, suspended, or revoked. Expired is\nan effective status returned when an otherwise-approved grant is past its\noptional expires_at timestamp."
         },
         "approved_at": {
           "type": "string",
           "format": "date-time",
           "description": "approved_at is populated when status is approved."
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "expires_at is the optional instant after which this grant stops\nauthorizing requests. The server enforces it on every request."
         }
       },
       "description": "ProductEntitlement describes one user-level product access decision."

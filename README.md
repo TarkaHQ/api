@@ -108,6 +108,11 @@ an owner, admin, or operator. Product entitlements add a second gate for
 private-beta model categories, Agent Hosts, Batch Jobs, Sandboxes, Object
 Storage, and Hosted Git. A key scope cannot exceed its creator's current product
 entitlement, and removing that entitlement blocks existing model keys.
+Time-limited grants expose `expires_at` and stop authorizing requests as soon as
+that timestamp passes. The canonical product identifiers, display metadata,
+API-key capabilities, and operator presets are versioned in
+[`contracts/product-access.json`](contracts/product-access.json); generated or
+copied policy definitions in implementation repositories must originate there.
 
 ### Identity, organizations, and access requests
 

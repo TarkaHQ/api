@@ -1,0 +1,78 @@
+{
+  "version": 1,
+  "products": [
+    {
+      "id": "himalaya",
+      "label": "HimalayaAI models",
+      "description": "HimalayaGPT and Himalaya Gemma models",
+      "group": "models",
+      "api_key_scope": true
+    },
+    {
+      "id": "inference",
+      "label": "LLMs",
+      "description": "General language, embedding, and rerank models",
+      "group": "models",
+      "api_key_scope": true
+    },
+    {
+      "id": "utilities",
+      "label": "Utility models",
+      "description": "OCR, speech-to-text, text-to-speech, and voice tools",
+      "group": "models",
+      "api_key_scope": true
+    },
+    {
+      "id": "agents",
+      "label": "Agent hosts",
+      "description": "Managed long-running agent containers",
+      "group": "compute",
+      "api_key_scope": false
+    },
+    {
+      "id": "jobs",
+      "label": "Compute jobs",
+      "description": "Managed batch and scheduled compute",
+      "group": "compute",
+      "api_key_scope": false
+    },
+    {
+      "id": "sandboxes",
+      "label": "Code sandboxes",
+      "description": "Isolated code execution environments",
+      "group": "compute",
+      "api_key_scope": true
+    },
+    {
+      "id": "storage",
+      "label": "Object storage",
+      "description": "Buckets and scoped storage credentials",
+      "group": "data",
+      "api_key_scope": false
+    },
+    {
+      "id": "git",
+      "label": "Hosted Git",
+      "description": "Private repositories hosted by Tarka",
+      "group": "data",
+      "api_key_scope": false
+    }
+  ],
+  "presets": [
+    {
+      "id": "models",
+      "label": "All model APIs",
+      "products": ["himalaya", "inference", "utilities"]
+    },
+    {
+      "id": "compute",
+      "label": "Compute beta",
+      "products": ["agents", "jobs", "sandboxes"]
+    },
+    {
+      "id": "full_beta",
+      "label": "Full beta access",
+      "products": ["himalaya", "inference", "utilities", "agents", "jobs", "sandboxes", "storage", "git"]
+    }
+  ]
+}

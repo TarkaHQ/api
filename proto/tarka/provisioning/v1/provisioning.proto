@@ -19,7 +19,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Tarka Control API"
     description: "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management."
-    version: "1.5.0"
+    version: "1.6.0"
   }
   host: "tarka.rest"
   schemes: HTTPS
@@ -366,10 +366,15 @@ message ProductEntitlement {
   // product is a canonical identifier such as "himalaya", "inference",
   // "utilities", "agents", "jobs", "sandboxes", "storage", or "git".
   string product = 1;
-  // status is pending, approved, suspended, or revoked.
+  // status is pending, approved, expired, suspended, or revoked. Expired is
+  // an effective status returned when an otherwise-approved grant is past its
+  // optional expires_at timestamp.
   string status = 2;
   // approved_at is populated when status is approved.
   google.protobuf.Timestamp approved_at = 3;
+  // expires_at is the optional instant after which this grant stops
+  // authorizing requests. The server enforces it on every request.
+  google.protobuf.Timestamp expires_at = 4;
 }
 
 // Org is an organization as visible to the authenticated caller.
