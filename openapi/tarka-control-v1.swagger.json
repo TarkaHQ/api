@@ -2008,6 +2008,10 @@
             "type": "object",
             "$ref": "#/definitions/v1AgentHostTemplateVariable"
           }
+        },
+        "tier": {
+          "type": "string",
+          "description": "tier is the default capacity profile for this template."
         }
       },
       "description": "AgentHostTemplate describes a versioned, platform-tested Compose stack."

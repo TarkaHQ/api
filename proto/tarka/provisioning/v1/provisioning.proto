@@ -549,6 +549,8 @@ message AgentHostTemplate {
   string version = 4;
   int32 service_count = 5;
   repeated AgentHostTemplateVariable variables = 6;
+  // tier is the default capacity profile for this template.
+  string tier = 7;
 }
 
 // AgentHostTemplateVariable documents one configurable template value without
