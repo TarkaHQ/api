@@ -114,12 +114,25 @@ service ProvisioningService {
     };
   }
 
-  // CreateAgentHost records desired state for a managed agent container.
+  // CreateAgentHost applies desired state for a managed multi-service Compose
+  // stack or a backward-compatible single-image Agent Host.
   rpc CreateAgentHost(CreateAgentHostRequest) returns (ProvisionedResource) {
     option (google.api.http) = {
       post: "/control/v1/orgs/{org_id}/agent-hosts"
       body: "*"
     };
+  }
+
+  // ListAgentHostTemplates returns the versioned Compose templates published
+  // by Tarka. Template definitions never contain runtime secret values.
+  rpc ListAgentHostTemplates(ListAgentHostTemplatesRequest) returns (ListAgentHostTemplatesResponse) {
+    option (google.api.http) = {get: "/control/v1/agent-host-templates"};
+  }
+
+  // DeleteAgentHost requests deletion of an Agent Host and every namespaced
+  // workload owned by it. Retained volume data follows the platform policy.
+  rpc DeleteAgentHost(DeleteAgentHostRequest) returns (ProvisionedResource) {
+    option (google.api.http) = {delete: "/control/v1/orgs/{org_id}/agent-hosts/{agent_host_id}"};
   }
 
   // CreateJob records desired state for a managed finite-duration job.
@@ -473,7 +486,9 @@ message CreateInferenceServiceRequest {
   google.protobuf.Struct spec = 6;
 }
 
-// CreateAgentHostRequest defines desired state for an agent container.
+// CreateAgentHostRequest applies desired state for a complete Agent Host
+// Compose stack. Existing single-image callers remain supported and are
+// normalized into a one-service stack.
 message CreateAgentHostRequest {
   string org_id = 1;
   // name must be a DNS label and is unique per organization/resource type.
@@ -487,6 +502,70 @@ message CreateAgentHostRequest {
   int32 max_replicas = 6;
   // spec carries non-secret extension fields. Typed fields take precedence.
   google.protobuf.Struct spec = 7;
+  // template_id selects a versioned Tarka template such as openclaw, hermes,
+  // or onyx. It is mutually exclusive with compose_yaml and image.
+  string template_id = 8;
+  // compose_yaml contains an inline Compose Specification document. Runtime
+  // secret values must be supplied through variables and must not be embedded
+  // in this document.
+  string compose_yaml = 9;
+  // variables supplies Compose interpolation values. Secret values are
+  // encrypted separately and never returned in ProvisionedResource.spec.
+  repeated AgentHostVariable variables = 10;
+  // public_service optionally overrides the service exposed at the stack's
+  // generated HTTPS hostname. An x-tarka.routes extension can expose multiple
+  // service paths without this override.
+  string public_service = 11;
+  // public_port is required when public_service is set unless the service has
+  // exactly one declared port.
+  int32 public_port = 12;
+  // tier is the platform capacity profile. Empty selects the beta default.
+  string tier = 13;
+}
+
+// AgentHostVariable is one Compose interpolation value. Values marked secret
+// are accepted once over TLS, encrypted at rest, mounted from Kubernetes
+// Secrets, and redacted from all read responses.
+message AgentHostVariable {
+  string name = 1;
+  string value = 2;
+  bool secret = 3;
+}
+
+// ListAgentHostTemplatesRequest has no parameters. Template visibility is
+// controlled by the caller's platform and Agent Hosts entitlements.
+message ListAgentHostTemplatesRequest {}
+
+// ListAgentHostTemplatesResponse contains stable template metadata.
+message ListAgentHostTemplatesResponse {
+  repeated AgentHostTemplate templates = 1;
+}
+
+// AgentHostTemplate describes a versioned, platform-tested Compose stack.
+message AgentHostTemplate {
+  string id = 1;
+  string title = 2;
+  string description = 3;
+  string version = 4;
+  int32 service_count = 5;
+  repeated AgentHostTemplateVariable variables = 6;
+}
+
+// AgentHostTemplateVariable documents one configurable template value without
+// exposing a runtime secret.
+message AgentHostTemplateVariable {
+  string name = 1;
+  string label = 2;
+  string description = 3;
+  bool secret = 4;
+  bool required = 5;
+  string default_value = 6;
+}
+
+// DeleteAgentHostRequest selects an Agent Host visible to the caller.
+message DeleteAgentHostRequest {
+  string org_id = 1;
+  string agent_host_id = 2;
 }
 
 // CreateJobRequest defines desired state for a finite-duration container job.

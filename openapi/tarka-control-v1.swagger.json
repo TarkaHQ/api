@@ -26,6 +26,29 @@
     "application/json"
   ],
   "paths": {
+    "/control/v1/agent-host-templates": {
+      "get": {
+        "summary": "ListAgentHostTemplates returns the versioned Compose templates published\nby Tarka. Template definitions never contain runtime secret values.",
+        "operationId": "ProvisioningService_ListAgentHostTemplates",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListAgentHostTemplatesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
     "/control/v1/inference-services": {
       "post": {
         "summary": "CreateInferenceService records desired state for a managed inference\nservice. Reusing an organization, resource type, and name updates it.",
@@ -287,7 +310,7 @@
     },
     "/control/v1/orgs/{org_id}/agent-hosts": {
       "post": {
-        "summary": "CreateAgentHost records desired state for a managed agent container.",
+        "summary": "CreateAgentHost applies desired state for a managed multi-service Compose\nstack or a backward-compatible single-image Agent Host.",
         "operationId": "ProvisioningService_CreateAgentHost",
         "responses": {
           "200": {
@@ -317,6 +340,43 @@
             "schema": {
               "$ref": "#/definitions/ProvisioningServiceCreateAgentHostBody"
             }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/agent-hosts/{agent_host_id}": {
+      "delete": {
+        "summary": "DeleteAgentHost requests deletion of an Agent Host and every namespaced\nworkload owned by it. Retained volume data follows the platform policy.",
+        "operationId": "ProvisioningService_DeleteAgentHost",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ProvisionedResource"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "agent_host_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
           }
         ],
         "tags": [
@@ -1581,9 +1641,38 @@
         "spec": {
           "type": "object",
           "description": "spec carries non-secret extension fields. Typed fields take precedence."
+        },
+        "template_id": {
+          "type": "string",
+          "description": "template_id selects a versioned Tarka template such as openclaw, hermes,\nor onyx. It is mutually exclusive with compose_yaml and image."
+        },
+        "compose_yaml": {
+          "type": "string",
+          "description": "compose_yaml contains an inline Compose Specification document. Runtime\nsecret values must be supplied through variables and must not be embedded\nin this document."
+        },
+        "variables": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1AgentHostVariable"
+          },
+          "description": "variables supplies Compose interpolation values. Secret values are\nencrypted separately and never returned in ProvisionedResource.spec."
+        },
+        "public_service": {
+          "type": "string",
+          "description": "public_service optionally overrides the service exposed at the stack's\ngenerated HTTPS hostname. An x-tarka.routes extension can expose multiple\nservice paths without this override."
+        },
+        "public_port": {
+          "type": "integer",
+          "format": "int32",
+          "description": "public_port is required when public_service is set unless the service has\nexactly one declared port."
+        },
+        "tier": {
+          "type": "string",
+          "description": "tier is the platform capacity profile. Empty selects the beta default."
         }
       },
-      "description": "CreateAgentHostRequest defines desired state for an agent container."
+      "description": "CreateAgentHostRequest applies desired state for a complete Agent Host\nCompose stack. Existing single-image callers remain supported and are\nnormalized into a one-service stack."
     },
     "ProvisioningServiceCreateApiKeyBody": {
       "type": "object",
@@ -1893,6 +1982,74 @@
           }
         }
       }
+    },
+    "v1AgentHostTemplate": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "service_count": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "variables": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1AgentHostTemplateVariable"
+          }
+        }
+      },
+      "description": "AgentHostTemplate describes a versioned, platform-tested Compose stack."
+    },
+    "v1AgentHostTemplateVariable": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "secret": {
+          "type": "boolean"
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "default_value": {
+          "type": "string"
+        }
+      },
+      "description": "AgentHostTemplateVariable documents one configurable template value without\nexposing a runtime secret."
+    },
+    "v1AgentHostVariable": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        },
+        "secret": {
+          "type": "boolean"
+        }
+      },
+      "description": "AgentHostVariable is one Compose interpolation value. Values marked secret\nare accepted once over TLS, encrypted at rest, mounted from Kubernetes\nSecrets, and redacted from all read responses."
     },
     "v1ApiKey": {
       "type": "object",
@@ -2266,6 +2423,19 @@
         }
       },
       "description": "HostedGitAccess describes the caller's hosted Git identity."
+    },
+    "v1ListAgentHostTemplatesResponse": {
+      "type": "object",
+      "properties": {
+        "templates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1AgentHostTemplate"
+          }
+        }
+      },
+      "description": "ListAgentHostTemplatesResponse contains stable template metadata."
     },
     "v1ListApiKeysResponse": {
       "type": "object",
