@@ -38,9 +38,6 @@ services:
       HERMES_HOME: /home/hermes/.hermes
       HERMES_UID: "1000"
       HERMES_GID: "1000"
-      # The local Agent Host gateway ignores caller credentials and injects a
-      # host-bound service identity upstream. This is only an SDK placeholder.
-      TARKA_API_KEY: tarka-local
       TARKA_API_URL: http://tarka/v1
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}

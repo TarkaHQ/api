@@ -7,7 +7,7 @@
       "tier": "core",
       "service_count": 2,
       "file": "hermes.compose.yaml",
-      "sha256": "e79412a74eb1466c070d0bddd79d6296d2eee7a44bef95920e99da3d14e2987c"
+      "sha256": "a8fa9804cd3b6d76905af1fa43239603d2e6b2c10aeaec21619fa9cf0d56fb8f"
     },
     {
       "id": "onyx",
@@ -23,7 +23,7 @@
       "tier": "core",
       "service_count": 2,
       "file": "openclaw.compose.yaml",
-      "sha256": "5539337bfddff021e9e88d23a0a7533e8a5f41320d145ef0fcd8c9074a35a157"
+      "sha256": "6cea0b8ea9265d2ab0963f20a4552ccc6e5444494242b63cd549a5b49e5810e8"
     }
   ]
 }

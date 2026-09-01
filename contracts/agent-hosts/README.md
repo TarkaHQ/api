@@ -21,8 +21,7 @@ Every running Agent Host also receives a private platform gateway at
 `http://tarka`. Agent workloads call the OpenAI-compatible inference API at
 `http://tarka/v1` without supplying a customer API key. A host-bound service
 identity is held only by that gateway and is rejected by Tarka's public API
-surfaces. Template values such as `TARKA_API_KEY=tarka-local` are non-secret SDK
-placeholders, not usable credentials.
+surfaces.
 
 `catalog.json` is the machine-readable release index. Its SHA-256 checksums
 cover the exact Compose bytes consumed by the infrastructure repository. CI
