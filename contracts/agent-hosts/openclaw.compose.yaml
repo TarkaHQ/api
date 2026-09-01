@@ -2,7 +2,7 @@ x-tarka:
   id: openclaw
   title: OpenClaw
   description: OpenClaw with a persistent workspace and isolated browser automation.
-  version: "2026.2.6-tarka.2"
+  version: "2026.2.6-tarka.3"
   tier: core
   routes:
     - service: openclaw
@@ -20,10 +20,6 @@ x-tarka:
       label: Gateway token
       secret: true
       required: true
-    - name: TARKA_API_KEY
-      label: Tarka API key
-      description: Optional scoped key for calling http://tarka/v1 from the stack.
-      secret: true
     - name: OPENAI_API_KEY
       label: OpenAI API key
       secret: true
@@ -46,7 +42,10 @@ services:
       AUTH_USERNAME: ${AUTH_USERNAME}
       AUTH_PASSWORD: ${AUTH_PASSWORD}
       OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN}
-      TARKA_API_KEY: ${TARKA_API_KEY:-}
+      # The local Agent Host gateway ignores caller credentials and injects a
+      # host-bound service identity upstream. This non-secret placeholder keeps
+      # OpenAI-compatible clients that require a value happy.
+      TARKA_API_KEY: tarka-local
       TARKA_API_URL: http://tarka/v1
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}

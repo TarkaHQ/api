@@ -17,6 +17,13 @@ explicit, persistent volumes have quotas, public routes are declared, and
 secrets are supplied through Agent Host variables. These are therefore not
 drop-in replacements for the upstream projects' local-development files.
 
+Every running Agent Host also receives a private platform gateway at
+`http://tarka`. Agent workloads call the OpenAI-compatible inference API at
+`http://tarka/v1` without supplying a customer API key. A host-bound service
+identity is held only by that gateway and is rejected by Tarka's public API
+surfaces. Template values such as `TARKA_API_KEY=tarka-local` are non-secret SDK
+placeholders, not usable credentials.
+
 `catalog.json` is the machine-readable release index. Its SHA-256 checksums
 cover the exact Compose bytes consumed by the infrastructure repository. CI
 rejects mutable image references, metadata/catalog drift, and checksum drift.
@@ -28,4 +35,3 @@ The runtime supports multi-service stacks, public Git builds, named persistent
 volumes, service dependencies, health checks, internal networking, and one or
 more HTTP routes. Host mounts, privileged containers, host namespaces, devices,
 external networks, and Docker socket access are intentionally rejected.
-

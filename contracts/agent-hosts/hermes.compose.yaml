@@ -2,7 +2,7 @@ x-tarka:
   id: hermes
   title: Hermes Agent
   description: Hermes autonomous agent with persistent memory, scheduling and its web UI.
-  version: "2026.5.29-tarka.2"
+  version: "2026.5.29-tarka.3"
   tier: core
   routes:
     - service: hermes-webui
@@ -13,10 +13,6 @@ x-tarka:
       label: Web UI password
       secret: true
       required: true
-    - name: TARKA_API_KEY
-      label: Tarka API key
-      description: Optional scoped key for calling http://tarka/v1 from the stack.
-      secret: true
     - name: OPENROUTER_API_KEY
       label: OpenRouter API key
       secret: true
@@ -42,7 +38,9 @@ services:
       HERMES_HOME: /home/hermes/.hermes
       HERMES_UID: "1000"
       HERMES_GID: "1000"
-      TARKA_API_KEY: ${TARKA_API_KEY:-}
+      # The local Agent Host gateway ignores caller credentials and injects a
+      # host-bound service identity upstream. This is only an SDK placeholder.
+      TARKA_API_KEY: tarka-local
       TARKA_API_URL: http://tarka/v1
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
