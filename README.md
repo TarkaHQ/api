@@ -30,6 +30,7 @@ deployment manifests, and repository dependencies.
 | `openapi/tarka-inference-v1.openapi.json` | Authored OpenAPI 3.1 contract for the supported OpenAI-compatible inference surface |
 | `openapi/tarka-inference-v2.openapi.json` | Authored OpenAPI 3.1 contract for the deprecated `/v2` REST alias |
 | `openapi/tarka-inference-v2.swagger.json` | Generated OpenAPI v2 description of protobuf-bound inference methods |
+| `contracts/agent-hosts` | Versioned OpenClaw, Hermes, and Onyx Compose contracts plus their machine-readable release catalog |
 | `buf.yaml` | Buf module, lint, dependency, and compatibility policy |
 | `buf.gen.yaml` | Pinned generator for the derived control OpenAPI document |
 
