@@ -1,0 +1,203 @@
+x-tarka:
+  id: onyx
+  title: Onyx
+  description: Full Onyx stack with web and API services, workers, Postgres, Vespa, Redis and MinIO.
+  version: "tarka.2"
+  tier: pro
+  routes:
+    - service: web-server
+      port: 3000
+      path: /
+    - service: api-server
+      port: 8080
+      path: /api
+  variables:
+    - name: POSTGRES_PASSWORD
+      label: Postgres password
+      secret: true
+      required: true
+    - name: MINIO_ROOT_USER
+      label: MinIO root user
+      required: true
+    - name: MINIO_ROOT_PASSWORD
+      label: MinIO root password
+      secret: true
+      required: true
+    - name: AUTH_TYPE
+      label: Authentication type
+      default: basic
+  volume_sizes:
+    db-volume: 20Gi
+    vespa-volume: 40Gi
+    minio-data: 20Gi
+    model-cache: 30Gi
+    indexing-model-cache: 30Gi
+    api-logs: 5Gi
+    background-logs: 5Gi
+
+services:
+  api-server:
+    image: onyxdotapp/onyx-backend@sha256:64ca3768a71ad848a5c6f9111b6355c8eca7e3faa0ec08f1e77427f906fa3616
+    command: /bin/sh -c 'alembic upgrade head && exec uvicorn onyx.main:app --host 0.0.0.0 --port 8080'
+    depends_on:
+      relational-db: {condition: service_healthy}
+      index: {condition: service_healthy}
+      cache: {condition: service_started}
+      inference-model-server: {condition: service_started}
+      minio: {condition: service_healthy}
+    environment:
+      AUTH_TYPE: ${AUTH_TYPE:-basic}
+      POSTGRES_HOST: relational-db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      VESPA_HOST: index
+      REDIS_HOST: cache
+      MODEL_SERVER_HOST: inference-model-server
+      S3_ENDPOINT_URL: http://minio:9000
+      S3_AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
+      S3_AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
+      API_PREFIX: /api
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://localhost:8080/api/health')"]
+      interval: 30s
+      timeout: 20s
+      retries: 5
+      start_period: 90s
+    expose: ["8080"]
+    volumes:
+      - api-logs:/var/log/onyx
+    deploy:
+      resources:
+        reservations: {cpus: "0.5", memory: 1G}
+        limits: {cpus: "1", memory: 2G}
+  background:
+    image: onyxdotapp/onyx-backend@sha256:64ca3768a71ad848a5c6f9111b6355c8eca7e3faa0ec08f1e77427f906fa3616
+    command: /app/scripts/supervisord_entrypoint.sh
+    depends_on:
+      relational-db: {condition: service_healthy}
+      index: {condition: service_healthy}
+      cache: {condition: service_started}
+      inference-model-server: {condition: service_started}
+      indexing-model-server: {condition: service_started}
+    environment:
+      USE_LIGHTWEIGHT_BACKGROUND_WORKER: "true"
+      POSTGRES_HOST: relational-db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      VESPA_HOST: index
+      REDIS_HOST: cache
+      MODEL_SERVER_HOST: inference-model-server
+      INDEXING_MODEL_SERVER_HOST: indexing-model-server
+      S3_ENDPOINT_URL: http://minio:9000
+      S3_AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
+      S3_AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - background-logs:/var/log/onyx
+    deploy:
+      resources:
+        reservations: {cpus: "0.5", memory: 1G}
+        limits: {cpus: "1", memory: 2G}
+  web-server:
+    image: onyxdotapp/onyx-web-server@sha256:720c37d755b6c6d58adf5062fa2f2ebaf7bf790d487817b5228f603f5e79cf5e
+    depends_on:
+      api-server: {condition: service_healthy}
+    environment:
+      INTERNAL_URL: http://api-server:8080/api
+      HOSTNAME: 0.0.0.0
+    expose: ["3000"]
+    deploy:
+      resources:
+        reservations: {cpus: "0.1", memory: 128M}
+        limits: {cpus: "0.5", memory: 512M}
+  inference-model-server:
+    image: onyxdotapp/onyx-model-server@sha256:8209f95d0886d4490b17356ea4942fe56248dbfe7700b0a32c496ea0a286a6c2
+    command: uvicorn model_server.main:app --host 0.0.0.0 --port 9000
+    expose: ["9000"]
+    volumes:
+      - model-cache:/app/.cache/huggingface/
+    deploy:
+      resources:
+        reservations: {cpus: "0.5", memory: 1G}
+        limits: {cpus: "1", memory: 2G}
+  indexing-model-server:
+    image: onyxdotapp/onyx-model-server@sha256:8209f95d0886d4490b17356ea4942fe56248dbfe7700b0a32c496ea0a286a6c2
+    command: uvicorn model_server.main:app --host 0.0.0.0 --port 9000
+    environment: {INDEXING_ONLY: "True"}
+    expose: ["9000"]
+    volumes:
+      - indexing-model-cache:/app/.cache/huggingface/
+    deploy:
+      resources:
+        reservations: {cpus: "0.5", memory: 1G}
+        limits: {cpus: "1", memory: 2G}
+  relational-db:
+    image: postgres@sha256:d9c304353c031b21e9a7e33dc4781e272a9fa802a2ab9703fe4199d72ba1422c
+    shm_size: 1g
+    command: -c max_connections=250
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U postgres]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    expose: ["5432"]
+    volumes:
+      - db-volume:/var/lib/postgresql/data
+    deploy:
+      resources:
+        reservations: {cpus: "0.25", memory: 512M}
+        limits: {cpus: "1", memory: 2G}
+  index:
+    image: vespaengine/vespa@sha256:734d02c6af037b618434a299553f90dc989c02a950377be500f24f4e2f2d0a7b
+    environment: {VESPA_SKIP_UPGRADE_CHECK: "true"}
+    volumes:
+      - vespa-volume:/opt/vespa/var
+    healthcheck:
+      test: [CMD-SHELL, curl -f http://localhost:19071/state/v1/health || exit 1]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 180s
+    expose: ["8080", "19071"]
+    deploy:
+      resources:
+        reservations: {cpus: "0.5", memory: 2G}
+        limits: {cpus: "1", memory: 4G}
+  cache:
+    image: redis@sha256:ff02b58f971e7d7d156a1267e283fcbbeee91773b6aa36c49dac28ecfe28eadf
+    command: redis-server --save "" --appendonly no
+    tmpfs: [/data]
+    expose: ["6379"]
+    deploy:
+      resources:
+        reservations: {cpus: "0.1", memory: 128M}
+        limits: {cpus: "0.5", memory: 512M}
+  minio:
+    image: minio/minio@sha256:7330be2e7320a7a699b36f72bd06a94d8a21ec9f6f397345d9c38fc6751141f5
+    command: server /data --console-address :9001
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: [CMD, curl, -f, http://localhost:9000/minio/health/live]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    expose: ["9000", "9001"]
+    deploy:
+      resources:
+        reservations: {cpus: "0.1", memory: 256M}
+        limits: {cpus: "0.5", memory: 1G}
+
+volumes:
+  db-volume:
+  vespa-volume:
+  minio-data:
+  model-cache:
+  indexing-model-cache:
+  api-logs:
+  background-logs:

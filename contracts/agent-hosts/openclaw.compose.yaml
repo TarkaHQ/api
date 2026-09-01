@@ -1,0 +1,109 @@
+x-tarka:
+  id: openclaw
+  title: OpenClaw
+  description: OpenClaw with a persistent workspace and isolated browser automation.
+  version: "2026.2.6-tarka.2"
+  tier: core
+  routes:
+    - service: openclaw
+      port: 8080
+      path: /
+  variables:
+    - name: AUTH_USERNAME
+      label: Console username
+      required: true
+    - name: AUTH_PASSWORD
+      label: Console password
+      secret: true
+      required: true
+    - name: OPENCLAW_GATEWAY_TOKEN
+      label: Gateway token
+      secret: true
+      required: true
+    - name: TARKA_API_KEY
+      label: Tarka API key
+      description: Optional scoped key for calling http://tarka/v1 from the stack.
+      secret: true
+    - name: OPENAI_API_KEY
+      label: OpenAI API key
+      secret: true
+    - name: ANTHROPIC_API_KEY
+      label: Anthropic API key
+      secret: true
+    - name: OPENROUTER_API_KEY
+      label: OpenRouter API key
+      secret: true
+    - name: OPENCLAW_PRIMARY_MODEL
+      label: Primary model
+  volume_sizes:
+    openclaw-data: 20Gi
+    browser-data: 5Gi
+
+services:
+  openclaw:
+    image: coollabsio/openclaw@sha256:a43ffaca3cc802ec28c16afa37c9d4cd28a9040ddd84aa386467bd09740e3dee
+    environment:
+      AUTH_USERNAME: ${AUTH_USERNAME}
+      AUTH_PASSWORD: ${AUTH_PASSWORD}
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN}
+      TARKA_API_KEY: ${TARKA_API_KEY:-}
+      TARKA_API_URL: http://tarka/v1
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENCLAW_PRIMARY_MODEL: ${OPENCLAW_PRIMARY_MODEL:-}
+      PORT: "8080"
+      OPENCLAW_GATEWAY_PORT: "18789"
+      OPENCLAW_GATEWAY_BIND: lan
+      OPENCLAW_STATE_DIR: /data/.openclaw
+      OPENCLAW_WORKSPACE_DIR: /data/workspace
+      BROWSER_CDP_URL: http://browser:9223
+      BROWSER_DEFAULT_PROFILE: openclaw
+      BROWSER_EVALUATE_ENABLED: "true"
+      BROWSER_SNAPSHOT_MODE: efficient
+    volumes:
+      - openclaw-data:/data
+    depends_on:
+      browser:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, curl, -sf, http://127.0.0.1:8080/healthz]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    deploy:
+      resources:
+        reservations:
+          cpus: "1"
+          memory: 2G
+        limits:
+          cpus: "3"
+          memory: 6G
+  browser:
+    image: coollabsio/openclaw-browser@sha256:c5f8a9d812992429be2c5a0b6b8f5d70d63e81cc1b381c5475e067a91e0d3179
+    environment:
+      PUID: "1000"
+      PGID: "1000"
+      TZ: Etc/UTC
+      CHROME_CLI: --remote-debugging-port=9222
+    volumes:
+      - browser-data:/config
+    shm_size: 2g
+    expose: ["9223"]
+    healthcheck:
+      test: [CMD-SHELL, "bash -c ':> /dev/tcp/127.0.0.1/9222' || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    deploy:
+      resources:
+        reservations:
+          cpus: "0.5"
+          memory: 1G
+        limits:
+          cpus: "1"
+          memory: 2G
+
+volumes:
+  openclaw-data:
+  browser-data:

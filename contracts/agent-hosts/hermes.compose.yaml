@@ -1,0 +1,92 @@
+x-tarka:
+  id: hermes
+  title: Hermes Agent
+  description: Hermes autonomous agent with persistent memory, scheduling and its web UI.
+  version: "2026.5.29-tarka.2"
+  tier: core
+  routes:
+    - service: hermes-webui
+      port: 8787
+      path: /
+  variables:
+    - name: HERMES_WEBUI_PASSWORD
+      label: Web UI password
+      secret: true
+      required: true
+    - name: TARKA_API_KEY
+      label: Tarka API key
+      description: Optional scoped key for calling http://tarka/v1 from the stack.
+      secret: true
+    - name: OPENROUTER_API_KEY
+      label: OpenRouter API key
+      secret: true
+    - name: ANTHROPIC_API_KEY
+      label: Anthropic API key
+      secret: true
+    - name: OPENAI_API_KEY
+      label: OpenAI API key
+      secret: true
+    - name: GOOGLE_API_KEY
+      label: Google API key
+      secret: true
+  volume_sizes:
+    hermes-home: 10Gi
+    hermes-agent-src: 5Gi
+    hermes-workspace: 20Gi
+
+services:
+  hermes-agent:
+    image: nousresearch/hermes-agent@sha256:2f1f2f1725e5dc9a61cf6a2dea5aca52a776ec4d022cb29679e6aa3ff303e77a
+    command: gateway run
+    environment:
+      HERMES_HOME: /home/hermes/.hermes
+      HERMES_UID: "1000"
+      HERMES_GID: "1000"
+      TARKA_API_KEY: ${TARKA_API_KEY:-}
+      TARKA_API_URL: http://tarka/v1
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+    volumes:
+      - hermes-home:/home/hermes/.hermes
+      - hermes-agent-src:/opt/hermes
+    healthcheck:
+      test: [CMD-SHELL, test -d /home/hermes/.hermes || exit 1]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        reservations: {cpus: "1", memory: 2G}
+        limits: {cpus: "3", memory: 6G}
+  hermes-webui:
+    image: ghcr.io/nesquena/hermes-webui@sha256:d6665a09b783a0fcc58136e67cdd40588ca2c21421ea97b3cfc5302d81effbec
+    depends_on:
+      hermes-agent:
+        condition: service_started
+    environment:
+      HERMES_WEBUI_HOST: 0.0.0.0
+      HERMES_WEBUI_PORT: "8787"
+      HERMES_WEBUI_STATE_DIR: /home/hermeswebui/.hermes/webui
+      WANTED_UID: "1000"
+      WANTED_GID: "1000"
+      HERMES_WEBUI_PASSWORD: ${HERMES_WEBUI_PASSWORD}
+    volumes:
+      - hermes-home:/home/hermeswebui/.hermes
+      - hermes-agent-src:/home/hermeswebui/.hermes/hermes-agent:ro
+      - hermes-workspace:/workspace
+    healthcheck:
+      test: [CMD, curl, -f, http://127.0.0.1:8787/health]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        reservations: {cpus: "0.25", memory: 256M}
+        limits: {cpus: "1", memory: 1G}
+
+volumes:
+  hermes-home:
+  hermes-agent-src:
+  hermes-workspace:
