@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import re
 import subprocess
 from pathlib import Path, PurePosixPath
 
@@ -44,6 +45,8 @@ IMPLEMENTATION_SUFFIXES = {
     ".swift",
     ".ts",
 }
+REQUIRED_PINNED_IMAGES = {"BUF_IMAGE", "OPENAPI_VALIDATOR_IMAGE"}
+MAKE_ASSIGNMENT = re.compile(r"^([A-Z][A-Z0-9_]*)\s*:?=\s*(\S+)\s*$")
 
 
 def tracked_entries() -> list[tuple[str, str]]:
@@ -70,6 +73,16 @@ def main() -> None:
             violations.append(f"forbidden implementation dependency file: {name}")
         if path.suffix in IMPLEMENTATION_SUFFIXES:
             violations.append(f"forbidden generated/implementation source: {name}")
+
+    image_assignments: dict[str, str] = {}
+    for line in (ROOT / "Makefile").read_text(encoding="utf-8").splitlines():
+        match = MAKE_ASSIGNMENT.fullmatch(line)
+        if match and match.group(1) in REQUIRED_PINNED_IMAGES:
+            image_assignments[match.group(1)] = match.group(2)
+    for name in sorted(REQUIRED_PINNED_IMAGES):
+        reference = image_assignments.get(name, "")
+        if not re.fullmatch(r"[^\s@]+:[^\s@]+@sha256:[0-9a-f]{64}", reference):
+            violations.append(f"Docker verification image is not digest-pinned: {name}")
     if violations:
         raise SystemExit("public contract boundary violations:\n- " + "\n- ".join(violations))
     print("validated contract-only public repository boundary")
