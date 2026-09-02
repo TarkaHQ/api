@@ -2,7 +2,7 @@ x-tarka:
   id: onyx
   title: Onyx
   description: Full Onyx stack with web and API services, workers, Postgres, Vespa, Redis and MinIO.
-  version: "tarka.2"
+  version: "tarka.3"
   tier: pro
   routes:
     - service: web-server
@@ -26,6 +26,35 @@ x-tarka:
     - name: AUTH_TYPE
       label: Authentication type
       default: basic
+  runtime_profile:
+    managed_model: true
+    default_model_alias: qwen3.8-flash-next
+    context_token_limit: 81920
+    compaction_threshold_tokens: 65536
+    utility_modalities: [stt, ocr, tts, embedding, rerank]
+    platform_services: [api-server, background]
+  gateways:
+    - id: slack
+      title: Slack
+      description: OnyxBot for workspace channels and direct messages.
+      setup_mode: predeploy
+      default_config_yaml: |
+        enabled: true
+      variables:
+        - name: SLACK_BOT_TOKEN
+          label: Bot token
+          description: Bot User OAuth token beginning with xoxb-.
+          secret: true
+          required: true
+        - name: SLACK_APP_TOKEN
+          label: App token
+          description: Socket Mode app token beginning with xapp-.
+          secret: true
+          required: true
+        - name: SLACK_USER_TOKEN
+          label: User token
+          description: Optional user OAuth token for richer search behavior.
+          secret: true
   volume_sizes:
     db-volume: 20Gi
     vespa-volume: 40Gi

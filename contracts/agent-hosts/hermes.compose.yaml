@@ -2,7 +2,7 @@ x-tarka:
   id: hermes
   title: Hermes Agent
   description: Hermes autonomous agent with persistent memory, scheduling and its web UI.
-  version: "2026.5.29-tarka.3"
+  version: "2026.5.29-tarka.4"
   tier: core
   routes:
     - service: hermes-webui
@@ -13,18 +13,59 @@ x-tarka:
       label: Web UI password
       secret: true
       required: true
-    - name: OPENROUTER_API_KEY
-      label: OpenRouter API key
-      secret: true
-    - name: ANTHROPIC_API_KEY
-      label: Anthropic API key
-      secret: true
-    - name: OPENAI_API_KEY
-      label: OpenAI API key
-      secret: true
-    - name: GOOGLE_API_KEY
-      label: Google API key
-      secret: true
+  runtime_profile:
+    managed_model: true
+    default_model_alias: qwen3.8-flash-next
+    context_token_limit: 81920
+    compaction_threshold_tokens: 65536
+    utility_modalities: [stt, ocr, tts, embedding, rerank]
+    platform_services: [hermes-agent]
+  gateways:
+    - id: telegram
+      title: Telegram
+      description: Telegram bot with pairing or an explicit sender allowlist.
+      setup_mode: predeploy
+      default_config_yaml: |
+        enabled: true
+        dm_policy: pairing
+      variables:
+        - name: TELEGRAM_BOT_TOKEN
+          label: Bot token
+          description: Token issued by BotFather.
+          secret: true
+          required: true
+    - id: discord
+      title: Discord
+      description: Discord bot for direct messages and selected servers.
+      setup_mode: predeploy
+      default_config_yaml: |
+        enabled: true
+        dm_policy: pairing
+      variables:
+        - name: DISCORD_BOT_TOKEN
+          label: Bot token
+          description: Bot token from the Discord developer portal.
+          secret: true
+          required: true
+    - id: whatsapp
+      title: WhatsApp
+      description: Linked WhatsApp device configured after the host is ready.
+      setup_mode: postdeploy_pairing
+      default_config_yaml: |
+        enabled: true
+        dm_policy: pairing
+    - id: signal
+      title: Signal
+      description: Dedicated Signal bot number through the managed Signal bridge.
+      setup_mode: postdeploy_pairing
+      default_config_yaml: |
+        enabled: true
+        dm_policy: pairing
+      variables:
+        - name: SIGNAL_ACCOUNT
+          label: Bot phone number
+          description: Dedicated Signal number in E.164 format.
+          required: true
   volume_sizes:
     hermes-home: 10Gi
     hermes-agent-src: 5Gi
@@ -39,10 +80,6 @@ services:
       HERMES_UID: "1000"
       HERMES_GID: "1000"
       TARKA_API_URL: http://tarka/v1
-      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
     volumes:
       - hermes-home:/home/hermes/.hermes
       - hermes-agent-src:/opt/hermes

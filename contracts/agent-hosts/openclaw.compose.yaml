@@ -2,7 +2,7 @@ x-tarka:
   id: openclaw
   title: OpenClaw
   description: OpenClaw with a persistent workspace and isolated browser automation.
-  version: "2026.2.6-tarka.3"
+  version: "2026.2.6-tarka.4"
   tier: core
   routes:
     - service: openclaw
@@ -20,17 +20,63 @@ x-tarka:
       label: Gateway token
       secret: true
       required: true
-    - name: OPENAI_API_KEY
-      label: OpenAI API key
-      secret: true
-    - name: ANTHROPIC_API_KEY
-      label: Anthropic API key
-      secret: true
-    - name: OPENROUTER_API_KEY
-      label: OpenRouter API key
-      secret: true
-    - name: OPENCLAW_PRIMARY_MODEL
-      label: Primary model
+  runtime_profile:
+    managed_model: true
+    default_model_alias: qwen3.8-flash-next
+    context_token_limit: 81920
+    compaction_threshold_tokens: 65536
+    utility_modalities: [stt, ocr, tts, embedding, rerank]
+    platform_services: [openclaw]
+  gateways:
+    - id: telegram
+      title: Telegram
+      description: Telegram bot with pairing or an explicit sender allowlist.
+      setup_mode: predeploy
+      default_config_yaml: |
+        enabled: true
+        dmPolicy: pairing
+        groupPolicy: allowlist
+      variables:
+        - name: TELEGRAM_BOT_TOKEN
+          label: Bot token
+          description: Token issued by BotFather.
+          secret: true
+          required: true
+    - id: discord
+      title: Discord
+      description: Discord bot for direct messages and selected servers.
+      setup_mode: predeploy
+      default_config_yaml: |
+        enabled: true
+        dmPolicy: pairing
+        groupPolicy: allowlist
+      variables:
+        - name: DISCORD_BOT_TOKEN
+          label: Bot token
+          description: Bot token from the Discord developer portal.
+          secret: true
+          required: true
+    - id: whatsapp
+      title: WhatsApp
+      description: Linked WhatsApp device configured after the host is ready.
+      setup_mode: postdeploy_pairing
+      default_config_yaml: |
+        enabled: true
+        dmPolicy: pairing
+        groupPolicy: allowlist
+    - id: signal
+      title: Signal
+      description: Dedicated Signal bot number through the managed Signal bridge.
+      setup_mode: postdeploy_pairing
+      default_config_yaml: |
+        enabled: true
+        dmPolicy: pairing
+        groupPolicy: allowlist
+      variables:
+        - name: SIGNAL_ACCOUNT
+          label: Bot phone number
+          description: Dedicated Signal number in E.164 format.
+          required: true
   volume_sizes:
     openclaw-data: 20Gi
     browser-data: 5Gi
@@ -43,10 +89,6 @@ services:
       AUTH_PASSWORD: ${AUTH_PASSWORD}
       OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN}
       TARKA_API_URL: http://tarka/v1
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
-      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
-      OPENCLAW_PRIMARY_MODEL: ${OPENCLAW_PRIMARY_MODEL:-}
       PORT: "8080"
       OPENCLAW_GATEWAY_PORT: "18789"
       OPENCLAW_GATEWAY_BIND: lan

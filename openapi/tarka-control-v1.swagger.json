@@ -3,7 +3,7 @@
   "info": {
     "title": "Tarka Control API",
     "description": "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management.",
-    "version": "1.6.0"
+    "version": "1.7.0"
   },
   "tags": [
     {
@@ -356,6 +356,43 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/v1ProvisionedResource"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "agent_host_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/agent-hosts/{agent_host_id}/configuration": {
+      "get": {
+        "summary": "GetAgentHostConfiguration returns the editable, redacted configuration for\none Agent Host. Secret values are never returned; preserve_existing marks\nsecret references that may be carried into a later revision.",
+        "operationId": "ProvisioningService_GetAgentHostConfiguration",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1AgentHostConfiguration"
             }
           },
           "default": {
@@ -1670,6 +1707,10 @@
         "tier": {
           "type": "string",
           "description": "tier is the platform capacity profile. Empty selects the beta default."
+        },
+        "runtime": {
+          "$ref": "#/definitions/v1AgentHostRuntimeConfiguration",
+          "description": "runtime configures Tarka-managed model access, runtime-specific gateway\nfiles, and the Compose services that receive the managed environment.\nIt is optional for backward compatibility."
         }
       },
       "description": "CreateAgentHostRequest applies desired state for a complete Agent Host\nCompose stack. Existing single-image callers remain supported and are\nnormalized into a one-service stack."
@@ -1983,6 +2024,155 @@
         }
       }
     },
+    "v1AgentHostConfiguration": {
+      "type": "object",
+      "properties": {
+        "agent_host_id": {
+          "type": "string"
+        },
+        "revision": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "name": {
+          "type": "string"
+        },
+        "template_id": {
+          "type": "string"
+        },
+        "template_version": {
+          "type": "string"
+        },
+        "compose_yaml": {
+          "type": "string"
+        },
+        "variables": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1AgentHostVariable"
+          }
+        },
+        "public_service": {
+          "type": "string"
+        },
+        "public_port": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "tier": {
+          "type": "string"
+        },
+        "runtime": {
+          "$ref": "#/definitions/v1AgentHostRuntimeConfiguration"
+        }
+      },
+      "description": "AgentHostConfiguration is a redacted editable snapshot of the active\nrevision. Secret variables have empty values and preserve_existing=true."
+    },
+    "v1AgentHostGatewayConfiguration": {
+      "type": "object",
+      "properties": {
+        "gateway_id": {
+          "type": "string"
+        },
+        "config_yaml": {
+          "type": "string"
+        },
+        "variables": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1AgentHostVariable"
+          }
+        }
+      },
+      "description": "AgentHostGatewayConfiguration contains one runtime-specific messaging\nintegration. config_yaml contains non-secret advanced settings. Credentials\nare supplied separately through variables and encrypted at rest."
+    },
+    "v1AgentHostGatewayDefinition": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "setup_mode": {
+          "type": "string"
+        },
+        "default_config_yaml": {
+          "type": "string"
+        },
+        "variables": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1AgentHostTemplateVariable"
+          }
+        }
+      },
+      "description": "AgentHostGatewayDefinition describes one gateway option rendered by the\nConsole. setup_mode is predeploy or postdeploy_pairing."
+    },
+    "v1AgentHostRuntimeConfiguration": {
+      "type": "object",
+      "properties": {
+        "primary_model_alias": {
+          "type": "string",
+          "description": "primary_model_alias is an active chat model selected from ListModels."
+        },
+        "gateways": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1AgentHostGatewayConfiguration"
+          },
+          "description": "gateways contains the messaging integrations enabled for this revision."
+        },
+        "platform_services": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "platform_services names Compose services that receive managed runtime\nconfiguration and non-secret TARKA_* discovery environment variables."
+        }
+      },
+      "description": "AgentHostRuntimeConfiguration describes Tarka-managed configuration layered\nonto a Compose stack without exposing the host-bound platform credential."
+    },
+    "v1AgentHostRuntimeProfile": {
+      "type": "object",
+      "properties": {
+        "managed_model": {
+          "type": "boolean"
+        },
+        "default_model_alias": {
+          "type": "string"
+        },
+        "context_token_limit": {
+          "type": "string",
+          "format": "int64"
+        },
+        "compaction_threshold_tokens": {
+          "type": "string",
+          "format": "int64"
+        },
+        "utility_modalities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "platform_services": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "AgentHostRuntimeProfile advertises immutable managed defaults for a template.\ncontext and compaction values are enforced by the runtime adapter rather than\naccepted from untrusted Compose or browser input."
+    },
     "v1AgentHostTemplate": {
       "type": "object",
       "properties": {
@@ -2012,6 +2202,18 @@
         "tier": {
           "type": "string",
           "description": "tier is the default capacity profile for this template."
+        },
+        "runtime_profile": {
+          "$ref": "#/definitions/v1AgentHostRuntimeProfile",
+          "description": "runtime_profile contains platform-owned defaults for model routing,\ncontext management, utilities, and managed Compose services."
+        },
+        "gateways": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1AgentHostGatewayDefinition"
+          },
+          "description": "gateways lists integrations understood by this template's runtime adapter."
         }
       },
       "description": "AgentHostTemplate describes a versioned, platform-tested Compose stack."
@@ -2051,6 +2253,10 @@
         },
         "secret": {
           "type": "boolean"
+        },
+        "preserve_existing": {
+          "type": "boolean",
+          "description": "preserve_existing reuses the encrypted value from the active revision.\nIt is valid only for secret variables during an update and is returned by\nGetAgentHostConfiguration when an encrypted value already exists."
         }
       },
       "description": "AgentHostVariable is one Compose interpolation value. Values marked secret\nare accepted once over TLS, encrypted at rest, mounted from Kubernetes\nSecrets, and redacted from all read responses."

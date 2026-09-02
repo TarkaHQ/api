@@ -73,9 +73,9 @@ Inference API and, when they include the `sandboxes` scope, by SandboxService
 RPCs.
 
 Inside a Tarka Agent Host, the same canonical REST API is available at
-`http://tarka/v1`. Workloads authenticate with a scoped `tk_live_` credential
-supplied as an encrypted Agent Host variable; callers must not copy that
-credential outside the host.
+`http://tarka/v1` without a caller-supplied Authorization header. A host-bound
+service identity is injected only by the namespace-local platform gateway and
+is rejected by Tarka's public API surfaces.
 
 The control REST gateway is rooted at `https://tarka.rest/control/v1`. It
 accepts `Authorization: Bearer <Tarka account access token>` and uses protobuf
@@ -150,6 +150,7 @@ the route or request message.
 | `CreateInferenceService` | `POST /control/v1/orgs/{org_id}/inference-services` | Apply managed inference desired state |
 | `ListAgentHostTemplates` | `GET /control/v1/agent-host-templates` | List versioned OpenClaw, Hermes, Onyx, and future Compose templates |
 | `CreateAgentHost` | `POST /control/v1/orgs/{org_id}/agent-hosts` | Apply a template, inline Compose stack, or backward-compatible single image after beta approval |
+| `GetAgentHostConfiguration` | `GET /control/v1/orgs/{org_id}/agent-hosts/{agent_host_id}/configuration` | Read the editable active revision with every secret value redacted |
 | `DeleteAgentHost` | `DELETE /control/v1/orgs/{org_id}/agent-hosts/{agent_host_id}` | Request deletion of an Agent Host stack |
 | `CreateJob` | `POST /control/v1/orgs/{org_id}/jobs` | Apply Batch Job desired state after beta approval |
 
@@ -157,9 +158,10 @@ the route or request message.
 apply operations: reusing an organization, resource type, and name creates a
 new revision on the same resource identity. Agent Host Compose documents may
 reference encrypted variables, but secret values are never returned through
-`ProvisionedResource.spec`. Generic resource reads do not imply a generic
-delete operation; `DeleteAgentHost` is the explicit Agent Host lifecycle
-operation.
+`ProvisionedResource.spec` or the editable configuration response. Updates can
+explicitly preserve an existing encrypted secret without retrieving it. Generic
+resource reads do not imply a generic delete operation; `DeleteAgentHost` is
+the explicit Agent Host lifecycle operation.
 
 ### Object Storage and Hosted Git
 

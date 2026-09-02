@@ -19,7 +19,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Tarka Control API"
     description: "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management."
-    version: "1.6.0"
+    version: "1.7.0"
   }
   host: "tarka.rest"
   schemes: HTTPS
@@ -127,6 +127,13 @@ service ProvisioningService {
   // by Tarka. Template definitions never contain runtime secret values.
   rpc ListAgentHostTemplates(ListAgentHostTemplatesRequest) returns (ListAgentHostTemplatesResponse) {
     option (google.api.http) = {get: "/control/v1/agent-host-templates"};
+  }
+
+  // GetAgentHostConfiguration returns the editable, redacted configuration for
+  // one Agent Host. Secret values are never returned; preserve_existing marks
+  // secret references that may be carried into a later revision.
+  rpc GetAgentHostConfiguration(GetAgentHostConfigurationRequest) returns (AgentHostConfiguration) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/agent-hosts/{agent_host_id}/configuration"};
   }
 
   // DeleteAgentHost requests deletion of an Agent Host and every namespaced
@@ -521,6 +528,10 @@ message CreateAgentHostRequest {
   int32 public_port = 12;
   // tier is the platform capacity profile. Empty selects the beta default.
   string tier = 13;
+  // runtime configures Tarka-managed model access, runtime-specific gateway
+  // files, and the Compose services that receive the managed environment.
+  // It is optional for backward compatibility.
+  AgentHostRuntimeConfiguration runtime = 14;
 }
 
 // AgentHostVariable is one Compose interpolation value. Values marked secret
@@ -530,6 +541,31 @@ message AgentHostVariable {
   string name = 1;
   string value = 2;
   bool secret = 3;
+  // preserve_existing reuses the encrypted value from the active revision.
+  // It is valid only for secret variables during an update and is returned by
+  // GetAgentHostConfiguration when an encrypted value already exists.
+  bool preserve_existing = 4;
+}
+
+// AgentHostRuntimeConfiguration describes Tarka-managed configuration layered
+// onto a Compose stack without exposing the host-bound platform credential.
+message AgentHostRuntimeConfiguration {
+  // primary_model_alias is an active chat model selected from ListModels.
+  string primary_model_alias = 1;
+  // gateways contains the messaging integrations enabled for this revision.
+  repeated AgentHostGatewayConfiguration gateways = 2;
+  // platform_services names Compose services that receive managed runtime
+  // configuration and non-secret TARKA_* discovery environment variables.
+  repeated string platform_services = 3;
+}
+
+// AgentHostGatewayConfiguration contains one runtime-specific messaging
+// integration. config_yaml contains non-secret advanced settings. Credentials
+// are supplied separately through variables and encrypted at rest.
+message AgentHostGatewayConfiguration {
+  string gateway_id = 1;
+  string config_yaml = 2;
+  repeated AgentHostVariable variables = 3;
 }
 
 // ListAgentHostTemplatesRequest has no parameters. Template visibility is
@@ -551,6 +587,11 @@ message AgentHostTemplate {
   repeated AgentHostTemplateVariable variables = 6;
   // tier is the default capacity profile for this template.
   string tier = 7;
+  // runtime_profile contains platform-owned defaults for model routing,
+  // context management, utilities, and managed Compose services.
+  AgentHostRuntimeProfile runtime_profile = 8;
+  // gateways lists integrations understood by this template's runtime adapter.
+  repeated AgentHostGatewayDefinition gateways = 9;
 }
 
 // AgentHostTemplateVariable documents one configurable template value without
@@ -562,6 +603,51 @@ message AgentHostTemplateVariable {
   bool secret = 4;
   bool required = 5;
   string default_value = 6;
+}
+
+// AgentHostRuntimeProfile advertises immutable managed defaults for a template.
+// context and compaction values are enforced by the runtime adapter rather than
+// accepted from untrusted Compose or browser input.
+message AgentHostRuntimeProfile {
+  bool managed_model = 1;
+  string default_model_alias = 2;
+  int64 context_token_limit = 3;
+  int64 compaction_threshold_tokens = 4;
+  repeated string utility_modalities = 5;
+  repeated string platform_services = 6;
+}
+
+// AgentHostGatewayDefinition describes one gateway option rendered by the
+// Console. setup_mode is predeploy or postdeploy_pairing.
+message AgentHostGatewayDefinition {
+  string id = 1;
+  string title = 2;
+  string description = 3;
+  string setup_mode = 4;
+  string default_config_yaml = 5;
+  repeated AgentHostTemplateVariable variables = 6;
+}
+
+// GetAgentHostConfigurationRequest selects one editable Agent Host revision.
+message GetAgentHostConfigurationRequest {
+  string org_id = 1;
+  string agent_host_id = 2;
+}
+
+// AgentHostConfiguration is a redacted editable snapshot of the active
+// revision. Secret variables have empty values and preserve_existing=true.
+message AgentHostConfiguration {
+  string agent_host_id = 1;
+  int32 revision = 2;
+  string name = 3;
+  string template_id = 4;
+  string template_version = 5;
+  string compose_yaml = 6;
+  repeated AgentHostVariable variables = 7;
+  string public_service = 8;
+  int32 public_port = 9;
+  string tier = 10;
+  AgentHostRuntimeConfiguration runtime = 11;
 }
 
 // DeleteAgentHostRequest selects an Agent Host visible to the caller.

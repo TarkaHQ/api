@@ -2,8 +2,8 @@
 
 These files are the public, versioned definitions for Tarka's built-in Agent
 Host templates. They use the standard Compose model plus the `x-tarka`
-extension for public routes, product tier, variable prompts, and persistent
-volume sizes.
+extension for public routes, product tier, variable prompts, persistent volume
+sizes, and template-driven onboarding metadata.
 
 | Template | Tier | Services | Upstream starting point |
 | --- | --- | ---: | --- |
@@ -23,6 +23,12 @@ Every running Agent Host also receives a private platform gateway at
 identity is held only by that gateway and is rejected by Tarka's public API
 surfaces.
 
+Schema version 2 templates declare a managed runtime profile and the messaging
+gateways supported by that exact runtime. The profile selects a live Tarka chat
+model, caps active context at roughly 80K tokens, enables automatic compaction,
+and publishes utility-model modalities. Gateway YAML is non-secret; bot tokens
+and other credentials are supplied as separately encrypted variables.
+
 `catalog.json` is the machine-readable release index. Its SHA-256 checksums
 cover the exact Compose bytes consumed by the infrastructure repository. CI
 rejects mutable image references, metadata/catalog drift, and checksum drift.
@@ -34,3 +40,6 @@ The runtime supports multi-service stacks, public Git builds, named persistent
 volumes, service dependencies, health checks, internal networking, and one or
 more HTTP routes. Host mounts, privileged containers, host namespaces, devices,
 external networks, and Docker socket access are intentionally rejected.
+Custom stacks may opt selected services into the managed Tarka model environment
+without pretending the platform can configure an arbitrary application's own
+gateway or compaction implementation.

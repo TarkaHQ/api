@@ -23,6 +23,24 @@ def scalar(metadata: str, field: str) -> str:
     return match.group(1).strip()
 
 
+def section(metadata: str, field: str) -> str:
+    match = re.search(
+        rf"^  {re.escape(field)}:\s*$\n(?P<body>.*?)(?=^  [a-z][a-z0-9_]*:\s*(?:[^|>].*)?$|\Z)",
+        metadata,
+        re.MULTILINE | re.DOTALL,
+    )
+    if not match:
+        raise ValueError(f"x-tarka.{field} is missing")
+    return match.group("body")
+
+
+def nested_scalar(body: str, field: str) -> str:
+    match = re.search(rf"^    {re.escape(field)}:\s*[\"']?([^\n\"']+)[\"']?\s*$", body, re.MULTILINE)
+    if not match:
+        raise ValueError(f"x-tarka.runtime_profile.{field} is missing")
+    return match.group(1).strip()
+
+
 def service_count(document: str) -> int:
     match = re.search(r"^services:\s*$\n(?P<body>.*?)(?=^[a-z][a-z0-9_-]*:\s*$|\Z)", document, re.MULTILINE | re.DOTALL)
     if not match:
@@ -32,8 +50,8 @@ def service_count(document: str) -> int:
 
 def main() -> None:
     catalog = json.loads(CATALOG.read_text())
-    if catalog.get("schema_version") != 1:
-        raise ValueError("catalog schema_version must be 1")
+    if catalog.get("schema_version") != 2:
+        raise ValueError("catalog schema_version must be 2")
     entries = catalog.get("templates")
     if not isinstance(entries, list) or not entries:
         raise ValueError("catalog templates must be a non-empty list")
@@ -64,6 +82,22 @@ def main() -> None:
         if actual["id"] in ids:
             raise ValueError(f"duplicate template id {actual['id']}")
         ids.add(actual["id"])
+        runtime = section(metadata, "runtime_profile")
+        if nested_scalar(runtime, "managed_model") != "true":
+            raise ValueError(f"{path.name}: managed_model must be true")
+        if nested_scalar(runtime, "default_model_alias") != "qwen3.8-flash-next":
+            raise ValueError(f"{path.name}: default model must be qwen3.8-flash-next")
+        context_limit = int(nested_scalar(runtime, "context_token_limit"))
+        compaction_limit = int(nested_scalar(runtime, "compaction_threshold_tokens"))
+        if context_limit != 81920 or not 50000 <= compaction_limit < context_limit:
+            raise ValueError(f"{path.name}: managed context policy is invalid")
+        gateway_block = section(metadata, "gateways")
+        gateway_ids = re.findall(r"^    - id:\s*([a-z][a-z0-9_-]*)\s*$", gateway_block, re.MULTILINE)
+        if len(gateway_ids) != len(set(gateway_ids)) or not gateway_ids:
+            raise ValueError(f"{path.name}: gateway ids must be non-empty and unique")
+        setup_modes = re.findall(r"^      setup_mode:\s*([a-z_]+)\s*$", gateway_block, re.MULTILINE)
+        if len(setup_modes) != len(gateway_ids) or any(mode not in {"predeploy", "postdeploy_pairing"} for mode in setup_modes):
+            raise ValueError(f"{path.name}: every gateway needs a valid setup_mode")
         images = IMAGE_PATTERN.findall(document)
         if len(images) != actual["service_count"]:
             raise ValueError(f"{path.name}: every service must define exactly one image")
@@ -76,4 +110,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
