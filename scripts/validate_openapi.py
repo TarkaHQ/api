@@ -13,6 +13,16 @@ CONTROL_PATH = ROOT / "openapi" / "tarka-control-v1.swagger.json"
 INFERENCE_PATH = ROOT / "openapi" / "tarka-inference-v1.openapi.json"
 INFERENCE_V2_PATH = ROOT / "openapi" / "tarka-inference-v2.swagger.json"
 INFERENCE_V2_OPENAPI_PATH = ROOT / "openapi" / "tarka-inference-v2.openapi.json"
+HTTP_METHODS = {
+    "get",
+    "put",
+    "post",
+    "delete",
+    "options",
+    "head",
+    "patch",
+    "trace",
+}
 
 
 def load(path: Path) -> dict[str, Any]:
@@ -56,16 +66,7 @@ def operation_ids(document: dict[str, Any], source: Path) -> set[str]:
         if not isinstance(path_item, dict):
             raise ValueError(f"{source}: path item for {route} must be an object")
         for method, operation in path_item.items():
-            if method.lower() not in {
-                "get",
-                "put",
-                "post",
-                "delete",
-                "options",
-                "head",
-                "patch",
-                "trace",
-            }:
+            if method.lower() not in HTTP_METHODS:
                 continue
             if not isinstance(operation, dict):
                 raise ValueError(f"{source}: {method.upper()} {route} must be an object")
@@ -76,6 +77,50 @@ def operation_ids(document: dict[str, Any], source: Path) -> set[str]:
                 raise ValueError(f"{source}: duplicate operationId: {identifier}")
             identifiers.add(identifier)
     return identifiers
+
+
+def has_bearer_requirement(value: Any) -> bool:
+    return (
+        isinstance(value, list)
+        and bool(value)
+        and all(
+            isinstance(requirement, dict)
+            and set(requirement) == {"bearerAuth"}
+            and requirement["bearerAuth"] == []
+            for requirement in value
+        )
+    )
+
+
+def validate_authenticated_tls_surface(
+    document: dict[str, Any], source: Path
+) -> None:
+    if not has_bearer_requirement(document.get("security")):
+        raise ValueError(f"{source}: global bearerAuth requirement is required")
+
+    if document.get("swagger") == "2.0":
+        if document.get("schemes") != ["https"]:
+            raise ValueError(f"{source}: Swagger surface must use HTTPS only")
+    else:
+        servers = document.get("servers")
+        if not isinstance(servers, list) or not servers:
+            raise ValueError(f"{source}: at least one HTTPS server is required")
+        for server in servers:
+            if not isinstance(server, dict) or not str(server.get("url", "")).startswith(
+                "https://"
+            ):
+                raise ValueError(f"{source}: every server must use HTTPS")
+
+    for route, path_item in document.get("paths", {}).items():
+        for method, operation in path_item.items():
+            if method.lower() not in HTTP_METHODS or not isinstance(operation, dict):
+                continue
+            if "security" in operation and not has_bearer_requirement(
+                operation["security"]
+            ):
+                raise ValueError(
+                    f"{source}: {method.upper()} {route} weakens bearer authentication"
+                )
 
 
 def validate_control(document: dict[str, Any]) -> None:
@@ -260,6 +305,7 @@ def main() -> None:
         (INFERENCE_V2_PATH, inference_v2),
         (INFERENCE_V2_OPENAPI_PATH, inference_v2_openapi),
     ):
+        validate_authenticated_tls_surface(document, source)
         operation_ids(document, source)
         walk_references(document, document, source)
     print("validated control and v1/v2 inference OpenAPI contracts")
