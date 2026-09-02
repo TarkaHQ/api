@@ -64,19 +64,6 @@ x-tarka:
         enabled: true
         dmPolicy: pairing
         groupPolicy: allowlist
-    - id: signal
-      title: Signal
-      description: Dedicated Signal bot number through the managed Signal bridge.
-      setup_mode: postdeploy_pairing
-      default_config_yaml: |
-        enabled: true
-        dmPolicy: pairing
-        groupPolicy: allowlist
-      variables:
-        - name: SIGNAL_ACCOUNT
-          label: Bot phone number
-          description: Dedicated Signal number in E.164 format.
-          required: true
   volume_sizes:
     openclaw-data: 20Gi
     browser-data: 5Gi

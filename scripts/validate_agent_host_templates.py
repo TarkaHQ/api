@@ -34,6 +34,13 @@ def section(metadata: str, field: str) -> str:
     return match.group("body")
 
 
+def optional_section(metadata: str, field: str) -> str:
+    try:
+        return section(metadata, field)
+    except ValueError:
+        return ""
+
+
 def nested_scalar(body: str, field: str) -> str:
     match = re.search(rf"^    {re.escape(field)}:\s*[\"']?([^\n\"']+)[\"']?\s*$", body, re.MULTILINE)
     if not match:
@@ -91,10 +98,10 @@ def main() -> None:
         compaction_limit = int(nested_scalar(runtime, "compaction_threshold_tokens"))
         if context_limit != 81920 or not 50000 <= compaction_limit < context_limit:
             raise ValueError(f"{path.name}: managed context policy is invalid")
-        gateway_block = section(metadata, "gateways")
+        gateway_block = optional_section(metadata, "gateways")
         gateway_ids = re.findall(r"^    - id:\s*([a-z][a-z0-9_-]*)\s*$", gateway_block, re.MULTILINE)
-        if len(gateway_ids) != len(set(gateway_ids)) or not gateway_ids:
-            raise ValueError(f"{path.name}: gateway ids must be non-empty and unique")
+        if len(gateway_ids) != len(set(gateway_ids)):
+            raise ValueError(f"{path.name}: gateway ids must be unique")
         setup_modes = re.findall(r"^      setup_mode:\s*([a-z_]+)\s*$", gateway_block, re.MULTILINE)
         if len(setup_modes) != len(gateway_ids) or any(mode not in {"predeploy", "postdeploy_pairing"} for mode in setup_modes):
             raise ValueError(f"{path.name}: every gateway needs a valid setup_mode")

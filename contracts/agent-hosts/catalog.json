@@ -15,7 +15,7 @@
       "tier": "pro",
       "service_count": 9,
       "file": "onyx.compose.yaml",
-      "sha256": "cfe5662eb249f3cb9eba49768445fbb29a101f8fe4dcf54de76c6b3fa596e79e"
+	  "sha256": "ff2debc58462a562c8294acbfd4a37e8da3c463064e01b8bd57a325e8ba18b5c"
     },
     {
       "id": "openclaw",
@@ -23,7 +23,7 @@
       "tier": "core",
       "service_count": 2,
       "file": "openclaw.compose.yaml",
-      "sha256": "40211aff7bbf3fb5713cc18f5e956dace9f75a8a224ae99be8cf911c9296de2d"
+	  "sha256": "6b33822f21182258579310ff51d5a86fa5d6e70464a9db8de6d88d1336209dd3"
     }
   ]
 }
