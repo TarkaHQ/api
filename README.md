@@ -149,6 +149,7 @@ the route or request message.
 | `GetProvisionedResource` | `GET /control/v1/orgs/{org_id}/resources/{resource_id}` | Read one desired-state resource and status detail |
 | `CreateInferenceService` | `POST /control/v1/orgs/{org_id}/inference-services` | Apply managed inference desired state |
 | `ListAgentHostTemplates` | `GET /control/v1/agent-host-templates` | List versioned OpenClaw, Hermes, Onyx, and future Compose templates |
+| `GetAgentHostGatewayPairing` | `GET /control/v1/orgs/{org_id}/agent-hosts/{agent_host_id}/gateways/{gateway_id}/pairing` | Create a short-lived post-deploy gateway pairing artifact without exposing its private runtime |
 | `CreateAgentHost` | `POST /control/v1/orgs/{org_id}/agent-hosts` | Apply a template, inline Compose stack, or backward-compatible single image after beta approval |
 | `GetAgentHostConfiguration` | `GET /control/v1/orgs/{org_id}/agent-hosts/{agent_host_id}/configuration` | Read the editable active revision with every secret value redacted |
 | `DeleteAgentHost` | `DELETE /control/v1/orgs/{org_id}/agent-hosts/{agent_host_id}` | Request deletion of an Agent Host stack |
