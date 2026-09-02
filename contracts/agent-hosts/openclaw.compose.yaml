@@ -34,7 +34,9 @@ x-tarka:
       setup_mode: predeploy
       default_config_yaml: |
         enabled: true
-        dmPolicy: pairing
+        dm:
+          enabled: true
+          policy: pairing
         groupPolicy: allowlist
       variables:
         - name: TELEGRAM_BOT_TOKEN
@@ -61,7 +63,6 @@ x-tarka:
       description: Linked WhatsApp device configured after the host is ready.
       setup_mode: postdeploy_pairing
       default_config_yaml: |
-        enabled: true
         dmPolicy: pairing
         groupPolicy: allowlist
   volume_sizes:
