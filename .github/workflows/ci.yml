@@ -44,3 +44,5 @@ jobs:
         run: python3 scripts/validate_openapi.py
       - name: Validate Agent Host Compose contracts
         run: python3 scripts/validate_agent_host_templates.py
+      - name: Test contract security invariants
+        run: python3 -m unittest discover -s scripts -p 'test_*.py'

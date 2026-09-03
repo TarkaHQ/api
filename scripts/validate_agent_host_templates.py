@@ -14,6 +14,47 @@ CONTRACTS = ROOT / "contracts" / "agent-hosts"
 CATALOG = CONTRACTS / "catalog.json"
 IMAGE_PATTERN = re.compile(r"^\s+image:\s*[\"']?([^\s\"']+)", re.MULTILINE)
 DIGEST_PATTERN = re.compile(r"^[^@$\s]+@sha256:[0-9a-f]{64}$")
+ALLOWED_TOP_LEVEL_KEYS = {"x-tarka", "services", "volumes"}
+DISALLOWED_SERVICE_KEYS = {
+    "build",
+    "cap_add",
+    "cgroup",
+    "cgroup_parent",
+    "configs",
+    "credential_spec",
+    "device_cgroup_rules",
+    "devices",
+    "dns",
+    "dns_opt",
+    "dns_search",
+    "env_file",
+    "extends",
+    "extra_hosts",
+    "external_links",
+    "ipc",
+    "labels",
+    "links",
+    "logging",
+    "network_mode",
+    "networks",
+    "pid",
+    "ports",
+    "privileged",
+    "runtime",
+    "secrets",
+    "security_opt",
+    "sysctls",
+    "ulimits",
+    "userns_mode",
+    "uts",
+    "volumes_from",
+}
+SENSITIVE_ENVIRONMENT_NAME = re.compile(
+    r"(?:PASSWORD|PASSWD|SECRET|TOKEN|API_?KEY|ACCESS_?KEY|PRIVATE_?KEY)",
+    re.IGNORECASE,
+)
+INTERPOLATION_PATTERN = re.compile(r"\$\{([A-Z][A-Z0-9_]*)[^}]*}")
+NAMED_VOLUME_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
 
 
 def scalar(metadata: str, field: str) -> str:
@@ -48,11 +89,135 @@ def nested_scalar(body: str, field: str) -> str:
     return match.group(1).strip()
 
 
-def service_count(document: str) -> int:
+def service_body(document: str) -> str:
     match = re.search(r"^services:\s*$\n(?P<body>.*?)(?=^[a-z][a-z0-9_-]*:\s*$|\Z)", document, re.MULTILINE | re.DOTALL)
     if not match:
         raise ValueError("top-level services is missing")
-    return len(re.findall(r"^  [a-z0-9](?:[a-z0-9-]*[a-z0-9])?:\s*$", match.group("body"), re.MULTILINE))
+    return match.group("body")
+
+
+def service_count(document: str) -> int:
+    return len(re.findall(r"^  [a-z0-9](?:[a-z0-9-]*[a-z0-9])?:\s*$", service_body(document), re.MULTILINE))
+
+
+def declared_variables(metadata: str) -> set[str]:
+    return set(
+        re.findall(
+            r"^\s+- name:\s*([A-Z][A-Z0-9_]*)\s*$",
+            metadata,
+            re.MULTILINE,
+        )
+    )
+
+
+def validate_short_volume(entry: str, source: Path) -> str | None:
+    entry = entry.strip().strip("\"'")
+    if entry.startswith("/") and ":" not in entry:
+        return None
+    parts = entry.split(":")
+    if len(parts) not in {2, 3}:
+        raise ValueError(f"{source.name}: unsupported volume entry {entry!r}")
+    volume, target = parts[:2]
+    if not NAMED_VOLUME_PATTERN.fullmatch(volume):
+        raise ValueError(f"{source.name}: host bind mounts are forbidden: {entry!r}")
+    if not target.startswith("/") or ".." in target.split("/"):
+        raise ValueError(f"{source.name}: invalid volume target {target!r}")
+    if len(parts) == 3 and parts[2] not in {"ro", "rw"}:
+        raise ValueError(f"{source.name}: unsupported volume mode {parts[2]!r}")
+    return volume
+
+
+def validate_compose_security(document: str, metadata: str, source: Path) -> None:
+    top_level_keys = re.findall(
+        r"^([A-Za-z][A-Za-z0-9_-]*):(?:\s.*)?$", document, re.MULTILINE
+    )
+    duplicates = sorted(
+        key for key in set(top_level_keys) if top_level_keys.count(key) > 1
+    )
+    if duplicates:
+        raise ValueError(f"{source.name}: duplicate top-level keys: {duplicates}")
+    unexpected = sorted(set(top_level_keys) - ALLOWED_TOP_LEVEL_KEYS)
+    if unexpected:
+        raise ValueError(f"{source.name}: forbidden top-level keys: {unexpected}")
+
+    services = service_body(document)
+    if re.search(r"^\s*<<:\s*", services, re.MULTILINE):
+        raise ValueError(f"{source.name}: YAML merge keys are forbidden")
+    if re.search(r"^\s*[\"'][A-Za-z][A-Za-z0-9_-]*[\"']\s*:", services, re.MULTILINE):
+        raise ValueError(f"{source.name}: quoted Compose keys are forbidden")
+
+    for line in services.splitlines():
+        key_match = re.match(r"^\s*(?:-\s+)?([a-z][a-z0-9_-]*):", line)
+        if key_match and key_match.group(1) in DISALLOWED_SERVICE_KEYS:
+            raise ValueError(
+                f"{source.name}: service key {key_match.group(1)!r} is forbidden"
+            )
+
+        environment_match = re.match(
+            r"^\s+([A-Z][A-Z0-9_]*):\s*(.*?)\s*$", line
+        )
+        if (
+            environment_match
+            and SENSITIVE_ENVIRONMENT_NAME.search(environment_match.group(1))
+            and not re.fullmatch(
+                r"\$\{[A-Z][A-Z0-9_]*}", environment_match.group(2)
+            )
+        ):
+            raise ValueError(
+                f"{source.name}: sensitive environment variable "
+                f"{environment_match.group(1)!r} must use a declared variable"
+            )
+
+    declared = declared_variables(metadata)
+    referenced = set(INTERPOLATION_PATTERN.findall(services))
+    undeclared = sorted(referenced - declared)
+    if undeclared:
+        raise ValueError(
+            f"{source.name}: undeclared Compose variables referenced: {undeclared}"
+        )
+
+    lines = services.splitlines()
+    volume_indent: int | None = None
+    referenced_volumes: set[str] = set()
+    for line in lines:
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        indent = len(line) - len(line.lstrip())
+        if volume_indent is not None and indent <= volume_indent:
+            volume_indent = None
+        if re.fullmatch(r"volumes:\s*", stripped):
+            volume_indent = indent
+            continue
+        if volume_indent is not None and stripped.startswith("- "):
+            entry = stripped[2:].strip()
+            if re.match(r"(?:type|source|target):", entry):
+                raise ValueError(
+                    f"{source.name}: long-form volumes are forbidden"
+                )
+            volume = validate_short_volume(entry, source)
+            if volume:
+                referenced_volumes.add(volume)
+
+    volume_section = re.search(
+        r"^volumes:\s*$\n(?P<body>.*)\Z", document, re.MULTILINE | re.DOTALL
+    )
+    declared_volumes: set[str] = set()
+    if volume_section:
+        for line in volume_section.group("body").splitlines():
+            if not line.strip() or line.lstrip().startswith("#"):
+                continue
+            match = re.fullmatch(r"  ([A-Za-z0-9][A-Za-z0-9_.-]*):\s*", line)
+            if not match:
+                raise ValueError(
+                    f"{source.name}: named volumes must be empty, internal declarations"
+                )
+            declared_volumes.add(match.group(1))
+    undeclared_volumes = sorted(referenced_volumes - declared_volumes)
+    if undeclared_volumes:
+        raise ValueError(
+            f"{source.name}: undeclared named volumes: {undeclared_volumes}"
+        )
 
 
 def main() -> None:
@@ -89,6 +254,7 @@ def main() -> None:
         if actual["id"] in ids:
             raise ValueError(f"duplicate template id {actual['id']}")
         ids.add(actual["id"])
+        validate_compose_security(document, metadata, path)
         runtime = section(metadata, "runtime_profile")
         if nested_scalar(runtime, "managed_model") != "true":
             raise ValueError(f"{path.name}: managed_model must be true")
