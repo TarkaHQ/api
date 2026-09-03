@@ -23,6 +23,8 @@ HTTP_METHODS = {
     "patch",
     "trace",
 }
+PUBLIC_API_HOST = "tarka.rest"
+PUBLIC_API_ORIGIN = f"https://{PUBLIC_API_HOST}"
 
 
 def load(path: Path) -> dict[str, Any]:
@@ -132,15 +134,21 @@ def validate_authenticated_tls_surface(
     if document.get("swagger") == "2.0":
         if document.get("schemes") != ["https"]:
             raise ValueError(f"{source}: Swagger surface must use HTTPS only")
+        if document.get("host") != PUBLIC_API_HOST:
+            raise ValueError(
+                f"{source}: Swagger host must be {PUBLIC_API_HOST}"
+            )
     else:
         servers = document.get("servers")
-        if not isinstance(servers, list) or not servers:
-            raise ValueError(f"{source}: at least one HTTPS server is required")
-        for server in servers:
-            if not isinstance(server, dict) or not str(server.get("url", "")).startswith(
-                "https://"
-            ):
-                raise ValueError(f"{source}: every server must use HTTPS")
+        if (
+            not isinstance(servers, list)
+            or len(servers) != 1
+            or not isinstance(servers[0], dict)
+            or servers[0].get("url") != PUBLIC_API_ORIGIN
+        ):
+            raise ValueError(
+                f"{source}: server must be exactly {PUBLIC_API_ORIGIN}"
+            )
 
     for route, path_item in document.get("paths", {}).items():
         for method, operation in path_item.items():

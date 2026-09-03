@@ -20,6 +20,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
     title: "Tarka Inference API"
     version: "2.0"
   }
+  host: "tarka.rest"
   schemes: HTTPS
   consumes: "application/json"
   produces: "application/json"

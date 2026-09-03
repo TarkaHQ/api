@@ -10,6 +10,7 @@
       "description": "InferenceService exposes OpenAI-compatible inference and Tarka utility RPCs.\nREST /v1 is the canonical compatibility surface. REST /v2 bindings remain as\ndeprecated migration aliases; the native gRPC package stays versioned as v2."
     }
   ],
+  "host": "tarka.rest",
   "schemes": [
     "https"
   ],
