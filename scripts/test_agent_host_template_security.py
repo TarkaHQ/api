@@ -61,6 +61,13 @@ class AgentHostTemplateSecurityTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "service key 'privileged' is forbidden"):
             self.validate(SAFE.replace("    environment:", "    privileged: true\n    environment:"))
 
+    def test_whitespace_before_forbidden_key_colon_is_rejected(self) -> None:
+        document = SAFE.replace(
+            "    environment:", "    privileged : true\n    environment:"
+        )
+        with self.assertRaisesRegex(ValueError, "service key 'privileged' is forbidden"):
+            self.validate(document)
+
     def test_undeclared_interpolation_is_rejected(self) -> None:
         with self.assertRaisesRegex(ValueError, "undeclared Compose variables"):
             self.validate(SAFE.replace("${APP_PASSWORD}", "${UNDECLARED_TOKEN}"))
@@ -68,6 +75,40 @@ class AgentHostTemplateSecurityTests(unittest.TestCase):
     def test_literal_secret_is_rejected(self) -> None:
         with self.assertRaisesRegex(ValueError, "sensitive environment variable"):
             self.validate(SAFE.replace("${APP_PASSWORD}", "hard-coded"))
+
+    def test_list_style_literal_secret_is_rejected(self) -> None:
+        document = SAFE.replace(
+            "      APP_PASSWORD: ${APP_PASSWORD}",
+            '      - "APP_PASSWORD=hard-coded"',
+        )
+        with self.assertRaisesRegex(ValueError, "must use mapping syntax"):
+            self.validate(document)
+
+    def test_flow_style_literal_secret_is_rejected(self) -> None:
+        document = SAFE.replace(
+            "    environment:\n      APP_PASSWORD: ${APP_PASSWORD}",
+            "    environment: {APP_PASSWORD: hard-coded}",
+        )
+        with self.assertRaisesRegex(ValueError, "block mapping syntax"):
+            self.validate(document)
+
+    def test_explicit_yaml_key_is_rejected(self) -> None:
+        document = SAFE.replace(
+            "    environment:", "    ? privileged\n    : true\n    environment:"
+        )
+        with self.assertRaisesRegex(ValueError, "explicit YAML keys"):
+            self.validate(document)
+
+    def test_environment_alias_is_rejected(self) -> None:
+        document = SAFE.replace(
+            "  id: test",
+            "  id: test\n  hidden_environment: &hidden_environment\n    APP_PASSWORD: hard-coded",
+        ).replace(
+            "    environment:\n      APP_PASSWORD: ${APP_PASSWORD}",
+            "    environment: *hidden_environment",
+        )
+        with self.assertRaisesRegex(ValueError, "tags, anchors, and aliases"):
+            self.validate(document)
 
     def test_unknown_top_level_section_is_rejected(self) -> None:
         with self.assertRaisesRegex(ValueError, "forbidden top-level keys"):

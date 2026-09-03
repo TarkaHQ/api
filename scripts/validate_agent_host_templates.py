@@ -145,12 +145,48 @@ def validate_compose_security(document: str, metadata: str, source: Path) -> Non
         raise ValueError(f"{source.name}: YAML merge keys are forbidden")
     if re.search(r"^\s*[\"'][A-Za-z][A-Za-z0-9_-]*[\"']\s*:", services, re.MULTILINE):
         raise ValueError(f"{source.name}: quoted Compose keys are forbidden")
+    if re.search(
+        r"^\s*(?:[^#\n]+:\s*|-\s+)[!&*][A-Za-z0-9_.-]+",
+        document,
+        re.MULTILINE,
+    ):
+        raise ValueError(
+            f"{source.name}: YAML tags, anchors, and aliases are forbidden"
+        )
 
     for line in services.splitlines():
-        key_match = re.match(r"^\s*(?:-\s+)?([a-z][a-z0-9_-]*):", line)
+        if re.match(r"^\s*\?\s+", line):
+            raise ValueError(
+                f"{source.name}: explicit YAML keys are forbidden"
+            )
+
+        key_match = re.match(
+            r"^\s*(?:-\s+)?([a-z][a-z0-9_-]*)[ \t]*:", line
+        )
         if key_match and key_match.group(1) in DISALLOWED_SERVICE_KEYS:
             raise ValueError(
                 f"{source.name}: service key {key_match.group(1)!r} is forbidden"
+            )
+
+        list_environment_match = re.match(
+            r"^\s*-\s*[\"']?([A-Z][A-Z0-9_]*)", line
+        )
+        if (
+            list_environment_match
+            and SENSITIVE_ENVIRONMENT_NAME.search(list_environment_match.group(1))
+        ):
+            raise ValueError(
+                f"{source.name}: sensitive environment variables must use mapping syntax"
+            )
+
+        flow_environment_match = re.match(
+            r"^\s*environment:\s*[\[{](.*)[\]}]\s*$", line
+        )
+        if flow_environment_match and SENSITIVE_ENVIRONMENT_NAME.search(
+            flow_environment_match.group(1)
+        ):
+            raise ValueError(
+                f"{source.name}: sensitive environment variables must use block mapping syntax"
             )
 
         environment_match = re.match(
