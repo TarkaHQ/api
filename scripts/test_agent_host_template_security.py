@@ -20,6 +20,13 @@ METADATA = """  id: test
     - name: APP_PASSWORD
       secret: true
 """
+OPENCLAW_ROUTE_METADATA = """  routes:
+    - service: openclaw
+      port: 8080
+      path: /
+  variables:
+    - name: APP_PASSWORD
+"""
 SAFE = """x-tarka:
   id: test
 services:
@@ -132,6 +139,27 @@ class AgentHostTemplateSecurityTests(unittest.TestCase):
         )
         with self.assertRaisesRegex(ValueError, "quoted Compose keys"):
             self.validate(document)
+
+    def test_reviewed_public_route_is_allowed(self) -> None:
+        VALIDATOR.validate_public_route(
+            "openclaw", OPENCLAW_ROUTE_METADATA, Path("openclaw.compose.yaml")
+        )
+
+    def test_internal_service_route_is_rejected(self) -> None:
+        metadata = OPENCLAW_ROUTE_METADATA.replace(
+            "service: openclaw", "service: browser"
+        ).replace("port: 8080", "port: 9223")
+
+        with self.assertRaisesRegex(ValueError, "reviewed template boundary"):
+            VALIDATOR.validate_public_route(
+                "openclaw", metadata, Path("openclaw.compose.yaml")
+            )
+
+    def test_unreviewed_template_route_is_rejected(self) -> None:
+        with self.assertRaisesRegex(ValueError, "explicitly reviewed public route"):
+            VALIDATOR.validate_public_route(
+                "new-template", OPENCLAW_ROUTE_METADATA, Path("new.compose.yaml")
+            )
 
 
 if __name__ == "__main__":

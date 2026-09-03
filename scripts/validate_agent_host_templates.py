@@ -55,6 +55,11 @@ SENSITIVE_ENVIRONMENT_NAME = re.compile(
 )
 INTERPOLATION_PATTERN = re.compile(r"\$\{([A-Z][A-Z0-9_]*)[^}]*}")
 NAMED_VOLUME_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
+EXPECTED_PUBLIC_ROUTES = {
+    "openclaw": ("openclaw", 8080, "/"),
+    "hermes": ("hermes-webui", 8787, "/"),
+    "onyx": ("web-server", 3000, "/"),
+}
 
 
 def scalar(metadata: str, field: str) -> str:
@@ -256,6 +261,31 @@ def validate_compose_security(document: str, metadata: str, source: Path) -> Non
         )
 
 
+def validate_public_route(template_id: str, metadata: str, source: Path) -> None:
+    """Allow only the reviewed public frontend for each built-in template."""
+
+    expected = EXPECTED_PUBLIC_ROUTES.get(template_id)
+    if expected is None:
+        raise ValueError(
+            f"{source.name}: template needs an explicitly reviewed public route"
+        )
+    service, port, path = expected
+    expected_lines = (
+        f"- service: {service}",
+        f"port: {port}",
+        f"path: {path}",
+    )
+    actual_lines = tuple(
+        line.strip()
+        for line in section(metadata, "routes").splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
+    )
+    if actual_lines != expected_lines:
+        raise ValueError(
+            f"{source.name}: public route differs from the reviewed template boundary"
+        )
+
+
 def validate_onyx_authentication_boundary(
     document: str, metadata: str, source: Path
 ) -> None:
@@ -341,6 +371,7 @@ def main() -> None:
         if actual["id"] in ids:
             raise ValueError(f"duplicate template id {actual['id']}")
         ids.add(actual["id"])
+        validate_public_route(actual["id"], metadata, path)
         validate_compose_security(document, metadata, path)
         if actual["id"] == "onyx":
             validate_onyx_authentication_boundary(document, metadata, path)
