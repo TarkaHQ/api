@@ -9,42 +9,26 @@ from pathlib import Path, PurePosixPath
 
 
 ROOT = Path(__file__).resolve().parents[1]
-FORBIDDEN_ROOTS = {
-    "cmd",
-    "deploy",
-    "deployment",
-    "gen",
-    "infrastructure",
-    "internal",
-    "k8s",
-    "runtime",
-    "services",
+ALLOWED_ROOT_FILES = {
+    ".editorconfig",
+    ".gitignore",
+    "CONTRIBUTING.md",
+    "LICENSE",
+    "Makefile",
+    "README.md",
+    "SECURITY.md",
+    "VERSIONING.md",
+    "buf.gen.yaml",
+    "buf.lock",
+    "buf.yaml",
 }
-FORBIDDEN_NAMES = {
-    "Dockerfile",
-    "docker-compose.yml",
-    "go.mod",
-    "go.sum",
-    "package-lock.json",
-    "package.json",
-    "pyproject.toml",
-    "requirements.txt",
+ALLOWED_DIRECTORY_SUFFIXES = {
+    "contracts": {".json", ".md", ".yaml"},
+    "openapi": {".json"},
+    "proto": {".proto"},
+    "scripts": {".py"},
 }
-IMPLEMENTATION_SUFFIXES = {
-    ".c",
-    ".cc",
-    ".cpp",
-    ".cs",
-    ".go",
-    ".java",
-    ".js",
-    ".kt",
-    ".php",
-    ".rb",
-    ".rs",
-    ".swift",
-    ".ts",
-}
+SAFE_PATH_COMPONENT = re.compile(r"^[A-Za-z0-9._-]+$")
 REQUIRED_PINNED_IMAGES = {"BUF_IMAGE", "OPENAPI_VALIDATOR_IMAGE"}
 MAKE_ASSIGNMENT = re.compile(r"^([A-Z][A-Z0-9_]*)\s*:?=\s*(\S+)\s*$")
 SECRET_PATTERNS = {
@@ -88,19 +72,41 @@ def secret_findings(name: str, content: bytes) -> list[str]:
     return findings
 
 
+def contract_path_allowed(name: str) -> bool:
+    path = PurePosixPath(name)
+    if not path.parts or any(
+        part in {"", ".", ".."} or not SAFE_PATH_COMPONENT.fullmatch(part)
+        for part in path.parts
+    ):
+        return False
+    if len(path.parts) == 1:
+        return name in ALLOWED_ROOT_FILES
+    if path.parts[0] == ".github":
+        if name == ".github/CODEOWNERS":
+            return True
+        return path.suffix in {".md", ".yaml", ".yml"}
+    return path.suffix in ALLOWED_DIRECTORY_SUFFIXES.get(path.parts[0], set())
+
+
 def main() -> None:
     violations: list[str] = []
     for mode, name in tracked_entries():
-        path = PurePosixPath(name)
-        if mode == "160000":
-            violations.append(f"repository dependency is not a contract file: {name}")
-        if path.parts[0] in FORBIDDEN_ROOTS:
-            violations.append(f"forbidden implementation/generated directory: {name}")
-        if path.name in FORBIDDEN_NAMES:
-            violations.append(f"forbidden implementation dependency file: {name}")
-        if path.suffix in IMPLEMENTATION_SUFFIXES:
-            violations.append(f"forbidden generated/implementation source: {name}")
-        violations.extend(secret_findings(name, (ROOT / name).read_bytes()))
+        if mode != "100644":
+            violations.append(f"non-regular or executable tracked file: {name}")
+            continue
+        if not contract_path_allowed(name):
+            violations.append(f"file is outside the public contract allowlist: {name}")
+            continue
+        content = (ROOT / name).read_bytes()
+        try:
+            content.decode("utf-8")
+        except UnicodeDecodeError:
+            violations.append(f"tracked contract file is not UTF-8 text: {name}")
+            continue
+        if b"\0" in content:
+            violations.append(f"tracked contract file contains binary data: {name}")
+            continue
+        violations.extend(secret_findings(name, content))
 
     image_assignments: dict[str, str] = {}
     for line in (ROOT / "Makefile").read_text(encoding="utf-8").splitlines():

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from check_public_boundary import secret_findings
+from check_public_boundary import contract_path_allowed, secret_findings
 
 
 class PublicBoundarySecretTests(unittest.TestCase):
@@ -32,6 +32,18 @@ class PublicBoundarySecretTests(unittest.TestCase):
         credential = "".join(("cfat_", "B" * 48)).encode()
 
         self.assertEqual(secret_findings("asset.bin", b"\x00" + credential), [])
+
+    def test_allows_only_public_contract_file_types(self) -> None:
+        self.assertTrue(contract_path_allowed("proto/tarka/inference/v2/api.proto"))
+        self.assertTrue(contract_path_allowed("contracts/agent-hosts/catalog.json"))
+        self.assertTrue(contract_path_allowed("scripts/validate_openapi.py"))
+        self.assertFalse(contract_path_allowed("runtime/server.mjs"))
+        self.assertFalse(contract_path_allowed("scripts/bootstrap.sh"))
+        self.assertFalse(contract_path_allowed("contracts/runtime.wasm"))
+
+    def test_rejects_unsafe_path_components(self) -> None:
+        self.assertFalse(contract_path_allowed("contracts/bad\nname.json"))
+        self.assertFalse(contract_path_allowed("contracts/path with space/spec.json"))
 
 
 if __name__ == "__main__":
