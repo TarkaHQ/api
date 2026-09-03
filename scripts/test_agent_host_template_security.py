@@ -49,6 +49,33 @@ class AgentHostTemplateSecurityTests(unittest.TestCase):
     def test_safe_named_volume_and_declared_secret_are_allowed(self) -> None:
         self.validate(SAFE)
 
+    def test_sensitive_variable_must_be_marked_secret(self) -> None:
+        metadata = METADATA.replace("      secret: true\n", "")
+
+        with self.assertRaisesRegex(ValueError, "must declare secret: true"):
+            VALIDATOR.validate_compose_security(
+                SAFE, metadata, Path("test.yaml")
+            )
+
+    def test_duplicate_variable_declaration_is_rejected(self) -> None:
+        metadata = METADATA + "    - name: APP_PASSWORD\n      secret: true\n"
+
+        with self.assertRaisesRegex(ValueError, "duplicate variable declaration"):
+            VALIDATOR.validate_compose_security(
+                SAFE, metadata, Path("test.yaml")
+            )
+
+    def test_nested_secret_flag_cannot_mark_variable_secret(self) -> None:
+        metadata = METADATA.replace(
+            "      secret: true",
+            "      metadata:\n        secret: true",
+        )
+
+        with self.assertRaisesRegex(ValueError, "must declare secret: true"):
+            VALIDATOR.validate_compose_security(
+                SAFE, metadata, Path("test.yaml")
+            )
+
     def test_host_bind_mount_is_rejected(self) -> None:
         with self.assertRaisesRegex(ValueError, "host bind mounts"):
             self.validate(SAFE.replace("app-data:/data", "/etc:/host"))

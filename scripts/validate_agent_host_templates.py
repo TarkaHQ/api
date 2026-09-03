@@ -115,6 +115,48 @@ def declared_variables(metadata: str) -> set[str]:
     )
 
 
+def validate_variable_security(metadata: str, source: Path) -> None:
+    """Require an unambiguous secret declaration for password-like inputs."""
+
+    lines = metadata.splitlines()
+    definitions: dict[str, dict[str, str]] = {}
+    for index, line in enumerate(lines):
+        match = re.match(r"^(?P<indent>\s*)- name:\s*(?P<name>[A-Z][A-Z0-9_]*)\s*$", line)
+        if not match:
+            continue
+        name = match.group("name")
+        if name in definitions:
+            raise ValueError(f"{source.name}: duplicate variable declaration {name!r}")
+        indent = len(match.group("indent"))
+        attributes: dict[str, str] = {}
+        for child in lines[index + 1 :]:
+            if not child.strip():
+                continue
+            child_indent = len(child) - len(child.lstrip())
+            if child_indent <= indent:
+                break
+            if child_indent != indent + 2:
+                continue
+            attribute = re.match(
+                r"^\s+([a-z][a-z0-9_]*):\s*[\"']?([^\n\"']+)[\"']?\s*$",
+                child,
+            )
+            if attribute:
+                key = attribute.group(1)
+                if key in attributes:
+                    raise ValueError(
+                        f"{source.name}: duplicate attribute {key!r} for variable {name!r}"
+                    )
+                attributes[key] = attribute.group(2).strip()
+        definitions[name] = attributes
+
+    for name, attributes in definitions.items():
+        if SENSITIVE_ENVIRONMENT_NAME.search(name) and attributes.get("secret") != "true":
+            raise ValueError(
+                f"{source.name}: sensitive variable {name!r} must declare secret: true"
+            )
+
+
 def validate_short_volume(entry: str, source: Path) -> str | None:
     entry = entry.strip().strip("\"'")
     if entry.startswith("/") and ":" not in entry:
@@ -133,6 +175,7 @@ def validate_short_volume(entry: str, source: Path) -> str | None:
 
 
 def validate_compose_security(document: str, metadata: str, source: Path) -> None:
+    validate_variable_security(metadata, source)
     top_level_keys = re.findall(
         r"^([A-Za-z][A-Za-z0-9_-]*):(?:\s.*)?$", document, re.MULTILINE
     )
