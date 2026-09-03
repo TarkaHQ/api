@@ -65,6 +65,35 @@ class AgentHostTemplateSecurityTests(unittest.TestCase):
                 SAFE, metadata, Path("test.yaml")
             )
 
+    def test_duplicate_routes_metadata_is_rejected(self) -> None:
+        metadata = (
+            OPENCLAW_ROUTE_METADATA.replace(
+                "  variables:",
+                "  routes:\n    - service: browser\n      port: 9223\n      path: /\n  variables:",
+            )
+        )
+
+        with self.assertRaisesRegex(ValueError, "duplicate x-tarka keys"):
+            VALIDATOR.validate_compose_security(
+                SAFE, metadata, Path("openclaw.compose.yaml")
+            )
+
+    def test_quoted_metadata_key_is_rejected(self) -> None:
+        metadata = METADATA.replace("  variables:", '  "variables":')
+
+        with self.assertRaisesRegex(ValueError, "quoted x-tarka keys"):
+            VALIDATOR.validate_compose_security(
+                SAFE, metadata, Path("test.yaml")
+            )
+
+    def test_whitespace_before_metadata_key_colon_is_rejected(self) -> None:
+        metadata = METADATA.replace("  variables:", "  variables :")
+
+        with self.assertRaisesRegex(ValueError, "whitespace before"):
+            VALIDATOR.validate_compose_security(
+                SAFE, metadata, Path("test.yaml")
+            )
+
     def test_nested_secret_flag_cannot_mark_variable_secret(self) -> None:
         metadata = METADATA.replace(
             "      secret: true",

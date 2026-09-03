@@ -15,6 +15,18 @@ CATALOG = CONTRACTS / "catalog.json"
 IMAGE_PATTERN = re.compile(r"^\s+image:\s*[\"']?([^\s\"']+)", re.MULTILINE)
 DIGEST_PATTERN = re.compile(r"^[^@$\s]+@sha256:[0-9a-f]{64}$")
 ALLOWED_TOP_LEVEL_KEYS = {"x-tarka", "services", "volumes"}
+ALLOWED_METADATA_KEYS = {
+    "description",
+    "gateways",
+    "id",
+    "routes",
+    "runtime_profile",
+    "tier",
+    "title",
+    "variables",
+    "version",
+    "volume_sizes",
+}
 DISALLOWED_SERVICE_KEYS = {
     "build",
     "cap_add",
@@ -115,6 +127,33 @@ def declared_variables(metadata: str) -> set[str]:
     )
 
 
+def validate_metadata_security(metadata: str, source: Path) -> None:
+    """Keep security-sensitive x-tarka fields canonical and unambiguous."""
+
+    if re.search(
+        r"^\s*[\"'][A-Za-z][A-Za-z0-9_-]*[\"']\s*:",
+        metadata,
+        re.MULTILINE,
+    ):
+        raise ValueError(f"{source.name}: quoted x-tarka keys are forbidden")
+    if re.search(
+        r"^\s*[A-Za-z][A-Za-z0-9_-]*[ \t]+:", metadata, re.MULTILINE
+    ):
+        raise ValueError(
+            f"{source.name}: whitespace before x-tarka key colons is forbidden"
+        )
+    if re.search(r"^\s*\?\s+", metadata, re.MULTILINE):
+        raise ValueError(f"{source.name}: explicit x-tarka keys are forbidden")
+
+    keys = re.findall(r"^  ([a-z][a-z0-9_]*):", metadata, re.MULTILINE)
+    duplicates = sorted(key for key in set(keys) if keys.count(key) > 1)
+    if duplicates:
+        raise ValueError(f"{source.name}: duplicate x-tarka keys: {duplicates}")
+    unexpected = sorted(set(keys) - ALLOWED_METADATA_KEYS)
+    if unexpected:
+        raise ValueError(f"{source.name}: unsupported x-tarka keys: {unexpected}")
+
+
 def validate_variable_security(metadata: str, source: Path) -> None:
     """Require an unambiguous secret declaration for password-like inputs."""
 
@@ -175,6 +214,7 @@ def validate_short_volume(entry: str, source: Path) -> str | None:
 
 
 def validate_compose_security(document: str, metadata: str, source: Path) -> None:
+    validate_metadata_security(metadata, source)
     validate_variable_security(metadata, source)
     top_level_keys = re.findall(
         r"^([A-Za-z][A-Za-z0-9_-]*):(?:\s.*)?$", document, re.MULTILINE
