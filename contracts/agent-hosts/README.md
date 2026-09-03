@@ -17,6 +17,13 @@ explicit, persistent volumes have quotas, public routes are declared, and
 secrets are supplied through Agent Host variables. These are therefore not
 drop-in replacements for the upstream projects' local-development files.
 
+The Onyx template requires an initial administrator email, a unique
+administrator password, and an authentication signing secret. Its backend
+first starts on a pod-local listener; Tarka registers, authenticates, and
+verifies that administrator before Onyx binds its service port. Only the Onyx
+web proxy is published. This prevents an Internet client from claiming the
+first-account administrator role on a fresh deployment.
+
 Every running Agent Host also receives a private platform gateway at
 `http://tarka`. Agent workloads call the OpenAI-compatible inference API at
 `http://tarka/v1` without supplying a customer API key. A host-bound service
