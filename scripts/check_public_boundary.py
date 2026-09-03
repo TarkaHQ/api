@@ -30,6 +30,8 @@ ALLOWED_DIRECTORY_SUFFIXES = {
 }
 SAFE_PATH_COMPONENT = re.compile(r"^[A-Za-z0-9._-]+$")
 REQUIRED_PINNED_IMAGES = {"BUF_IMAGE", "OPENAPI_VALIDATOR_IMAGE"}
+APPROVED_REMOTE_PLUGIN = "buf.build/grpc-ecosystem/openapiv2:v2.30.0"
+APPROVED_REMOTE_PLUGIN_REVISION = "1"
 MAKE_ASSIGNMENT = re.compile(r"^([A-Z][A-Z0-9_]*)\s*:?=\s*(\S+)\s*$")
 SECRET_PATTERNS = {
     "private key": re.compile(r"-----BEGIN (?:RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----"),
@@ -88,6 +90,28 @@ def contract_path_allowed(name: str) -> bool:
     return path.suffix in ALLOWED_DIRECTORY_SUFFIXES.get(path.parts[0], set())
 
 
+def remote_plugin_findings(content: str) -> list[str]:
+    findings: list[str] = []
+    plugin_entries = re.findall(r"^  -\s+\S.*$", content, re.MULTILINE)
+    matches = list(
+        re.finditer(r"^  - remote:\s*(\S+)\s*$", content, re.MULTILINE)
+    )
+    for index, match in enumerate(matches):
+        reference = match.group(1)
+        end = matches[index + 1].start() if index + 1 < len(matches) else len(content)
+        block = content[match.end() : end]
+        revisions = re.findall(r"^    revision:\s*(\S+)\s*$", block, re.MULTILINE)
+        if reference != APPROVED_REMOTE_PLUGIN:
+            findings.append(f"unapproved remote generator: {reference}")
+        if revisions != [APPROVED_REMOTE_PLUGIN_REVISION]:
+            findings.append(f"remote generator is not revision-pinned: {reference}")
+    if len(plugin_entries) != len(matches):
+        findings.append("only canonical remote protobuf generators are allowed")
+    if not matches:
+        findings.append("no approved remote protobuf generator configured")
+    return findings
+
+
 def main() -> None:
     violations: list[str] = []
     for mode, name in tracked_entries():
@@ -117,6 +141,9 @@ def main() -> None:
         reference = image_assignments.get(name, "")
         if not re.fullmatch(r"[^\s@]+:[^\s@]+@sha256:[0-9a-f]{64}", reference):
             violations.append(f"Docker verification image is not digest-pinned: {name}")
+    violations.extend(
+        remote_plugin_findings((ROOT / "buf.gen.yaml").read_text(encoding="utf-8"))
+    )
     if violations:
         raise SystemExit("public contract boundary violations:\n- " + "\n- ".join(violations))
     print("validated contract-only public repository boundary")

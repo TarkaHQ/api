@@ -2,7 +2,12 @@ from __future__ import annotations
 
 import unittest
 
-from check_public_boundary import contract_path_allowed, secret_findings
+from check_public_boundary import (
+    APPROVED_REMOTE_PLUGIN,
+    contract_path_allowed,
+    remote_plugin_findings,
+    secret_findings,
+)
 
 
 class PublicBoundarySecretTests(unittest.TestCase):
@@ -44,6 +49,49 @@ class PublicBoundarySecretTests(unittest.TestCase):
     def test_rejects_unsafe_path_components(self) -> None:
         self.assertFalse(contract_path_allowed("contracts/bad\nname.json"))
         self.assertFalse(contract_path_allowed("contracts/path with space/spec.json"))
+
+    def test_accepts_revision_pinned_approved_remote_plugin(self) -> None:
+        content = (
+            "version: v2\nplugins:\n"
+            f"  - remote: {APPROVED_REMOTE_PLUGIN}\n"
+            "    revision: 1\n"
+            "    out: openapi\n"
+        )
+
+        self.assertEqual(remote_plugin_findings(content), [])
+
+    def test_rejects_revisionless_remote_plugin(self) -> None:
+        content = (
+            "version: v2\nplugins:\n"
+            f"  - remote: {APPROVED_REMOTE_PLUGIN}\n"
+            "    out: openapi\n"
+        )
+
+        self.assertEqual(
+            remote_plugin_findings(content),
+            [
+                "remote generator is not revision-pinned: "
+                + APPROVED_REMOTE_PLUGIN
+            ],
+        )
+
+    def test_rejects_unapproved_or_local_plugin(self) -> None:
+        content = (
+            "version: v2\nplugins:\n"
+            "  - remote: buf.build/example/unreviewed:v1.0.0\n"
+            "    revision: 1\n"
+            "    out: openapi\n"
+            "  - local: protoc-gen-example\n"
+            "    out: generated\n"
+        )
+
+        self.assertEqual(
+            remote_plugin_findings(content),
+            [
+                "unapproved remote generator: buf.build/example/unreviewed:v1.0.0",
+                "only canonical remote protobuf generators are allowed",
+            ],
+        )
 
 
 if __name__ == "__main__":

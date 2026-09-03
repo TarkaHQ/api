@@ -2,6 +2,7 @@ version: v2
 clean: false
 plugins:
   - remote: buf.build/grpc-ecosystem/openapiv2:v2.30.0
+    revision: 1
     out: openapi
     types:
       - tarka.provisioning.v1.ProvisioningService
@@ -11,6 +12,7 @@ plugins:
       - merge_file_name=tarka-control-v1
       - json_names_for_fields=false
   - remote: buf.build/grpc-ecosystem/openapiv2:v2.30.0
+    revision: 1
     out: openapi
     types:
       - tarka.inference.v2.InferenceService
