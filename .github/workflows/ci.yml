@@ -42,6 +42,8 @@ jobs:
         run: git diff --exit-code -- openapi/tarka-control-v1.swagger.json
       - name: Validate OpenAPI contracts
         run: python3 scripts/validate_openapi.py
+      - name: Validate product access authorization contract
+        run: python3 scripts/validate_product_access.py
       - name: Validate Agent Host Compose contracts
         run: python3 scripts/validate_agent_host_templates.py
       - name: Test contract security invariants
