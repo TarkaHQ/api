@@ -9,6 +9,10 @@ The protobuf files are public contracts, not a location for secrets. Never add
 tokens, private endpoints, customer identifiers, production credentials, or
 example values that resemble live Tarka keys.
 
+CI scans every tracked text file for private keys and common provider token
+formats. Findings report only their file, line, and rule; candidate secret
+values are never copied into CI output.
+
 Security fixes are supported for the current stable protobuf package and for
 the latest released generated bindings. Tarka will coordinate disclosure and
 migration guidance when a contract-level change is required.

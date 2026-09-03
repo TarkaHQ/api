@@ -47,6 +47,21 @@ IMPLEMENTATION_SUFFIXES = {
 }
 REQUIRED_PINNED_IMAGES = {"BUF_IMAGE", "OPENAPI_VALIDATOR_IMAGE"}
 MAKE_ASSIGNMENT = re.compile(r"^([A-Z][A-Z0-9_]*)\s*:?=\s*(\S+)\s*$")
+SECRET_PATTERNS = {
+    "private key": re.compile(r"-----BEGIN (?:RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----"),
+    "AWS access key": re.compile(r"\bAKIA[0-9A-Z]{16}\b"),
+    "Brevo credential": re.compile(r"\bx(?:key|smtp)sib-[A-Za-z0-9_-]{20,}\b"),
+    "Cloudflare API token": re.compile(r"\bcfat_[A-Za-z0-9_-]{20,}\b"),
+    "GitHub token": re.compile(r"\b(?:gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,})\b"),
+    "GitLab token": re.compile(r"\bglpat-[A-Za-z0-9_-]{20,}\b"),
+    "Google API key": re.compile(r"\bAIza[0-9A-Za-z_-]{35}\b"),
+    "Hugging Face token": re.compile(r"\bhf_[A-Za-z0-9]{20,}\b"),
+    "npm token": re.compile(r"\bnpm_[A-Za-z0-9]{20,}\b"),
+    "OpenAI-style key": re.compile(r"\bsk-(?:proj-)?[A-Za-z0-9_-]{20,}\b"),
+    "Slack token": re.compile(r"\bxox[baprs]-[A-Za-z0-9-]{20,}\b"),
+    "Tarka live key": re.compile(r"\btk_live_[A-Za-z0-9_-]{20,}\b"),
+    "Uptime Kuma API key": re.compile(r"\buk1_[A-Za-z0-9_-]{20,}\b"),
+}
 
 
 def tracked_entries() -> list[tuple[str, str]]:
@@ -61,6 +76,18 @@ def tracked_entries() -> list[tuple[str, str]]:
     return entries
 
 
+def secret_findings(name: str, content: bytes) -> list[str]:
+    if b"\0" in content:
+        return []
+    text = content.decode("utf-8", errors="replace")
+    findings: list[str] = []
+    for label, pattern in SECRET_PATTERNS.items():
+        for match in pattern.finditer(text):
+            line = text.count("\n", 0, match.start()) + 1
+            findings.append(f"possible {label} in {name}:{line}")
+    return findings
+
+
 def main() -> None:
     violations: list[str] = []
     for mode, name in tracked_entries():
@@ -73,6 +100,7 @@ def main() -> None:
             violations.append(f"forbidden implementation dependency file: {name}")
         if path.suffix in IMPLEMENTATION_SUFFIXES:
             violations.append(f"forbidden generated/implementation source: {name}")
+        violations.extend(secret_findings(name, (ROOT / name).read_bytes()))
 
     image_assignments: dict[str, str] = {}
     for line in (ROOT / "Makefile").read_text(encoding="utf-8").splitlines():
