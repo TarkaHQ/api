@@ -2,16 +2,29 @@ x-tarka:
   id: onyx
   title: Onyx
   description: Full Onyx stack with web and API services, workers, Postgres, Vespa, Redis and MinIO.
-  version: "tarka.3"
+  version: "tarka.4"
   tier: pro
   routes:
     - service: web-server
       port: 3000
       path: /
-    - service: api-server
-      port: 8080
-      path: /api
   variables:
+    - name: ONYX_ADMIN_EMAIL
+      label: Initial administrator email
+      description: Tarka creates and verifies this administrator before the public Onyx endpoint becomes ready.
+      required: true
+    - name: ONYX_ADMIN_PASSWORD
+      label: Initial administrator password
+      description: >-
+        Use a unique password. It is submitted only to the private bootstrap
+        listener and stored as an encrypted Agent Host secret.
+      secret: true
+      required: true
+    - name: USER_AUTH_SECRET
+      label: Authentication signing secret
+      description: A unique high-entropy value used by Onyx to sign authentication and verification tokens.
+      secret: true
+      required: true
     - name: POSTGRES_PASSWORD
       label: Postgres password
       secret: true
@@ -23,9 +36,6 @@ x-tarka:
       label: MinIO root password
       secret: true
       required: true
-    - name: AUTH_TYPE
-      label: Authentication type
-      default: basic
   runtime_profile:
     managed_model: true
     default_model_alias: qwen3.8-flash-next
@@ -45,7 +55,81 @@ x-tarka:
 services:
   api-server:
     image: onyxdotapp/onyx-backend@sha256:64ca3768a71ad848a5c6f9111b6355c8eca7e3faa0ec08f1e77427f906fa3616
-    command: /bin/sh -c 'alembic upgrade head && exec uvicorn onyx.main:app --host 0.0.0.0 --port 8080'
+    command:
+      - /bin/sh
+      - -ec
+      - |
+        alembic upgrade head
+        uvicorn onyx.main:app --host 127.0.0.1 --port 8081 &
+        bootstrap_pid=$$!
+        cleanup() {
+          kill "$$bootstrap_pid" 2>/dev/null || true
+          wait "$$bootstrap_pid" 2>/dev/null || true
+        }
+        trap cleanup EXIT HUP INT TERM
+        python - <<'PY'
+        import http.cookiejar
+        import json
+        import os
+        import time
+        import urllib.error
+        import urllib.parse
+        import urllib.request
+
+        base = "http://127.0.0.1:8081/api"
+        opener = urllib.request.build_opener(
+            urllib.request.ProxyHandler({}),
+            urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()),
+        )
+        deadline = time.monotonic() + 600
+        while True:
+            try:
+                with opener.open(base + "/health", timeout=3) as response:
+                    if 200 <= response.status < 300:
+                        break
+            except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError):
+                if time.monotonic() >= deadline:
+                    raise RuntimeError("Onyx private bootstrap listener did not become ready")
+                time.sleep(2)
+
+        email = os.environ["ONYX_ADMIN_EMAIL"]
+        password = os.environ["ONYX_ADMIN_PASSWORD"]
+        registration = json.dumps(
+            {"email": email, "username": email, "password": password}
+        ).encode()
+        request = urllib.request.Request(
+            base + "/auth/register",
+            data=registration,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        try:
+            with opener.open(request, timeout=15):
+                pass
+        except urllib.error.HTTPError as error:
+            if error.code != 400:
+                raise
+
+        login = urllib.parse.urlencode(
+            {"username": email, "password": password}
+        ).encode()
+        request = urllib.request.Request(
+            base + "/auth/login",
+            data=login,
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            method="POST",
+        )
+        with opener.open(request, timeout=15):
+            pass
+        with opener.open(base + "/me", timeout=15) as response:
+            user = json.load(response)
+        if str(user.get("role", "")).lower() != "admin":
+            raise RuntimeError("Configured Onyx bootstrap identity is not an administrator")
+        PY
+        cleanup
+        trap - EXIT HUP INT TERM
+        unset ONYX_ADMIN_EMAIL ONYX_ADMIN_PASSWORD
+        exec uvicorn onyx.main:app --host 0.0.0.0 --port 8080
     depends_on:
       relational-db: {condition: service_healthy}
       index: {condition: service_healthy}
@@ -53,7 +137,10 @@ services:
       inference-model-server: {condition: service_started}
       minio: {condition: service_healthy}
     environment:
-      AUTH_TYPE: ${AUTH_TYPE:-basic}
+      AUTH_TYPE: basic
+      ONYX_ADMIN_EMAIL: ${ONYX_ADMIN_EMAIL}
+      ONYX_ADMIN_PASSWORD: ${ONYX_ADMIN_PASSWORD}
+      USER_AUTH_SECRET: ${USER_AUTH_SECRET}
       POSTGRES_HOST: relational-db
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -87,6 +174,8 @@ services:
       inference-model-server: {condition: service_started}
       indexing-model-server: {condition: service_started}
     environment:
+      AUTH_TYPE: basic
+      USER_AUTH_SECRET: ${USER_AUTH_SECRET}
       USE_LIGHTWEIGHT_BACKGROUND_WORKER: "true"
       POSTGRES_HOST: relational-db
       POSTGRES_USER: postgres

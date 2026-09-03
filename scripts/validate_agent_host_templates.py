@@ -220,6 +220,57 @@ def validate_compose_security(document: str, metadata: str, source: Path) -> Non
         )
 
 
+def validate_onyx_authentication_boundary(
+    document: str, metadata: str, source: Path
+) -> None:
+    """Keep a fresh Onyx deployment private until Tarka owns its first admin."""
+
+    variables = declared_variables(metadata)
+    required = {"ONYX_ADMIN_EMAIL", "ONYX_ADMIN_PASSWORD", "USER_AUTH_SECRET"}
+    missing = sorted(required - variables)
+    if missing:
+        raise ValueError(
+            f"{source.name}: Onyx bootstrap variables are missing: {missing}"
+        )
+    if "AUTH_TYPE" in variables:
+        raise ValueError(
+            f"{source.name}: Onyx authentication mode must not be customer-controlled"
+        )
+
+    for secret in ("ONYX_ADMIN_PASSWORD", "USER_AUTH_SECRET"):
+        pattern = rf"^    - name: {secret}\s*$\n(?:(?:      .*)?\n)*?^      secret: true\s*$"
+        if not re.search(pattern, metadata, re.MULTILINE):
+            raise ValueError(f"{source.name}: {secret} must be declared secret")
+
+    routes = section(metadata, "routes")
+    if "service: api-server" in routes or routes.count("service:") != 1:
+        raise ValueError(f"{source.name}: only the Onyx web proxy may be public")
+    if "service: web-server" not in routes:
+        raise ValueError(f"{source.name}: Onyx web route is missing")
+
+    invariants = {
+        "private bootstrap listener": (
+            "uvicorn onyx.main:app --host 127.0.0.1 --port 8081"
+        ),
+        "admin registration": 'base + "/auth/register"',
+        "admin login": 'base + "/auth/login"',
+        "admin verification": 'user.get("role", "")',
+        "public listener after verification": (
+            "exec uvicorn onyx.main:app --host 0.0.0.0 --port 8080"
+        ),
+        "bootstrap credential removal": "unset ONYX_ADMIN_EMAIL ONYX_ADMIN_PASSWORD",
+    }
+    for label, value in invariants.items():
+        if value not in document:
+            raise ValueError(f"{source.name}: Onyx {label} invariant is missing")
+    if document.count("AUTH_TYPE: basic") != 2:
+        raise ValueError(f"{source.name}: Onyx authentication must be fixed to basic")
+    if document.count("USER_AUTH_SECRET: ${USER_AUTH_SECRET}") != 2:
+        raise ValueError(
+            f"{source.name}: Onyx signing secret must reach both backend services"
+        )
+
+
 def main() -> None:
     catalog = json.loads(CATALOG.read_text())
     if catalog.get("schema_version") != 2:
@@ -255,6 +306,8 @@ def main() -> None:
             raise ValueError(f"duplicate template id {actual['id']}")
         ids.add(actual["id"])
         validate_compose_security(document, metadata, path)
+        if actual["id"] == "onyx":
+            validate_onyx_authentication_boundary(document, metadata, path)
         runtime = section(metadata, "runtime_profile")
         if nested_scalar(runtime, "managed_model") != "true":
             raise ValueError(f"{path.name}: managed_model must be true")
