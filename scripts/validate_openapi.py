@@ -92,11 +92,42 @@ def has_bearer_requirement(value: Any) -> bool:
     )
 
 
+def validate_bearer_definition(document: dict[str, Any], source: Path) -> None:
+    """Require credentials to use the standard Authorization bearer header."""
+
+    if document.get("swagger") == "2.0":
+        definition = document.get("securityDefinitions", {}).get("bearerAuth")
+        expected = {
+            "type": "apiKey",
+            "in": "header",
+            "name": "Authorization",
+        }
+        if not isinstance(definition, dict) or any(
+            definition.get(key) != value for key, value in expected.items()
+        ):
+            raise ValueError(
+                f"{source}: bearerAuth must use the Authorization header"
+            )
+        return
+
+    definition = (
+        document.get("components", {})
+        .get("securitySchemes", {})
+        .get("bearerAuth")
+    )
+    if not isinstance(definition, dict) or {
+        "type": definition.get("type"),
+        "scheme": definition.get("scheme"),
+    } != {"type": "http", "scheme": "bearer"}:
+        raise ValueError(f"{source}: bearerAuth must be an HTTP bearer scheme")
+
+
 def validate_authenticated_tls_surface(
     document: dict[str, Any], source: Path
 ) -> None:
     if not has_bearer_requirement(document.get("security")):
         raise ValueError(f"{source}: global bearerAuth requirement is required")
+    validate_bearer_definition(document, source)
 
     if document.get("swagger") == "2.0":
         if document.get("schemes") != ["https"]:
