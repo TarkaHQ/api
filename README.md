@@ -46,11 +46,15 @@ cannot describe precisely.
   usage, object storage, hosted Git, sandboxes, and desired-state resources. Its REST
   transcoding routes live under `/control/v1`.
 - The inference API is a deliberately scoped OpenAI-compatible HTTP API at
-  `https://tarka.rest/v1`. It supports models, chat completions, OCR,
-  Responses, transcription, translation, speech generation, and consent-backed
-  voice cloning through the endpoints in `tarka-inference-v1.openapi.json`.
+  `https://tarka.rest/v1`. It supports models, chat completions, OCR, structured
+  document layout, Responses, transcription, translation, speech generation,
+  and consent-backed voice cloning through the endpoints in
+  `tarka-inference-v1.openapi.json`.
   OCR is available both through the dedicated `POST /v1/ocr` endpoint and
   through multimodal `POST /v1/chat/completions` requests.
+  The Tarka extension `POST /v1/document/layout` returns ordered regions with
+  confidence scores and geometry while preserving the same authentication,
+  discovery, metering, and error conventions.
 - Every inference operation also has a native gRPC method at
   `grpc.tarka.rest:443`. The REST gateway calls those same authenticated gRPC
   methods, so REST and gRPC share authorization, model routing, metering,
