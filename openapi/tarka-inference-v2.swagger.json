@@ -249,6 +249,38 @@
         ]
       }
     },
+    "/v1/document/layout": {
+      "post": {
+        "operationId": "InferenceService_CreateDocumentLayout",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2DocumentLayoutResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v2DocumentLayoutRequest"
+            }
+          }
+        ],
+        "tags": [
+          "InferenceService"
+        ]
+      }
+    },
     "/v1/models": {
       "get": {
         "operationId": "InferenceService_ListModels",
@@ -690,6 +722,38 @@
         ]
       }
     },
+    "/v2/document/layout": {
+      "post": {
+        "operationId": "InferenceService_CreateDocumentLayout2",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2DocumentLayoutResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v2DocumentLayoutRequest"
+            }
+          }
+        ],
+        "tags": [
+          "InferenceService"
+        ]
+      }
+    },
     "/v2/models": {
       "get": {
         "operationId": "InferenceService_ListModels2",
@@ -1069,6 +1133,27 @@
         }
       }
     },
+    "v2BoundingBox": {
+      "type": "object",
+      "properties": {
+        "x_min": {
+          "type": "number",
+          "format": "double"
+        },
+        "y_min": {
+          "type": "number",
+          "format": "double"
+        },
+        "x_max": {
+          "type": "number",
+          "format": "double"
+        },
+        "y_max": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
     "v2ChatChoice": {
       "type": "object",
       "properties": {
@@ -1283,6 +1368,171 @@
         }
       }
     },
+    "v2DocumentBlock": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "reading_order": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "bbox": {
+          "$ref": "#/definitions/v2BoundingBox"
+        },
+        "polygon": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2Point"
+          }
+        },
+        "confidence": {
+          "type": "number",
+          "format": "double"
+        },
+        "content": {
+          "type": "string"
+        }
+      }
+    },
+    "v2DocumentLayoutRequest": {
+      "type": "object",
+      "properties": {
+        "model": {
+          "type": "string"
+        },
+        "image": {
+          "type": "string",
+          "description": "A base64 value or base64 data URL. Remote URLs are not accepted."
+        },
+        "threshold": {
+          "type": "number",
+          "format": "double"
+        },
+        "shape": {
+          "type": "string",
+          "description": "Geometry returned for regions: auto, box, quadrilateral, or polygon."
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Optional allow-list of document region labels."
+        },
+        "extra_body": {
+          "type": "object"
+        }
+      }
+    },
+    "v2DocumentLayoutResponse": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "object": {
+          "type": "string"
+        },
+        "created": {
+          "type": "string",
+          "format": "int64"
+        },
+        "model": {
+          "type": "string"
+        },
+        "width": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "height": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "regions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2DocumentRegion"
+          }
+        },
+        "usage": {
+          "$ref": "#/definitions/v2Usage"
+        },
+        "extensions": {
+          "type": "object"
+        }
+      }
+    },
+    "v2DocumentPage": {
+      "type": "object",
+      "properties": {
+        "index": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "width": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "height": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "text": {
+          "type": "string"
+        },
+        "markdown": {
+          "type": "string"
+        },
+        "blocks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2DocumentBlock"
+          }
+        }
+      },
+      "description": "DocumentPage is the Tarka structured-document extension to the OCR surface.\ntext remains the portable representation; markdown and blocks are additive."
+    },
+    "v2DocumentRegion": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "class_id": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "score": {
+          "type": "number",
+          "format": "double"
+        },
+        "bbox": {
+          "$ref": "#/definitions/v2BoundingBox"
+        },
+        "polygon": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2Point"
+          }
+        },
+        "reading_order": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
     "v2FunctionCall": {
       "type": "object",
       "properties": {
@@ -1378,6 +1628,21 @@
         },
         "extra_body": {
           "type": "object"
+        },
+        "output_format": {
+          "type": "string",
+          "description": "Controls the top-level text representation while structured page data is\nreturned in OCRResponse.pages when requested."
+        },
+        "include": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Optional bounded expansions. Supported values are \"blocks\" and \"layout\"."
+        },
+        "layout_shape": {
+          "type": "string",
+          "description": "Layout geometry used for structured blocks: auto, box, quadrilateral, or polygon."
         }
       }
     },
@@ -1405,6 +1670,13 @@
         },
         "extensions": {
           "type": "object"
+        },
+        "pages": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2DocumentPage"
+          }
         }
       }
     },
@@ -1422,6 +1694,19 @@
       "properties": {
         "body": {
           "type": "object"
+        }
+      }
+    },
+    "v2Point": {
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": "number",
+          "format": "double"
+        },
+        "y": {
+          "type": "number",
+          "format": "double"
         }
       }
     },

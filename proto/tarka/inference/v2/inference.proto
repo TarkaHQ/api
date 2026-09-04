@@ -120,6 +120,16 @@ service InferenceService {
     };
   }
   rpc StreamOCR(OCRRequest) returns (stream OCRChunk) {}
+  rpc CreateDocumentLayout(DocumentLayoutRequest) returns (DocumentLayoutResponse) {
+    option (google.api.http) = {
+      post: "/v1/document/layout"
+      body: "*"
+      additional_bindings: {
+        post: "/v2/document/layout"
+        body: "*"
+      }
+    };
+  }
   rpc CreateTranscription(AudioTranscriptionRequest) returns (AudioTextResponse) {
     option (google.api.http) = {
       post: "/v1/audio/transcriptions"
@@ -355,6 +365,13 @@ message OCRRequest {
   optional int32 max_tokens = 6;
   optional double temperature = 7;
   google.protobuf.Struct extra_body = 8;
+  // Controls the top-level text representation while structured page data is
+  // returned in OCRResponse.pages when requested.
+  string output_format = 9;
+  // Optional bounded expansions. Supported values are "blocks" and "layout".
+  repeated string include = 10;
+  // Layout geometry used for structured blocks: auto, box, quadrilateral, or polygon.
+  string layout_shape = 11;
 }
 
 message OCRResponse {
@@ -365,6 +382,7 @@ message OCRResponse {
   string text = 5;
   Usage usage = 6;
   google.protobuf.Struct extensions = 7;
+  repeated DocumentPage pages = 8;
 }
 
 message OCRChunk {
@@ -375,6 +393,74 @@ message OCRChunk {
   string text = 5;
   Usage usage = 6;
   google.protobuf.Struct extensions = 7;
+  repeated DocumentPage pages = 8;
+}
+
+// DocumentPage is the Tarka structured-document extension to the OCR surface.
+// text remains the portable representation; markdown and blocks are additive.
+message DocumentPage {
+  int32 index = 1;
+  int32 width = 2;
+  int32 height = 3;
+  string text = 4;
+  string markdown = 5;
+  repeated DocumentBlock blocks = 6;
+}
+
+message DocumentBlock {
+  string id = 1;
+  string label = 2;
+  optional int32 reading_order = 3;
+  BoundingBox bbox = 4;
+  repeated Point polygon = 5;
+  optional double confidence = 6;
+  string content = 7;
+}
+
+message Point {
+  double x = 1;
+  double y = 2;
+}
+
+message BoundingBox {
+  double x_min = 1;
+  double y_min = 2;
+  double x_max = 3;
+  double y_max = 4;
+}
+
+message DocumentLayoutRequest {
+  string model = 1;
+  // A base64 value or base64 data URL. Remote URLs are not accepted.
+  string image = 2;
+  optional double threshold = 3;
+  // Geometry returned for regions: auto, box, quadrilateral, or polygon.
+  string shape = 4;
+  // Optional allow-list of document region labels.
+  repeated string labels = 5;
+  google.protobuf.Struct extra_body = 6;
+}
+
+message DocumentLayoutResponse {
+  string id = 1;
+  string object = 2;
+  int64 created = 3;
+  string model = 4;
+  int32 width = 5;
+  int32 height = 6;
+  repeated DocumentRegion regions = 7;
+  Usage usage = 8;
+  google.protobuf.Struct extensions = 9;
+}
+
+message DocumentRegion {
+  string id = 1;
+  string label = 2;
+  int32 class_id = 3;
+  double score = 4;
+  BoundingBox bbox = 5;
+  repeated Point polygon = 6;
+  int32 reading_order = 7;
 }
 
 message AudioTranscriptionRequest {

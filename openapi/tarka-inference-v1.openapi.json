@@ -282,6 +282,37 @@
         }
       }
     },
+    "/v1/document/layout": {
+      "post": {
+        "operationId": "createDocumentLayout",
+        "summary": "Detect document regions and reading order",
+        "description": "Runs a document-layout model over one inline base64 image or base64 data URL. This Tarka extension returns typed regions, confidence scores, geometry, and logical reading order. Remote image URLs are not accepted.",
+        "tags": ["Documents"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {"$ref": "#/components/schemas/DocumentLayoutRequest"}
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Ordered document regions.",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/DocumentLayoutResponse"}
+              }
+            }
+          },
+          "400": {"$ref": "#/components/responses/BadRequest"},
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"$ref": "#/components/responses/Forbidden"},
+          "429": {"$ref": "#/components/responses/RateLimited"},
+          "500": {"$ref": "#/components/responses/InternalError"}
+        }
+      }
+    },
     "/v1/audio/transcriptions": {
       "post": {
         "operationId": "createTranscription",
@@ -997,7 +1028,24 @@
           "prompt": {"type": "string"},
           "stream": {"type": "boolean", "default": false},
           "max_tokens": {"type": "integer", "minimum": 1},
-          "temperature": {"type": "number", "minimum": 0, "default": 0}
+          "temperature": {"type": "number", "minimum": 0, "default": 0},
+          "output_format": {
+            "type": "string",
+            "enum": ["text", "markdown", "json"],
+            "default": "markdown",
+            "description": "Controls the top-level text representation. Structured pages remain JSON."
+          },
+          "include": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {"type": "string", "enum": ["blocks", "layout"]},
+            "description": "Adds structured blocks and optional raw layout details to the response."
+          },
+          "layout_shape": {
+            "type": "string",
+            "enum": ["auto", "box", "quadrilateral", "polygon"],
+            "default": "auto"
+          }
         }
       },
       "OCRResponse": {
@@ -1010,6 +1058,103 @@
           "created": {"type": "integer", "format": "int64"},
           "model": {"type": "string"},
           "text": {"type": "string"},
+          "usage": {"$ref": "#/components/schemas/CompletionUsage"},
+          "pages": {
+            "type": "array",
+            "items": {"$ref": "#/components/schemas/DocumentPage"},
+            "description": "Structured per-page output when requested by include."
+          }
+        }
+      },
+      "Point": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["x", "y"],
+        "properties": {
+          "x": {"type": "number"},
+          "y": {"type": "number"}
+        }
+      },
+      "BoundingBox": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["x_min", "y_min", "x_max", "y_max"],
+        "properties": {
+          "x_min": {"type": "number"},
+          "y_min": {"type": "number"},
+          "x_max": {"type": "number"},
+          "y_max": {"type": "number"}
+        }
+      },
+      "DocumentBlock": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "label", "bbox", "content"],
+        "properties": {
+          "id": {"type": "string"},
+          "label": {"type": "string"},
+          "reading_order": {"type": ["integer", "null"], "minimum": 0},
+          "bbox": {"$ref": "#/components/schemas/BoundingBox"},
+          "polygon": {"type": "array", "items": {"$ref": "#/components/schemas/Point"}},
+          "confidence": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+          "content": {"type": "string"}
+        }
+      },
+      "DocumentPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["index", "width", "height", "text", "markdown", "blocks"],
+        "properties": {
+          "index": {"type": "integer", "minimum": 0},
+          "width": {"type": "integer", "minimum": 1},
+          "height": {"type": "integer", "minimum": 1},
+          "text": {"type": "string"},
+          "markdown": {"type": "string"},
+          "blocks": {"type": "array", "items": {"$ref": "#/components/schemas/DocumentBlock"}}
+        }
+      },
+      "DocumentLayoutRequest": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["model", "image"],
+        "properties": {
+          "model": {"type": "string", "description": "A document-layout model alias."},
+          "image": {"type": "string", "description": "A base64 value or base64 data URL. Remote URLs are not accepted."},
+          "threshold": {"type": "number", "minimum": 0, "maximum": 1, "default": 0.3},
+          "shape": {
+            "type": "string",
+            "enum": ["auto", "box", "quadrilateral", "polygon"],
+            "default": "auto"
+          },
+          "labels": {"type": "array", "uniqueItems": true, "items": {"type": "string"}}
+        }
+      },
+      "DocumentRegion": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "label", "class_id", "score", "bbox", "polygon", "reading_order"],
+        "properties": {
+          "id": {"type": "string"},
+          "label": {"type": "string"},
+          "class_id": {"type": "integer", "minimum": 0},
+          "score": {"type": "number", "minimum": 0, "maximum": 1},
+          "bbox": {"$ref": "#/components/schemas/BoundingBox"},
+          "polygon": {"type": "array", "items": {"$ref": "#/components/schemas/Point"}},
+          "reading_order": {"type": "integer", "minimum": 0}
+        }
+      },
+      "DocumentLayoutResponse": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["id", "object", "created", "model", "width", "height", "regions"],
+        "properties": {
+          "id": {"type": "string"},
+          "object": {"type": "string", "const": "document.layout"},
+          "created": {"type": "integer", "format": "int64"},
+          "model": {"type": "string"},
+          "width": {"type": "integer", "minimum": 1},
+          "height": {"type": "integer", "minimum": 1},
+          "regions": {"type": "array", "items": {"$ref": "#/components/schemas/DocumentRegion"}},
           "usage": {"$ref": "#/components/schemas/CompletionUsage"}
         }
       },
