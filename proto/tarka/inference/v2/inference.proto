@@ -431,14 +431,22 @@ message BoundingBox {
 
 message DocumentLayoutRequest {
   string model = 1;
-  // A base64 value or base64 data URL. Remote URLs are not accepted.
-  string image = 2;
+  string image = 2 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "A base64 value or base64 data URL for an image of at most 32 MiB after decoding. Remote URLs are not accepted."
+    min_length: 1
+    max_length: 44740268
+  }];
   optional double threshold = 3;
   // Geometry returned for regions: auto, box, quadrilateral, or polygon.
   string shape = 4;
-  // Optional allow-list of document region labels.
-  repeated string labels = 5;
-  google.protobuf.Struct extra_body = 6;
+  repeated string labels = 5 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "Optional allow-list of up to 64 unique document region labels, each containing 1 to 64 Unicode characters."
+    min_length: 1
+    max_length: 64
+    max_items: 64
+    unique_items: true
+  }];
+  google.protobuf.Struct extra_body = 6 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {description: "Optional provider extensions. The combined serialized extension data, including unrecognized top-level REST fields, must not exceed 16 KiB."}];
 }
 
 message DocumentLayoutResponse {
