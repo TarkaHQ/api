@@ -357,9 +357,22 @@ message Usage {
 }
 
 message OCRRequest {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_schema) = {
+    json_schema: {description: "OCR request with either one image or an images array. Public REST JSON request bodies are limited to 8 MiB in total. Each image may contain at most 32 MiB after base64 decoding on transports that permit a larger envelope."}
+  };
+
   string model = 1;
-  string image = 2;
-  repeated string images = 3;
+  string image = 2 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "A base64 value or base64 data URL for one image. Remote URLs are not accepted."
+    min_length: 1
+    max_length: 44740268
+  }];
+  repeated string images = 3 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "Between 1 and 32 base64 values or base64 data URLs. Remote URLs are not accepted."
+    min_length: 1
+    max_length: 44740268
+    max_items: 32
+  }];
   string prompt = 4;
   bool stream = 5;
   optional int32 max_tokens = 6;
