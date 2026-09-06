@@ -1120,14 +1120,29 @@
         "required": ["model", "image"],
         "properties": {
           "model": {"type": "string", "description": "A document-layout model alias."},
-          "image": {"type": "string", "description": "A base64 value or base64 data URL. Remote URLs are not accepted."},
+          "image": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 44740268,
+            "description": "A base64 value or base64 data URL for an image of at most 32 MiB after decoding. Remote URLs are not accepted."
+          },
           "threshold": {"type": "number", "minimum": 0, "maximum": 1, "default": 0.3},
           "shape": {
             "type": "string",
             "enum": ["auto", "box", "quadrilateral", "polygon"],
             "default": "auto"
           },
-          "labels": {"type": "array", "uniqueItems": true, "items": {"type": "string"}}
+          "labels": {
+            "type": "array",
+            "maxItems": 64,
+            "uniqueItems": true,
+            "items": {"type": "string", "minLength": 1, "maxLength": 64}
+          },
+          "extra_body": {
+            "type": "object",
+            "description": "Optional provider extensions. The combined serialized extension data, including unrecognized top-level fields, must not exceed 16 KiB.",
+            "x-tarka-max-serialized-bytes": 16384
+          }
         }
       },
       "DocumentRegion": {

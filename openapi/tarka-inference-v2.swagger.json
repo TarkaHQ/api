@@ -1408,7 +1408,9 @@
         },
         "image": {
           "type": "string",
-          "description": "A base64 value or base64 data URL. Remote URLs are not accepted."
+          "description": "A base64 value or base64 data URL for an image of at most 32 MiB after decoding. Remote URLs are not accepted.",
+          "maxLength": 44740268,
+          "minLength": 1
         },
         "threshold": {
           "type": "number",
@@ -1421,12 +1423,17 @@
         "labels": {
           "type": "array",
           "items": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1
           },
-          "description": "Optional allow-list of document region labels."
+          "description": "Optional allow-list of up to 64 unique document region labels, each containing 1 to 64 Unicode characters.",
+          "maxItems": 64,
+          "uniqueItems": true
         },
         "extra_body": {
-          "type": "object"
+          "type": "object",
+          "description": "Optional provider extensions. The combined serialized extension data, including unrecognized top-level REST fields, must not exceed 16 KiB."
         }
       }
     },
