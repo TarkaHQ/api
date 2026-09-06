@@ -479,7 +479,11 @@ message AudioTranscriptionRequest {
   string language = 5;
   string prompt = 6;
   string response_format = 7;
-  optional double temperature = 8;
+  optional double temperature = 8 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "Sampling temperature from 0 through 1."
+    minimum: 0
+    maximum: 1
+  }];
   repeated string timestamp_granularities = 9;
   google.protobuf.Struct extra_body = 10;
 }
@@ -491,7 +495,11 @@ message AudioTranslationRequest {
   string model = 4;
   string prompt = 5;
   string response_format = 6;
-  optional double temperature = 7;
+  optional double temperature = 7 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "Sampling temperature from 0 through 1."
+    minimum: 0
+    maximum: 1
+  }];
   repeated string timestamp_granularities = 8;
   google.protobuf.Struct extra_body = 9;
 }

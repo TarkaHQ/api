@@ -1188,7 +1188,7 @@
             "enum": ["json", "text", "srt", "verbose_json", "vtt"],
             "default": "json"
           },
-          "temperature": {"type": "number", "minimum": 0},
+          "temperature": {"type": "number", "minimum": 0, "maximum": 1},
           "timestamp_granularities[]": {
             "type": "array",
             "items": {"type": "string", "enum": ["segment", "word"]}
@@ -1208,7 +1208,7 @@
             "enum": ["json", "text", "srt", "verbose_json", "vtt"],
             "default": "json"
           },
-          "temperature": {"type": "number", "minimum": 0},
+          "temperature": {"type": "number", "minimum": 0, "maximum": 1},
           "timestamp_granularities[]": {
             "type": "array",
             "items": {"type": "string", "enum": ["segment", "word"]}
