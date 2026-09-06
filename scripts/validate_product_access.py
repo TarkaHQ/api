@@ -3,8 +3,9 @@
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
+
+from strict_json import load_json_object
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -12,7 +13,7 @@ CONTRACT = ROOT / "contracts" / "product-access.json"
 
 
 def main() -> int:
-    policy = json.loads(CONTRACT.read_text())
+    policy = load_json_object(CONTRACT)
     if policy.get("version") != 1:
         raise SystemExit("product-access contract version must be 1")
 

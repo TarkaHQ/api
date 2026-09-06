@@ -4,9 +4,10 @@
 from __future__ import annotations
 
 import hashlib
-import json
 import re
 from pathlib import Path
+
+from strict_json import load_json_object
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -421,7 +422,7 @@ def validate_onyx_authentication_boundary(
 
 
 def main() -> None:
-    catalog = json.loads(CATALOG.read_text())
+    catalog = load_json_object(CATALOG)
     if catalog.get("schema_version") != 2:
         raise ValueError("catalog schema_version must be 2")
     entries = catalog.get("templates")
