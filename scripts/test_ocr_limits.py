@@ -22,6 +22,11 @@ class OCRLimitTests(unittest.TestCase):
                 request = load(path)["components"]["schemas"]["OCRRequest"]
                 properties = request["properties"]
                 self.assertEqual(
+                    request["oneOf"],
+                    [{"required": ["image"]}, {"required": ["images"]}],
+                )
+                self.assertNotIn("anyOf", request)
+                self.assertEqual(
                     request["x-tarka-max-rest-json-bytes"],
                     MAX_REST_JSON_BYTES,
                 )
