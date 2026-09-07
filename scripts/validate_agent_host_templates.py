@@ -73,6 +73,109 @@ EXPECTED_PUBLIC_ROUTES = {
     "hermes": ("hermes-webui", 8787, "/"),
     "onyx": ("web-server", 3000, "/"),
 }
+BLOCK_MAPPING_KEY = re.compile(r"^([A-Za-z0-9][A-Za-z0-9_.-]*)[ \t]*:(.*)$")
+
+
+def structural_yaml_text(line: str) -> str:
+    """Remove a plain YAML comment without interpreting quoted hash characters."""
+
+    single_quoted = False
+    double_quoted = False
+    escaped = False
+    index = 0
+    while index < len(line):
+        character = line[index]
+        if double_quoted:
+            if escaped:
+                escaped = False
+            elif character == "\\":
+                escaped = True
+            elif character == '"':
+                double_quoted = False
+        elif single_quoted:
+            if character == "'" and index + 1 < len(line) and line[index + 1] == "'":
+                index += 1
+            elif character == "'":
+                single_quoted = False
+        elif character == '"':
+            double_quoted = True
+        elif character == "'":
+            single_quoted = True
+        elif character == "#" and (index == 0 or line[index - 1].isspace()):
+            return line[:index].rstrip()
+        index += 1
+    return line.rstrip()
+
+
+def validate_unique_block_mapping_keys(document: str, source: Path) -> None:
+    """Reject duplicate keys in the canonical block-style Compose subset."""
+
+    ancestors: list[tuple[int, int]] = []
+    seen: dict[tuple[tuple[int, ...], int], set[str]] = {}
+    next_node_id = 0
+    block_scalar_indent: int | None = None
+
+    def register(key: str, indent: int, line_number: int) -> int:
+        nonlocal next_node_id
+        scope = (tuple(node_id for _, node_id in ancestors), indent)
+        keys = seen.setdefault(scope, set())
+        if key in keys:
+            raise ValueError(
+                f"{source.name}: duplicate mapping key {key!r} at line {line_number}"
+            )
+        keys.add(key)
+        next_node_id += 1
+        return next_node_id
+
+    for line_number, raw_line in enumerate(document.splitlines(), start=1):
+        stripped = raw_line.lstrip(" ")
+        indent = len(raw_line) - len(stripped)
+        if block_scalar_indent is not None:
+            if not stripped or stripped.startswith("#") or indent > block_scalar_indent:
+                continue
+            block_scalar_indent = None
+        if not stripped or stripped.startswith("#"):
+            continue
+        leading = raw_line[: len(raw_line) - len(raw_line.lstrip(" \t"))]
+        if "\t" in leading:
+            raise ValueError(f"{source.name}: tabs are forbidden in YAML indentation")
+
+        line = structural_yaml_text(raw_line).lstrip(" ")
+        if not line:
+            continue
+        sequence = re.match(r"^-\s+(.*)$", line)
+        if sequence:
+            while ancestors and ancestors[-1][0] >= indent:
+                ancestors.pop()
+            next_node_id += 1
+            ancestors.append((indent + 1, next_node_id))
+            value = sequence.group(1).strip()
+            if value.startswith(("|", ">")):
+                block_scalar_indent = indent
+                continue
+            match = BLOCK_MAPPING_KEY.match(value)
+            if not match:
+                continue
+            key, child = match.group(1), match.group(2).strip()
+            effective_indent = indent + 2
+            node_id = register(key, effective_indent, line_number)
+            if not child:
+                ancestors.append((effective_indent, node_id))
+            elif child.startswith(("|", ">")):
+                block_scalar_indent = effective_indent
+            continue
+
+        while ancestors and ancestors[-1][0] >= indent:
+            ancestors.pop()
+        match = BLOCK_MAPPING_KEY.match(line)
+        if not match:
+            continue
+        key, child = match.group(1), match.group(2).strip()
+        node_id = register(key, indent, line_number)
+        if not child:
+            ancestors.append((indent, node_id))
+        elif child.startswith(("|", ">")):
+            block_scalar_indent = indent
 
 
 def scalar(metadata: str, field: str) -> str:
@@ -215,6 +318,7 @@ def validate_short_volume(entry: str, source: Path) -> str | None:
 
 
 def validate_compose_security(document: str, metadata: str, source: Path) -> None:
+    validate_unique_block_mapping_keys(document, source)
     validate_metadata_security(metadata, source)
     validate_variable_security(metadata, source)
     top_level_keys = re.findall(

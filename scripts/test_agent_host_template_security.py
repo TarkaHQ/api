@@ -49,6 +49,68 @@ class AgentHostTemplateSecurityTests(unittest.TestCase):
     def test_safe_named_volume_and_declared_secret_are_allowed(self) -> None:
         self.validate(SAFE)
 
+    def test_duplicate_runtime_policy_key_is_rejected(self) -> None:
+        document = SAFE.replace(
+            "  id: test\n",
+            "  id: test\n"
+            "  runtime_profile:\n"
+            "    managed_model: true\n"
+            "    managed_model: false\n",
+        )
+
+        with self.assertRaisesRegex(ValueError, "duplicate mapping key 'managed_model'"):
+            self.validate(document)
+
+    def test_duplicate_service_name_is_rejected(self) -> None:
+        document = """services:
+  app:
+    image: example.invalid/one@sha256:{digest}
+  app:
+    image: example.invalid/two@sha256:{digest}
+""".format(digest="0" * 64)
+
+        with self.assertRaisesRegex(ValueError, "duplicate mapping key 'app'"):
+            VALIDATOR.validate_unique_block_mapping_keys(document, Path("test.yaml"))
+
+    def test_same_keys_in_distinct_services_and_sequence_items_are_allowed(self) -> None:
+        document = """x-tarka:
+  variables:
+    - name: FIRST_TOKEN
+      secret: true
+    - name: SECOND_TOKEN
+      secret: true
+services:
+  first:
+    image: example.invalid/one@sha256:{digest}
+  second:
+    image: example.invalid/two@sha256:{digest}
+""".format(digest="0" * 64)
+
+        VALIDATOR.validate_unique_block_mapping_keys(document, Path("test.yaml"))
+
+    def test_block_scalar_contents_are_not_parsed_as_yaml_keys(self) -> None:
+        document = """services:
+  app:
+    command: |
+      privileged: true
+      privileged: false
+    image: example.invalid/app@sha256:{digest}
+""".format(digest="0" * 64)
+
+        VALIDATOR.validate_unique_block_mapping_keys(document, Path("test.yaml"))
+
+    def test_sequence_mapping_block_scalar_ends_at_sibling_key(self) -> None:
+        document = """items:
+  - script: |
+      duplicate: ignored
+      duplicate: ignored
+    policy: true
+    policy: false
+"""
+
+        with self.assertRaisesRegex(ValueError, "duplicate mapping key 'policy'"):
+            VALIDATOR.validate_unique_block_mapping_keys(document, Path("test.yaml"))
+
     def test_sensitive_variable_must_be_marked_secret(self) -> None:
         metadata = METADATA.replace("      secret: true\n", "")
 
