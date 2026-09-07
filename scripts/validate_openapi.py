@@ -3,9 +3,10 @@
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Any
+
+from strict_json import load_json_object
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -28,11 +29,7 @@ PUBLIC_API_ORIGIN = f"https://{PUBLIC_API_HOST}"
 
 
 def load(path: Path) -> dict[str, Any]:
-    with path.open(encoding="utf-8") as handle:
-        document = json.load(handle)
-    if not isinstance(document, dict):
-        raise ValueError(f"{path}: document root must be an object")
-    return document
+    return load_json_object(path)
 
 
 def resolve_pointer(document: dict[str, Any], reference: str, source: Path) -> None:
