@@ -124,6 +124,24 @@ class AgentHostTemplateSecurityTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "service key 'privileged' is forbidden"):
             self.validate(SAFE.replace("    environment:", "    privileged: true\n    environment:"))
 
+    def test_platform_managed_container_overrides_are_rejected(self) -> None:
+        for key, value in (
+            ("container_name", "platform-control"),
+            ("gpus", "all"),
+            ("isolation", "default"),
+            ("use_api_socket", "true"),
+        ):
+            with self.subTest(key=key):
+                document = SAFE.replace(
+                    "    environment:",
+                    f"    {key}: {value}\n    environment:",
+                )
+                with self.assertRaisesRegex(
+                    ValueError,
+                    rf"service key '{key}' is forbidden",
+                ):
+                    self.validate(document)
+
     def test_whitespace_before_forbidden_key_colon_is_rejected(self) -> None:
         document = SAFE.replace(
             "    environment:", "    privileged : true\n    environment:"
