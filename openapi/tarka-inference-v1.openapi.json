@@ -1008,7 +1008,7 @@
         "x-tarka-max-rest-json-bytes": 8388608,
         "description": "OCR request with either one image or an images array. The complete public REST JSON request body is limited to 8 MiB. Each image may contain at most 32 MiB after base64 decoding on transports that permit a larger envelope.",
         "required": ["model"],
-        "anyOf": [
+        "oneOf": [
           {"required": ["image"]},
           {"required": ["images"]}
         ],
