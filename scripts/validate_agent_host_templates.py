@@ -74,6 +74,10 @@ EXPECTED_PUBLIC_ROUTES = {
     "onyx": ("web-server", 3000, "/"),
 }
 BLOCK_MAPPING_KEY = re.compile(r"^([A-Za-z0-9][A-Za-z0-9_.-]*)[ \t]*:(.*)$")
+QUOTED_MAPPING_KEY = re.compile(
+    r"^\s*(?:-\s+)?[\"'][^\n]*[\"']\s*:",
+    re.MULTILINE,
+)
 
 
 def structural_yaml_text(line: str) -> str:
@@ -176,8 +180,6 @@ def validate_unique_block_mapping_keys(document: str, source: Path) -> None:
             ancestors.append((indent, node_id))
         elif child.startswith(("|", ">")):
             block_scalar_indent = indent
-
-
 def scalar(metadata: str, field: str) -> str:
     match = re.search(rf"^  {re.escape(field)}:\s*[\"']?([^\n\"']+)[\"']?\s*$", metadata, re.MULTILINE)
     if not match:
@@ -234,11 +236,7 @@ def declared_variables(metadata: str) -> set[str]:
 def validate_metadata_security(metadata: str, source: Path) -> None:
     """Keep security-sensitive x-tarka fields canonical and unambiguous."""
 
-    if re.search(
-        r"^\s*[\"'][A-Za-z][A-Za-z0-9_-]*[\"']\s*:",
-        metadata,
-        re.MULTILINE,
-    ):
+    if QUOTED_MAPPING_KEY.search(metadata):
         raise ValueError(f"{source.name}: quoted x-tarka keys are forbidden")
     if re.search(
         r"^\s*[A-Za-z][A-Za-z0-9_-]*[ \t]+:", metadata, re.MULTILINE
@@ -336,7 +334,7 @@ def validate_compose_security(document: str, metadata: str, source: Path) -> Non
     services = service_body(document)
     if re.search(r"^\s*<<:\s*", services, re.MULTILINE):
         raise ValueError(f"{source.name}: YAML merge keys are forbidden")
-    if re.search(r"^\s*[\"'][A-Za-z][A-Za-z0-9_-]*[\"']\s*:", services, re.MULTILINE):
+    if QUOTED_MAPPING_KEY.search(services):
         raise ValueError(f"{source.name}: quoted Compose keys are forbidden")
     if re.search(
         r"^\s*(?:(?:-\s+)?[!&*]|(?:[^#\n]+:\s*|-\s+)[!&*])",
