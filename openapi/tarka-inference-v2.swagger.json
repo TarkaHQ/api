@@ -1083,7 +1083,9 @@
         },
         "temperature": {
           "type": "number",
-          "format": "double"
+          "format": "double",
+          "description": "Sampling temperature from 0 through 1.",
+          "maximum": 1
         },
         "timestamp_granularities": {
           "type": "array",
@@ -1120,7 +1122,9 @@
         },
         "temperature": {
           "type": "number",
-          "format": "double"
+          "format": "double",
+          "description": "Sampling temperature from 0 through 1.",
+          "maximum": 1
         },
         "timestamp_granularities": {
           "type": "array",
