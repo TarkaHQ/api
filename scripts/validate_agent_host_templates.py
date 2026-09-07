@@ -184,6 +184,8 @@ def validate_unique_block_mapping_keys(document: str, source: Path) -> None:
             ancestors.append((indent, node_id))
         elif child.startswith(("|", ">")):
             block_scalar_indent = indent
+
+
 def scalar(metadata: str, field: str) -> str:
     match = re.search(rf"^  {re.escape(field)}:\s*[\"']?([^\n\"']+)[\"']?\s*$", metadata, re.MULTILINE)
     if not match:
