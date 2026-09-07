@@ -72,6 +72,10 @@ EXPECTED_PUBLIC_ROUTES = {
     "hermes": ("hermes-webui", 8787, "/"),
     "onyx": ("web-server", 3000, "/"),
 }
+QUOTED_MAPPING_KEY = re.compile(
+    r"^\s*(?:-\s+)?[\"'][^\n]*[\"']\s*:",
+    re.MULTILINE,
+)
 
 
 def scalar(metadata: str, field: str) -> str:
@@ -130,11 +134,7 @@ def declared_variables(metadata: str) -> set[str]:
 def validate_metadata_security(metadata: str, source: Path) -> None:
     """Keep security-sensitive x-tarka fields canonical and unambiguous."""
 
-    if re.search(
-        r"^\s*[\"'][A-Za-z][A-Za-z0-9_-]*[\"']\s*:",
-        metadata,
-        re.MULTILINE,
-    ):
+    if QUOTED_MAPPING_KEY.search(metadata):
         raise ValueError(f"{source.name}: quoted x-tarka keys are forbidden")
     if re.search(
         r"^\s*[A-Za-z][A-Za-z0-9_-]*[ \t]+:", metadata, re.MULTILINE
@@ -231,7 +231,7 @@ def validate_compose_security(document: str, metadata: str, source: Path) -> Non
     services = service_body(document)
     if re.search(r"^\s*<<:\s*", services, re.MULTILINE):
         raise ValueError(f"{source.name}: YAML merge keys are forbidden")
-    if re.search(r"^\s*[\"'][A-Za-z][A-Za-z0-9_-]*[\"']\s*:", services, re.MULTILINE):
+    if QUOTED_MAPPING_KEY.search(services):
         raise ValueError(f"{source.name}: quoted Compose keys are forbidden")
     if re.search(
         r"^\s*(?:[^#\n]+:\s*|-\s+)[!&*][A-Za-z0-9_.-]+",

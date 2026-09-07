@@ -86,6 +86,14 @@ class AgentHostTemplateSecurityTests(unittest.TestCase):
                 SAFE, metadata, Path("test.yaml")
             )
 
+    def test_escaped_quoted_metadata_key_is_rejected(self) -> None:
+        metadata = METADATA.replace("  variables:", '  "vari\\u0061bles":')
+
+        with self.assertRaisesRegex(ValueError, "quoted x-tarka keys"):
+            VALIDATOR.validate_compose_security(
+                SAFE, metadata, Path("test.yaml")
+            )
+
     def test_whitespace_before_metadata_key_colon_is_rejected(self) -> None:
         metadata = METADATA.replace("  variables:", "  variables :")
 
@@ -192,6 +200,14 @@ class AgentHostTemplateSecurityTests(unittest.TestCase):
     def test_quoted_forbidden_key_cannot_bypass_validation(self) -> None:
         document = SAFE.replace(
             "    environment:", '    "privileged": true\n    environment:'
+        )
+        with self.assertRaisesRegex(ValueError, "quoted Compose keys"):
+            self.validate(document)
+
+    def test_escaped_quoted_forbidden_key_cannot_bypass_validation(self) -> None:
+        document = SAFE.replace(
+            "    environment:",
+            '    "privi\\u006ceged": true\n    environment:',
         )
         with self.assertRaisesRegex(ValueError, "quoted Compose keys"):
             self.validate(document)
