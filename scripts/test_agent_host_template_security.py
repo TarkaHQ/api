@@ -173,6 +173,23 @@ class AgentHostTemplateSecurityTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "tags, anchors, and aliases"):
             self.validate(document)
 
+    def test_tag_anchor_or_alias_cannot_hide_forbidden_key(self) -> None:
+        for syntax in (
+            "!!str privileged: true",
+            "&danger privileged: true",
+            "*danger: true",
+        ):
+            with self.subTest(syntax=syntax):
+                document = SAFE.replace(
+                    "    environment:",
+                    f"    {syntax}\n    environment:",
+                )
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "tags, anchors, and aliases",
+                ):
+                    self.validate(document)
+
     def test_unknown_top_level_section_is_rejected(self) -> None:
         with self.assertRaisesRegex(ValueError, "forbidden top-level keys"):
             self.validate(SAFE + "networks:\n  host-access:\n")

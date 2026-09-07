@@ -234,7 +234,7 @@ def validate_compose_security(document: str, metadata: str, source: Path) -> Non
     if re.search(r"^\s*[\"'][A-Za-z][A-Za-z0-9_-]*[\"']\s*:", services, re.MULTILINE):
         raise ValueError(f"{source.name}: quoted Compose keys are forbidden")
     if re.search(
-        r"^\s*(?:[^#\n]+:\s*|-\s+)[!&*][A-Za-z0-9_.-]+",
+        r"^\s*(?:(?:-\s+)?[!&*]|(?:[^#\n]+:\s*|-\s+)[!&*])",
         document,
         re.MULTILINE,
     ):
