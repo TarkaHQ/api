@@ -37,10 +37,10 @@ jobs:
       - name: Check backward compatibility
         if: github.event_name == 'pull_request'
         run: buf breaking --against "${{ github.server_url }}/${{ github.repository }}.git#branch=main"
-      - name: Regenerate control OpenAPI
+      - name: Regenerate OpenAPI
         run: buf generate
-      - name: Check generated control OpenAPI is committed
-        run: git diff --exit-code -- openapi/tarka-control-v1.swagger.json
+      - name: Check generated OpenAPI is committed
+        run: python3 scripts/check_generated_contracts.py
       - name: Validate OpenAPI contracts
         run: python3 scripts/validate_openapi.py
       - name: Validate product access authorization contract

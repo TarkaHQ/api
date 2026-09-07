@@ -8,11 +8,11 @@ that could affect existing clients.
 ## Development workflow
 
 1. Branch from `main`.
-2. Edit authoritative files under `proto/` or the inference contract under
-   `openapi/tarka-inference-v1.openapi.json`.
+2. Edit authoritative files under `proto/` or the authored inference contracts
+   under `openapi/`.
 3. Run `make verify` (or `make verify-docker`).
-4. Review the generated control OpenAPI diff and any authored inference
-   OpenAPI changes for unintended behavior.
+4. Review every generated Swagger diff and any authored inference OpenAPI
+   changes for unintended behavior.
 5. Describe compatibility, authentication, authorization, REST, and rollout
    effects in the pull request.
 
@@ -28,7 +28,7 @@ fields. Reserve the number and name of anything removed. Prefer additive
 changes to the current stable package, and introduce a new versioned package
 for deliberately incompatible designs.
 
-The generated control Swagger document must be produced by the pinned plugin in
+The generated Swagger documents must be produced by the pinned plugin in
 `buf.gen.yaml` and must not be edited manually. Do not commit generated client
 or server code in any language.
 
