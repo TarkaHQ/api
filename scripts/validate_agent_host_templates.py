@@ -113,8 +113,29 @@ def service_body(document: str) -> str:
     return match.group("body")
 
 
+def service_names(document: str) -> list[str]:
+    names: list[str] = []
+    for line in service_body(document).splitlines():
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        if len(line) - len(line.lstrip()) != 2:
+            continue
+        match = re.fullmatch(
+            r"  ([a-z0-9](?:[a-z0-9-]*[a-z0-9])?):\s*",
+            line,
+        )
+        if not match:
+            raise ValueError(
+                "services must use canonical block mapping syntax"
+            )
+        names.append(match.group(1))
+    if not names:
+        raise ValueError("services must contain at least one block-mapped service")
+    return names
+
+
 def service_count(document: str) -> int:
-    return len(re.findall(r"^  [a-z0-9](?:[a-z0-9-]*[a-z0-9])?:\s*$", service_body(document), re.MULTILINE))
+    return len(service_names(document))
 
 
 def declared_variables(metadata: str) -> set[str]:
@@ -216,6 +237,7 @@ def validate_short_volume(entry: str, source: Path) -> str | None:
 def validate_compose_security(document: str, metadata: str, source: Path) -> None:
     validate_metadata_security(metadata, source)
     validate_variable_security(metadata, source)
+    service_count(document)
     top_level_keys = re.findall(
         r"^([A-Za-z][A-Za-z0-9_-]*):(?:\s.*)?$", document, re.MULTILINE
     )

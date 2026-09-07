@@ -155,6 +155,16 @@ class AgentHostTemplateSecurityTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "block mapping syntax"):
             self.validate(document)
 
+    def test_flow_style_service_is_rejected_before_image_validation(self) -> None:
+        document = """x-tarka:
+  id: test
+services:
+  app: {image: example.invalid/app:latest, privileged: true, expose: ["8080"]}
+"""
+
+        with self.assertRaisesRegex(ValueError, "canonical block mapping syntax"):
+            self.validate(document)
+
     def test_explicit_yaml_key_is_rejected(self) -> None:
         document = SAFE.replace(
             "    environment:", "    ? privileged\n    : true\n    environment:"
