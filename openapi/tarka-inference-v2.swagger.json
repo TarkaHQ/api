@@ -353,6 +353,7 @@
         "parameters": [
           {
             "name": "body",
+            "description": "OCR request with either one image or an images array. Public REST JSON request bodies are limited to 8 MiB in total. Each image may contain at most 32 MiB after base64 decoding on transports that permit a larger envelope.",
             "in": "body",
             "required": true,
             "schema": {
@@ -826,6 +827,7 @@
         "parameters": [
           {
             "name": "body",
+            "description": "OCR request with either one image or an images array. Public REST JSON request bodies are limited to 8 MiB in total. Each image may contain at most 32 MiB after base64 decoding on transports that permit a larger envelope.",
             "in": "body",
             "required": true,
             "schema": {
