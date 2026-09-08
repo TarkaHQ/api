@@ -325,6 +325,60 @@ def validate_variable_security(metadata: str, source: Path) -> None:
             )
 
 
+def validate_environment_security(services: str, source: Path) -> None:
+    """Reject plaintext sensitive values only inside Compose environment blocks."""
+
+    environment_indent: int | None = None
+    for raw_line in services.splitlines():
+        line = structural_yaml_text(raw_line)
+        stripped = line.strip()
+        if not stripped:
+            continue
+        indent = len(line) - len(line.lstrip(" "))
+
+        if environment_indent is not None and indent <= environment_indent:
+            environment_indent = None
+
+        if environment_indent is not None:
+            if indent != environment_indent + 2:
+                continue
+            list_match = re.match(
+                r"^-\s*[\"']?([A-Za-z_][A-Za-z0-9_]*)", stripped
+            )
+            if list_match:
+                if SENSITIVE_ENVIRONMENT_NAME.search(list_match.group(1)):
+                    raise ValueError(
+                        f"{source.name}: sensitive environment variables must use mapping syntax"
+                    )
+                continue
+
+            mapping_match = re.match(
+                r"^([A-Za-z_][A-Za-z0-9_]*):\s*(.*?)\s*$", stripped
+            )
+            if (
+                mapping_match
+                and SENSITIVE_ENVIRONMENT_NAME.search(mapping_match.group(1))
+                and not re.fullmatch(
+                    r"\$\{[A-Z][A-Z0-9_]*}", mapping_match.group(2)
+                )
+            ):
+                raise ValueError(
+                    f"{source.name}: sensitive environment variable "
+                    f"{mapping_match.group(1)!r} must use a declared variable"
+                )
+            continue
+
+        flow_match = re.match(r"^environment:\s*[\[{](.*)[\]}]\s*$", stripped)
+        if flow_match:
+            if SENSITIVE_ENVIRONMENT_NAME.search(flow_match.group(1)):
+                raise ValueError(
+                    f"{source.name}: sensitive environment variables must use block mapping syntax"
+                )
+            continue
+        if stripped == "environment:":
+            environment_indent = indent
+
+
 def validate_short_volume(entry: str, source: Path) -> str | None:
     entry = entry.strip().strip("\"'")
     if entry.startswith("/") and ":" not in entry:
@@ -360,6 +414,7 @@ def validate_compose_security(document: str, metadata: str, source: Path) -> Non
         raise ValueError(f"{source.name}: forbidden top-level keys: {unexpected}")
 
     services = service_body(document)
+    validate_environment_security(services, source)
     if re.search(r"^\s*<<:\s*", services, re.MULTILINE):
         raise ValueError(f"{source.name}: YAML merge keys are forbidden")
     if QUOTED_MAPPING_KEY.search(services):
@@ -385,42 +440,6 @@ def validate_compose_security(document: str, metadata: str, source: Path) -> Non
         if key_match and key_match.group(1) in DISALLOWED_SERVICE_KEYS:
             raise ValueError(
                 f"{source.name}: service key {key_match.group(1)!r} is forbidden"
-            )
-
-        list_environment_match = re.match(
-            r"^\s*-\s*[\"']?([A-Z][A-Z0-9_]*)", line
-        )
-        if (
-            list_environment_match
-            and SENSITIVE_ENVIRONMENT_NAME.search(list_environment_match.group(1))
-        ):
-            raise ValueError(
-                f"{source.name}: sensitive environment variables must use mapping syntax"
-            )
-
-        flow_environment_match = re.match(
-            r"^\s*environment:\s*[\[{](.*)[\]}]\s*$", line
-        )
-        if flow_environment_match and SENSITIVE_ENVIRONMENT_NAME.search(
-            flow_environment_match.group(1)
-        ):
-            raise ValueError(
-                f"{source.name}: sensitive environment variables must use block mapping syntax"
-            )
-
-        environment_match = re.match(
-            r"^\s+([A-Z][A-Z0-9_]*):\s*(.*?)\s*$", line
-        )
-        if (
-            environment_match
-            and SENSITIVE_ENVIRONMENT_NAME.search(environment_match.group(1))
-            and not re.fullmatch(
-                r"\$\{[A-Z][A-Z0-9_]*}", environment_match.group(2)
-            )
-        ):
-            raise ValueError(
-                f"{source.name}: sensitive environment variable "
-                f"{environment_match.group(1)!r} must use a declared variable"
             )
 
     declared = declared_variables(metadata)
