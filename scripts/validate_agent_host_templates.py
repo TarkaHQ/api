@@ -67,7 +67,7 @@ DISALLOWED_SERVICE_KEYS = {
     "volumes_from",
 }
 SENSITIVE_ENVIRONMENT_NAME = re.compile(
-    r"(?:PASSWORD|PASSWD|SECRET|TOKEN|API_?KEY|ACCESS_?KEY|PRIVATE_?KEY)",
+    r"(?:PASSWORD|PASSWD|SECRET|TOKEN|API[_.-]?KEY|ACCESS[_.-]?KEY|PRIVATE[_.-]?KEY)",
     re.IGNORECASE,
 )
 INTERPOLATION_PATTERN = re.compile(r"\$\{([A-Z][A-Z0-9_]*)[^}]*}")
@@ -343,7 +343,7 @@ def validate_environment_security(services: str, source: Path) -> None:
             if indent != environment_indent + 2:
                 continue
             list_match = re.match(
-                r"^-\s*[\"']?([A-Za-z_][A-Za-z0-9_]*)", stripped
+                r"^-\s*[\"']?([^=\s\"']+)", stripped
             )
             if list_match:
                 if SENSITIVE_ENVIRONMENT_NAME.search(list_match.group(1)):
@@ -353,7 +353,7 @@ def validate_environment_security(services: str, source: Path) -> None:
                 continue
 
             mapping_match = re.match(
-                r"^([A-Za-z_][A-Za-z0-9_]*):\s*(.*?)\s*$", stripped
+                r"^([^:]+):\s*(.*?)\s*$", stripped
             )
             if (
                 mapping_match
