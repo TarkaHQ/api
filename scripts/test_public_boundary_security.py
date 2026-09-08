@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+import subprocess
+import tempfile
 import unittest
+from pathlib import Path
 
 from check_public_boundary import (
     APPROVED_REMOTE_PLUGIN,
     contract_path_allowed,
+    history_secret_findings,
     remote_plugin_findings,
     secret_findings,
 )
@@ -37,6 +41,43 @@ class PublicBoundarySecretTests(unittest.TestCase):
         credential = "".join(("cfat_", "B" * 48)).encode()
 
         self.assertEqual(secret_findings("asset.bin", b"\x00" + credential), [])
+
+    def test_detects_credentials_removed_from_the_worktree(self) -> None:
+        credential = "".join(("hf_", "C" * 40))
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory)
+            subprocess.run(["git", "init", "-q"], cwd=repository, check=True)
+            subprocess.run(
+                ["git", "config", "user.name", "Security Test"],
+                cwd=repository,
+                check=True,
+            )
+            subprocess.run(
+                ["git", "config", "user.email", "security@test.invalid"],
+                cwd=repository,
+                check=True,
+            )
+            leaked = repository / "removed-contract.txt"
+            leaked.write_text(f"token={credential}\n")
+            subprocess.run(["git", "add", leaked.name], cwd=repository, check=True)
+            subprocess.run(
+                ["git", "commit", "-q", "-m", "add removed contract"],
+                cwd=repository,
+                check=True,
+            )
+            leaked.unlink()
+            subprocess.run(["git", "add", "-u"], cwd=repository, check=True)
+            subprocess.run(
+                ["git", "commit", "-q", "-m", "remove contract"],
+                cwd=repository,
+                check=True,
+            )
+
+            findings = history_secret_findings(repository)
+
+        self.assertEqual(len(findings), 1)
+        self.assertIn("possible Hugging Face token in historical blob", findings[0])
+        self.assertNotIn(credential, findings[0])
 
     def test_allows_only_public_contract_file_types(self) -> None:
         self.assertTrue(contract_path_allowed("proto/tarka/inference/v2/api.proto"))

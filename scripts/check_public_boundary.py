@@ -74,6 +74,54 @@ def secret_findings(name: str, content: bytes) -> list[str]:
     return findings
 
 
+def history_secret_findings(root: Path = ROOT) -> list[str]:
+    shallow = subprocess.check_output(
+        ["git", "rev-parse", "--is-shallow-repository"],
+        cwd=root,
+        text=True,
+    ).strip()
+    if shallow != "false":
+        return ["git history is shallow; historical secrets cannot be verified"]
+
+    object_ids = list(
+        dict.fromkeys(
+            subprocess.check_output(
+                ["git", "rev-list", "--objects", "--all", "--no-object-names"],
+                cwd=root,
+                text=True,
+            ).splitlines()
+        )
+    )
+    if not object_ids:
+        return []
+
+    type_output = subprocess.check_output(
+        ["git", "cat-file", "--batch-check=%(objectname) %(objecttype)"],
+        cwd=root,
+        input="\n".join(object_ids) + "\n",
+        text=True,
+    )
+    object_types = {
+        object_id: object_type
+        for object_id, object_type in (
+            line.split(" ", 1) for line in type_output.splitlines()
+        )
+    }
+
+    findings: list[str] = []
+    for object_id in object_ids:
+        if object_types.get(object_id) != "blob":
+            continue
+        content = subprocess.check_output(
+            ["git", "cat-file", "blob", object_id],
+            cwd=root,
+        )
+        findings.extend(
+            secret_findings(f"historical blob {object_id}", content)
+        )
+    return findings
+
+
 def contract_path_allowed(name: str) -> bool:
     path = PurePosixPath(name)
     if not path.parts or any(
@@ -131,6 +179,8 @@ def main() -> None:
             violations.append(f"tracked contract file contains binary data: {name}")
             continue
         violations.extend(secret_findings(name, content))
+
+    violations.extend(history_secret_findings())
 
     image_assignments: dict[str, str] = {}
     for line in (ROOT / "Makefile").read_text(encoding="utf-8").splitlines():
