@@ -178,9 +178,11 @@
         "parameters": [
           {
             "name": "voice_id",
+            "description": "Tenant-scoped voice clone identifier.",
             "in": "path",
             "required": true,
-            "type": "string"
+            "type": "string",
+            "pattern": "^voice_[0-9a-f]{32}$"
           }
         ],
         "tags": [
@@ -207,9 +209,11 @@
         "parameters": [
           {
             "name": "voice_id",
+            "description": "Tenant-scoped voice clone identifier.",
             "in": "path",
             "required": true,
-            "type": "string"
+            "type": "string",
+            "pattern": "^voice_[0-9a-f]{32}$"
           }
         ],
         "tags": [
@@ -323,9 +327,11 @@
         "parameters": [
           {
             "name": "model",
+            "description": "Lowercase model alias containing 3 to 128 ASCII bytes.",
             "in": "path",
             "required": true,
-            "type": "string"
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._/-]{1,126}[a-z0-9]$"
           }
         ],
         "tags": [
@@ -419,9 +425,11 @@
         "parameters": [
           {
             "name": "response_id",
+            "description": "Stored response identifier returned by the Responses API.",
             "in": "path",
             "required": true,
-            "type": "string"
+            "type": "string",
+            "pattern": "^resp_[A-Za-z0-9_-]{16,128}$"
           }
         ],
         "tags": [
@@ -447,9 +455,11 @@
         "parameters": [
           {
             "name": "response_id",
+            "description": "Stored response identifier returned by the Responses API.",
             "in": "path",
             "required": true,
-            "type": "string"
+            "type": "string",
+            "pattern": "^resp_[A-Za-z0-9_-]{16,128}$"
           }
         ],
         "tags": [
@@ -477,9 +487,11 @@
         "parameters": [
           {
             "name": "response_id",
+            "description": "Stored response identifier returned by the Responses API.",
             "in": "path",
             "required": true,
-            "type": "string"
+            "type": "string",
+            "pattern": "^resp_[A-Za-z0-9_-]{16,128}$"
           },
           {
             "name": "body",
@@ -652,9 +664,11 @@
         "parameters": [
           {
             "name": "voice_id",
+            "description": "Tenant-scoped voice clone identifier.",
             "in": "path",
             "required": true,
-            "type": "string"
+            "type": "string",
+            "pattern": "^voice_[0-9a-f]{32}$"
           }
         ],
         "tags": [
@@ -681,9 +695,11 @@
         "parameters": [
           {
             "name": "voice_id",
+            "description": "Tenant-scoped voice clone identifier.",
             "in": "path",
             "required": true,
-            "type": "string"
+            "type": "string",
+            "pattern": "^voice_[0-9a-f]{32}$"
           }
         ],
         "tags": [
@@ -797,9 +813,11 @@
         "parameters": [
           {
             "name": "model",
+            "description": "Lowercase model alias containing 3 to 128 ASCII bytes.",
             "in": "path",
             "required": true,
-            "type": "string"
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._/-]{1,126}[a-z0-9]$"
           }
         ],
         "tags": [
@@ -893,9 +911,11 @@
         "parameters": [
           {
             "name": "response_id",
+            "description": "Stored response identifier returned by the Responses API.",
             "in": "path",
             "required": true,
-            "type": "string"
+            "type": "string",
+            "pattern": "^resp_[A-Za-z0-9_-]{16,128}$"
           }
         ],
         "tags": [
@@ -921,9 +941,11 @@
         "parameters": [
           {
             "name": "response_id",
+            "description": "Stored response identifier returned by the Responses API.",
             "in": "path",
             "required": true,
-            "type": "string"
+            "type": "string",
+            "pattern": "^resp_[A-Za-z0-9_-]{16,128}$"
           }
         ],
         "tags": [
@@ -951,9 +973,11 @@
         "parameters": [
           {
             "name": "response_id",
+            "description": "Stored response identifier returned by the Responses API.",
             "in": "path",
             "required": true,
-            "type": "string"
+            "type": "string",
+            "pattern": "^resp_[A-Za-z0-9_-]{16,128}$"
           },
           {
             "name": "body",

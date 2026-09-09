@@ -82,7 +82,12 @@
           "name": "model",
           "in": "path",
           "required": true,
-          "schema": {"type": "string"}
+          "schema": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 128,
+            "pattern": "^[a-z0-9][a-z0-9._/-]{1,126}[a-z0-9]$"
+          }
         }
       ],
       "get": {
@@ -197,7 +202,12 @@
           "name": "response_id",
           "in": "path",
           "required": true,
-          "schema": {"type": "string", "pattern": "^resp_[A-Za-z0-9_-]+$"}
+          "schema": {
+            "type": "string",
+            "minLength": 21,
+            "maxLength": 133,
+            "pattern": "^resp_[A-Za-z0-9_-]{16,128}$"
+          }
         }
       ],
       "get": {
@@ -231,7 +241,12 @@
           "name": "response_id",
           "in": "path",
           "required": true,
-          "schema": {"type": "string", "pattern": "^resp_[A-Za-z0-9_-]+$"}
+          "schema": {
+            "type": "string",
+            "minLength": 21,
+            "maxLength": 133,
+            "pattern": "^resp_[A-Za-z0-9_-]{16,128}$"
+          }
         }
       ],
       "post": {
@@ -447,7 +462,12 @@
           "name": "voice_id",
           "in": "path",
           "required": true,
-          "schema": {"type": "string"}
+          "schema": {
+            "type": "string",
+            "minLength": 38,
+            "maxLength": 38,
+            "pattern": "^voice_[0-9a-f]{32}$"
+          }
         }
       ],
       "get": {

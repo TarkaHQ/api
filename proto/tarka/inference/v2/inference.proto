@@ -201,13 +201,23 @@ message OpenAIStreamEvent {
 }
 
 message ResponseIDRequest {
-  string response_id = 1;
+  string response_id = 1 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "Stored response identifier returned by the Responses API."
+    min_length: 21
+    max_length: 133
+    pattern: "^resp_[A-Za-z0-9_-]{16,128}$"
+  }];
 }
 
 message ListModelsRequest {}
 
 message RetrieveModelRequest {
-  string model = 1;
+  string model = 1 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "Lowercase model alias containing 3 to 128 ASCII bytes."
+    min_length: 3
+    max_length: 128
+    pattern: "^[a-z0-9][a-z0-9._/-]{1,126}[a-z0-9]$"
+  }];
 }
 
 message ListModelsResponse {
@@ -566,9 +576,19 @@ message VoiceClone {
 }
 
 message GetVoiceCloneRequest {
-  string voice_id = 1;
+  string voice_id = 1 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "Tenant-scoped voice clone identifier."
+    min_length: 38
+    max_length: 38
+    pattern: "^voice_[0-9a-f]{32}$"
+  }];
 }
 
 message DeleteVoiceCloneRequest {
-  string voice_id = 1;
+  string voice_id = 1 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "Tenant-scoped voice clone identifier."
+    min_length: 38
+    max_length: 38
+    pattern: "^voice_[0-9a-f]{32}$"
+  }];
 }
