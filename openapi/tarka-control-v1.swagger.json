@@ -1768,9 +1768,13 @@
         "allowed_model_aliases": {
           "type": "array",
           "items": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 3,
+            "pattern": "^[a-z0-9][a-z0-9._/-]{1,126}[a-z0-9]$"
           },
-          "description": "allowed_model_aliases narrows model access. Empty uses the organization\npolicy rather than overriding it."
+          "description": "Up to 128 lowercase model aliases, each containing 3 to 128 ASCII bytes. Empty uses the organization policy rather than overriding it.",
+          "maxItems": 128
         },
         "scopes": {
           "type": "array",
@@ -1939,9 +1943,13 @@
         "allowed_model_aliases": {
           "type": "array",
           "items": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 3,
+            "pattern": "^[a-z0-9][a-z0-9._/-]{1,126}[a-z0-9]$"
           },
-          "description": "allowed_model_aliases is required when allow_all_models is false."
+          "description": "Up to 128 lowercase model aliases, each containing 3 to 128 ASCII bytes. Required when allow_all_models is false.",
+          "maxItems": 128
         },
         "allow_all_models": {
           "type": "boolean"

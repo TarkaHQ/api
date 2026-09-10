@@ -723,8 +723,15 @@ message CreateApiKeyRequest {
   // label is an optional human-readable purpose for the credential.
   string label = 2;
   // allowed_model_aliases narrows model access. Empty uses the organization
-  // policy rather than overriding it.
-  repeated string allowed_model_aliases = 3;
+  // policy rather than overriding it. At most 128 aliases may be submitted;
+  // duplicate entries still count toward that request limit.
+  repeated string allowed_model_aliases = 3 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "Up to 128 lowercase model aliases, each containing 3 to 128 ASCII bytes. Empty uses the organization policy rather than overriding it."
+    min_length: 3
+    max_length: 128
+    max_items: 128
+    pattern: "^[a-z0-9][a-z0-9._/-]{1,126}[a-z0-9]$"
+  }];
   // scopes grants product capabilities. Model scopes are "himalaya",
   // "inference", and "utilities"; "sandboxes" grants code-sandbox access.
   // Empty preserves the historical "inference" default.
@@ -803,8 +810,16 @@ message UpdateQuotaPolicyRequest {
   string org_id = 1;
   // max_concurrent_requests is unlimited when absent.
   optional int32 max_concurrent_requests = 2;
-  // allowed_model_aliases is required when allow_all_models is false.
-  repeated string allowed_model_aliases = 3;
+  // allowed_model_aliases is required when allow_all_models is false. At most
+  // 128 aliases may be submitted; duplicate entries still count toward that
+  // request limit.
+  repeated string allowed_model_aliases = 3 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "Up to 128 lowercase model aliases, each containing 3 to 128 ASCII bytes. Required when allow_all_models is false."
+    min_length: 3
+    max_length: 128
+    max_items: 128
+    pattern: "^[a-z0-9][a-z0-9._/-]{1,126}[a-z0-9]$"
+  }];
   bool allow_all_models = 4;
   // monthly_request_budget is unlimited when absent.
   optional int64 monthly_request_budget = 5;
