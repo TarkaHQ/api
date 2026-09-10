@@ -620,7 +620,10 @@
         "properties": {
           "model": {
             "type": "string",
-            "description": "An alias returned by GET /v1/models."
+            "description": "An alias returned by GET /v1/models.",
+            "minLength": 3,
+            "maxLength": 128,
+            "pattern": "^[a-z0-9][a-z0-9._/-]{1,126}[a-z0-9]$"
           },
           "messages": {
             "type": "array",
@@ -930,7 +933,13 @@
         "additionalProperties": true,
         "required": ["model", "input"],
         "properties": {
-          "model": {"type": "string", "description": "An alias returned by GET /v1/models."},
+          "model": {
+            "type": "string",
+            "description": "An alias returned by GET /v1/models.",
+            "minLength": 3,
+            "maxLength": 128,
+            "pattern": "^[a-z0-9][a-z0-9._/-]{1,126}[a-z0-9]$"
+          },
           "input": {
             "description": "Text or an ordered array of OpenAI-compatible response input items.",
             "oneOf": [
@@ -1038,7 +1047,10 @@
         "properties": {
           "model": {
             "type": "string",
-            "description": "An OCR model alias."
+            "description": "An OCR model alias.",
+            "minLength": 3,
+            "maxLength": 128,
+            "pattern": "^[a-z0-9][a-z0-9._/-]{1,126}[a-z0-9]$"
           },
           "image": {
             "type": "string",
@@ -1146,7 +1158,13 @@
         "additionalProperties": true,
         "required": ["model", "image"],
         "properties": {
-          "model": {"type": "string", "description": "A document-layout model alias."},
+          "model": {
+            "type": "string",
+            "description": "A document-layout model alias.",
+            "minLength": 3,
+            "maxLength": 128,
+            "pattern": "^[a-z0-9][a-z0-9._/-]{1,126}[a-z0-9]$"
+          },
           "image": {
             "type": "string",
             "minLength": 1,
@@ -1207,7 +1225,13 @@
         "required": ["file", "model"],
         "properties": {
           "file": {"type": "string", "format": "binary"},
-          "model": {"type": "string", "description": "A speech-to-text model alias."},
+          "model": {
+            "type": "string",
+            "description": "A speech-to-text model alias.",
+            "minLength": 3,
+            "maxLength": 128,
+            "pattern": "^[a-z0-9][a-z0-9._/-]{1,126}[a-z0-9]$"
+          },
           "language": {"type": "string", "description": "An ISO-639-1 language code when supported."},
           "prompt": {"type": "string"},
           "response_format": {
@@ -1228,7 +1252,13 @@
         "required": ["file", "model"],
         "properties": {
           "file": {"type": "string", "format": "binary"},
-          "model": {"type": "string", "description": "A speech model that supports translation."},
+          "model": {
+            "type": "string",
+            "description": "A speech model that supports translation.",
+            "minLength": 3,
+            "maxLength": 128,
+            "pattern": "^[a-z0-9][a-z0-9._/-]{1,126}[a-z0-9]$"
+          },
           "prompt": {"type": "string"},
           "response_format": {
             "type": "string",
@@ -1267,7 +1297,13 @@
         "additionalProperties": true,
         "required": ["model", "input", "voice"],
         "properties": {
-          "model": {"type": "string", "description": "A text-to-speech model alias."},
+          "model": {
+            "type": "string",
+            "description": "A text-to-speech model alias.",
+            "minLength": 3,
+            "maxLength": 128,
+            "pattern": "^[a-z0-9][a-z0-9._/-]{1,126}[a-z0-9]$"
+          },
           "input": {
             "type": "string",
             "minLength": 1,
@@ -1306,7 +1342,13 @@
         "additionalProperties": true,
         "required": ["model", "name", "sample", "consent_signed_by", "consent_date"],
         "properties": {
-          "model": {"type": "string", "description": "A speech model that supports voice cloning."},
+          "model": {
+            "type": "string",
+            "description": "A speech model that supports voice cloning.",
+            "minLength": 3,
+            "maxLength": 128,
+            "pattern": "^[a-z0-9][a-z0-9._/-]{1,126}[a-z0-9]$"
+          },
           "name": {
             "type": "string",
             "minLength": 1,

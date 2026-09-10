@@ -14,6 +14,26 @@ AUTHORED_CONTRACTS = (
 )
 GENERATED_CONTRACT = ROOT / "openapi" / "tarka-inference-v2.swagger.json"
 
+AUTHORED_MODEL_REQUEST_SCHEMAS = (
+    "ChatCompletionRequest",
+    "ResponseCreateRequest",
+    "OCRRequest",
+    "DocumentLayoutRequest",
+    "TranscriptionRequest",
+    "TranslationRequest",
+    "SpeechRequest",
+    "VoiceCloneRequest",
+)
+GENERATED_MODEL_REQUEST_SCHEMAS = (
+    "v2ChatCompletionRequest",
+    "v2OCRRequest",
+    "v2DocumentLayoutRequest",
+    "v2AudioTranscriptionRequest",
+    "v2AudioTranslationRequest",
+    "v2SpeechRequest",
+    "v2VoiceCloneRequest",
+)
+
 IDENTIFIERS = {
     "model": {
         "pattern": r"^[a-z0-9][a-z0-9._/-]{1,126}[a-z0-9]$",
@@ -55,6 +75,10 @@ def operation_parameter(
 
 
 class IdentifierContractTests(unittest.TestCase):
+    def assert_model_alias_schema(self, schema: dict[str, Any]) -> None:
+        for keyword, expected in IDENTIFIERS["model"].items():
+            self.assertEqual(schema.get(keyword), expected)
+
     def assert_identifier(
         self,
         document: dict[str, Any],
@@ -112,6 +136,23 @@ class IdentifierContractTests(unittest.TestCase):
         document = load_json_object(GENERATED_CONTRACT)
         for version in ("v1", "v2"):
             self.assert_version(document, version, openapi3=False)
+
+    def test_authored_requests_publish_model_alias_bounds(self) -> None:
+        for path, _ in AUTHORED_CONTRACTS:
+            schemas = load_json_object(path)["components"]["schemas"]
+            for schema_name in AUTHORED_MODEL_REQUEST_SCHEMAS:
+                with self.subTest(path=path.name, schema=schema_name):
+                    self.assert_model_alias_schema(
+                        schemas[schema_name]["properties"]["model"]
+                    )
+
+    def test_generated_requests_preserve_model_alias_bounds(self) -> None:
+        definitions = load_json_object(GENERATED_CONTRACT)["definitions"]
+        for schema_name in GENERATED_MODEL_REQUEST_SCHEMAS:
+            with self.subTest(schema=schema_name):
+                self.assert_model_alias_schema(
+                    definitions[schema_name]["properties"]["model"]
+                )
 
 
 if __name__ == "__main__":

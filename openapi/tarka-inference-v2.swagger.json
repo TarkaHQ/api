@@ -1096,7 +1096,11 @@
           "type": "string"
         },
         "model": {
-          "type": "string"
+          "type": "string",
+          "description": "Lowercase model alias containing 3 to 128 ASCII bytes.",
+          "maxLength": 128,
+          "minLength": 3,
+          "pattern": "^[a-z0-9][a-z0-9._/-]{1,126}[a-z0-9]$"
         },
         "language": {
           "type": "string"
@@ -1138,7 +1142,11 @@
           "type": "string"
         },
         "model": {
-          "type": "string"
+          "type": "string",
+          "description": "Lowercase model alias containing 3 to 128 ASCII bytes.",
+          "maxLength": 128,
+          "minLength": 3,
+          "pattern": "^[a-z0-9][a-z0-9._/-]{1,126}[a-z0-9]$"
         },
         "prompt": {
           "type": "string"
@@ -1243,7 +1251,11 @@
       "type": "object",
       "properties": {
         "model": {
-          "type": "string"
+          "type": "string",
+          "description": "Lowercase model alias containing 3 to 128 ASCII bytes.",
+          "maxLength": 128,
+          "minLength": 3,
+          "pattern": "^[a-z0-9][a-z0-9._/-]{1,126}[a-z0-9]$"
         },
         "messages": {
           "type": "array",
@@ -1440,7 +1452,11 @@
       "type": "object",
       "properties": {
         "model": {
-          "type": "string"
+          "type": "string",
+          "description": "Lowercase model alias containing 3 to 128 ASCII bytes.",
+          "maxLength": 128,
+          "minLength": 3,
+          "pattern": "^[a-z0-9][a-z0-9._/-]{1,126}[a-z0-9]$"
         },
         "image": {
           "type": "string",
@@ -1644,7 +1660,11 @@
       "type": "object",
       "properties": {
         "model": {
-          "type": "string"
+          "type": "string",
+          "description": "Lowercase model alias containing 3 to 128 ASCII bytes.",
+          "maxLength": 128,
+          "minLength": 3,
+          "pattern": "^[a-z0-9][a-z0-9._/-]{1,126}[a-z0-9]$"
         },
         "image": {
           "type": "string",
@@ -1767,7 +1787,11 @@
       "type": "object",
       "properties": {
         "model": {
-          "type": "string"
+          "type": "string",
+          "description": "Lowercase model alias containing 3 to 128 ASCII bytes.",
+          "maxLength": 128,
+          "minLength": 3,
+          "pattern": "^[a-z0-9][a-z0-9._/-]{1,126}[a-z0-9]$"
         },
         "input": {
           "type": "string",
@@ -1902,7 +1926,11 @@
       "type": "object",
       "properties": {
         "model": {
-          "type": "string"
+          "type": "string",
+          "description": "Lowercase model alias containing 3 to 128 ASCII bytes.",
+          "maxLength": 128,
+          "minLength": 3,
+          "pattern": "^[a-z0-9][a-z0-9._/-]{1,126}[a-z0-9]$"
         },
         "name": {
           "type": "string",
