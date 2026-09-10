@@ -4,7 +4,9 @@ import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
+import check_public_boundary
 from check_public_boundary import (
     APPROVED_REMOTE_PLUGIN,
     contract_path_allowed,
@@ -118,6 +120,86 @@ class PublicBoundarySecretTests(unittest.TestCase):
         self.assertEqual(len(findings), 1)
         self.assertIn("possible Cloudflare API token in historical blob", findings[0])
         self.assertNotIn(credential, findings[0])
+
+    def test_rejects_an_excessive_reachable_object_inventory(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory)
+            subprocess.run(["git", "init", "-q"], cwd=repository, check=True)
+            subprocess.run(
+                ["git", "config", "user.name", "Security Test"],
+                cwd=repository,
+                check=True,
+            )
+            subprocess.run(
+                ["git", "config", "user.email", "security@test.invalid"],
+                cwd=repository,
+                check=True,
+            )
+            (repository / "contract.txt").write_text("bounded\n")
+            subprocess.run(["git", "add", "."], cwd=repository, check=True)
+            subprocess.run(
+                ["git", "commit", "-q", "-m", "initial contract"],
+                cwd=repository,
+                check=True,
+            )
+
+            with patch.object(check_public_boundary, "MAX_HISTORY_OBJECTS", 1):
+                with self.assertRaisesRegex(ValueError, "object count exceeds"):
+                    history_secret_findings(repository)
+
+    def test_rejects_an_oversized_historical_blob_before_reading(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory)
+            subprocess.run(["git", "init", "-q"], cwd=repository, check=True)
+            subprocess.run(
+                ["git", "config", "user.name", "Security Test"],
+                cwd=repository,
+                check=True,
+            )
+            subprocess.run(
+                ["git", "config", "user.email", "security@test.invalid"],
+                cwd=repository,
+                check=True,
+            )
+            (repository / "contract.txt").write_text("ninebytes")
+            subprocess.run(["git", "add", "."], cwd=repository, check=True)
+            subprocess.run(
+                ["git", "commit", "-q", "-m", "oversized contract"],
+                cwd=repository,
+                check=True,
+            )
+
+            with patch.object(check_public_boundary, "MAX_HISTORY_BLOB_BYTES", 8):
+                with self.assertRaisesRegex(ValueError, "blob exceeds scanner limit"):
+                    history_secret_findings(repository)
+
+    def test_rejects_excessive_aggregate_historical_bytes(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory)
+            subprocess.run(["git", "init", "-q"], cwd=repository, check=True)
+            subprocess.run(
+                ["git", "config", "user.name", "Security Test"],
+                cwd=repository,
+                check=True,
+            )
+            subprocess.run(
+                ["git", "config", "user.email", "security@test.invalid"],
+                cwd=repository,
+                check=True,
+            )
+            (repository / "contract.txt").write_text("bounded\n")
+            subprocess.run(["git", "add", "."], cwd=repository, check=True)
+            subprocess.run(
+                ["git", "commit", "-q", "-m", "aggregate contract"],
+                cwd=repository,
+                check=True,
+            )
+
+            with patch.object(
+                check_public_boundary, "MAX_HISTORY_TOTAL_BLOB_BYTES", 1
+            ):
+                with self.assertRaisesRegex(ValueError, "blob bytes exceed"):
+                    history_secret_findings(repository)
 
     def test_allows_only_public_contract_file_types(self) -> None:
         self.assertTrue(contract_path_allowed("proto/tarka/inference/v2/api.proto"))

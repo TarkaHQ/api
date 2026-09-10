@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import re
 import subprocess
+from collections.abc import Iterator
 from pathlib import Path, PurePosixPath
 
 
@@ -48,6 +49,10 @@ SECRET_PATTERNS = {
     "Tarka live key": re.compile(r"\btk_live_[A-Za-z0-9_-]{20,}\b"),
     "Uptime Kuma API key": re.compile(r"\buk1_[A-Za-z0-9_-]{20,}\b"),
 }
+OBJECT_ID_PATTERN = re.compile(r"^(?:[0-9a-f]{40}|[0-9a-f]{64})$")
+MAX_HISTORY_OBJECTS = 100_000
+MAX_HISTORY_BLOB_BYTES = 32 * 1024 * 1024
+MAX_HISTORY_TOTAL_BLOB_BYTES = 512 * 1024 * 1024
 
 
 def tracked_entries() -> list[tuple[str, str]]:
@@ -72,6 +77,142 @@ def secret_findings(name: str, content: bytes) -> list[str]:
     return findings
 
 
+def reachable_object_ids(root: Path) -> list[str]:
+    process = subprocess.Popen(
+        ["git", "rev-list", "--objects", "--all", "--no-object-names"],
+        cwd=root,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    assert process.stdout is not None and process.stderr is not None
+    object_ids: list[str] = []
+    seen: set[str] = set()
+    try:
+        for raw_line in process.stdout:
+            object_id = raw_line.rstrip("\n")
+            if not OBJECT_ID_PATTERN.fullmatch(object_id):
+                raise ValueError("git returned invalid reachable-object metadata")
+            if object_id in seen:
+                continue
+            if len(object_ids) >= MAX_HISTORY_OBJECTS:
+                raise ValueError("reachable Git object count exceeds scanner limit")
+            seen.add(object_id)
+            object_ids.append(object_id)
+        stderr = process.stderr.read()
+        return_code = process.wait()
+        if return_code != 0:
+            raise subprocess.CalledProcessError(
+                return_code,
+                process.args,
+                stderr=stderr,
+            )
+        return object_ids
+    except BaseException:
+        if process.poll() is None:
+            process.kill()
+        process.wait()
+        raise
+    finally:
+        process.stdout.close()
+        process.stderr.close()
+
+
+def historical_blob_inventory(
+    root: Path, object_ids: list[str]
+) -> list[tuple[str, int]]:
+    if not object_ids:
+        return []
+    type_output = subprocess.check_output(
+        [
+            "git",
+            "cat-file",
+            "--batch-check=%(objectname) %(objecttype) %(objectsize)",
+        ],
+        cwd=root,
+        input="\n".join(object_ids) + "\n",
+        text=True,
+    )
+    lines = type_output.splitlines()
+    if len(lines) != len(object_ids):
+        raise ValueError("git object inventory is incomplete")
+
+    blobs: list[tuple[str, int]] = []
+    total_blob_bytes = 0
+    for expected_object_id, line in zip(object_ids, lines):
+        fields = line.split(" ")
+        if len(fields) != 3 or fields[0] != expected_object_id:
+            raise ValueError("git returned invalid object inventory metadata")
+        object_id, object_type, raw_size = fields
+        if object_type not in {"blob", "commit", "tag", "tree"}:
+            raise ValueError(f"git returned invalid object type for {object_id}")
+        try:
+            size = int(raw_size)
+        except ValueError as error:
+            raise ValueError(
+                f"git returned invalid object size for {object_id}"
+            ) from error
+        if size < 0:
+            raise ValueError(f"git returned invalid object size for {object_id}")
+        if object_type != "blob":
+            continue
+        if size > MAX_HISTORY_BLOB_BYTES:
+            raise ValueError(f"historical blob exceeds scanner limit: {object_id}")
+        total_blob_bytes += size
+        if total_blob_bytes > MAX_HISTORY_TOTAL_BLOB_BYTES:
+            raise ValueError("historical blob bytes exceed scanner limit")
+        blobs.append((object_id, size))
+    return blobs
+
+
+def historical_blobs(root: Path) -> Iterator[tuple[str, bytes]]:
+    inventory = historical_blob_inventory(root, reachable_object_ids(root))
+    if not inventory:
+        return
+    process = subprocess.Popen(
+        ["git", "cat-file", "--batch"],
+        cwd=root,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    assert (
+        process.stdin is not None
+        and process.stdout is not None
+        and process.stderr is not None
+    )
+    try:
+        for object_id, expected_size in inventory:
+            process.stdin.write(f"{object_id}\n".encode("ascii"))
+            process.stdin.flush()
+            header = process.stdout.readline().decode("ascii").rstrip("\n")
+            if header != f"{object_id} blob {expected_size}":
+                raise ValueError(f"unable to read historical blob {object_id}")
+            content = process.stdout.read(expected_size)
+            if len(content) != expected_size or process.stdout.read(1) != b"\n":
+                raise ValueError(f"truncated historical blob {object_id}")
+            yield object_id, content
+        process.stdin.close()
+        stderr = process.stderr.read()
+        return_code = process.wait()
+        if return_code != 0:
+            raise subprocess.CalledProcessError(
+                return_code,
+                process.args,
+                stderr=stderr,
+            )
+    except BaseException:
+        if process.poll() is None:
+            process.kill()
+        process.wait()
+        raise
+    finally:
+        if not process.stdin.closed:
+            process.stdin.close()
+        process.stdout.close()
+        process.stderr.close()
+
+
 def history_secret_findings(root: Path = ROOT) -> list[str]:
     shallow = subprocess.check_output(
         ["git", "rev-parse", "--is-shallow-repository"],
@@ -81,39 +222,8 @@ def history_secret_findings(root: Path = ROOT) -> list[str]:
     if shallow != "false":
         return ["git history is shallow; historical secrets cannot be verified"]
 
-    object_ids = list(
-        dict.fromkeys(
-            subprocess.check_output(
-                ["git", "rev-list", "--objects", "--all", "--no-object-names"],
-                cwd=root,
-                text=True,
-            ).splitlines()
-        )
-    )
-    if not object_ids:
-        return []
-
-    type_output = subprocess.check_output(
-        ["git", "cat-file", "--batch-check=%(objectname) %(objecttype)"],
-        cwd=root,
-        input="\n".join(object_ids) + "\n",
-        text=True,
-    )
-    object_types = {
-        object_id: object_type
-        for object_id, object_type in (
-            line.split(" ", 1) for line in type_output.splitlines()
-        )
-    }
-
     findings: list[str] = []
-    for object_id in object_ids:
-        if object_types.get(object_id) != "blob":
-            continue
-        content = subprocess.check_output(
-            ["git", "cat-file", "blob", object_id],
-            cwd=root,
-        )
+    for object_id, content in historical_blobs(root):
         findings.extend(
             secret_findings(f"historical blob {object_id}", content)
         )
