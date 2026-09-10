@@ -646,11 +646,13 @@
           "max_tokens": {
             "type": "integer",
             "minimum": 1,
+            "maximum": 32768,
             "description": "Legacy maximum number of generated tokens."
           },
           "max_completion_tokens": {
             "type": "integer",
             "minimum": 1,
+            "maximum": 32768,
             "description": "Maximum number of generated completion tokens."
           },
           "temperature": {
@@ -665,7 +667,8 @@
           },
           "n": {
             "type": "integer",
-            "minimum": 1
+            "minimum": 1,
+            "maximum": 8
           },
           "stop": {
             "oneOf": [
@@ -1265,7 +1268,13 @@
         "required": ["model", "input", "voice"],
         "properties": {
           "model": {"type": "string", "description": "A text-to-speech model alias."},
-          "input": {"type": "string", "minLength": 1},
+          "input": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096,
+            "description": "Speech text containing at most 4096 UTF-8 bytes.",
+            "x-tarka-max-bytes": 4096
+          },
           "voice": {
             "oneOf": [
               {"type": "string", "minLength": 1},
@@ -1283,7 +1292,12 @@
             "default": "mp3"
           },
           "speed": {"type": "number", "minimum": 0.25, "maximum": 4, "default": 1},
-          "instructions": {"type": "string"},
+          "instructions": {
+            "type": "string",
+            "maxLength": 4096,
+            "description": "Optional speaking instructions containing at most 4096 UTF-8 bytes.",
+            "x-tarka-max-bytes": 4096
+          },
           "stream_format": {"type": "string", "enum": ["audio", "sse"], "default": "audio"}
         }
       },
@@ -1293,9 +1307,26 @@
         "required": ["model", "name", "sample", "consent_signed_by", "consent_date"],
         "properties": {
           "model": {"type": "string", "description": "A speech model that supports voice cloning."},
-          "name": {"type": "string", "minLength": 1},
-          "sample": {"type": "string", "format": "binary"},
-          "consent_signed_by": {"type": "string", "minLength": 1},
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "Display name containing at most 255 UTF-8 bytes.",
+            "x-tarka-max-bytes": 255
+          },
+          "sample": {
+            "type": "string",
+            "format": "binary",
+            "description": "A raw voice sample of at most 30 MiB.",
+            "x-tarka-max-bytes": 31457280
+          },
+          "consent_signed_by": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "Consent signer containing at most 255 UTF-8 bytes.",
+            "x-tarka-max-bytes": 255
+          },
           "consent_date": {"type": "string", "format": "date"}
         }
       },

@@ -1257,7 +1257,9 @@
         },
         "max_tokens": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "maximum": 32768,
+          "minimum": 1
         },
         "temperature": {
           "type": "number",
@@ -1309,11 +1311,15 @@
         "function_call": {},
         "n": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "maximum": 8,
+          "minimum": 1
         },
         "max_completion_tokens": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "maximum": 32768,
+          "minimum": 1
         },
         "response_format": {
           "type": "object"
@@ -1762,7 +1768,10 @@
           "type": "string"
         },
         "input": {
-          "type": "string"
+          "type": "string",
+          "description": "Speech text containing at most 4096 UTF-8 bytes.",
+          "maxLength": 4096,
+          "minLength": 1
         },
         "voice": {
           "type": "string"
@@ -1775,7 +1784,9 @@
           "format": "double"
         },
         "instructions": {
-          "type": "string"
+          "type": "string",
+          "description": "Optional speaking instructions containing at most 4096 UTF-8 bytes.",
+          "maxLength": 4096
         },
         "stream_format": {
           "type": "string"
@@ -1892,20 +1903,29 @@
           "type": "string"
         },
         "name": {
-          "type": "string"
+          "type": "string",
+          "description": "Display name containing at most 255 UTF-8 bytes.",
+          "maxLength": 255,
+          "minLength": 1
         },
         "sample": {
           "type": "string",
-          "format": "byte"
+          "format": "byte",
+          "description": "A raw voice sample of at most 30 MiB before transport encoding."
         },
         "filename": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 255
         },
         "content_type": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 255
         },
         "consent_signed_by": {
-          "type": "string"
+          "type": "string",
+          "description": "Consent signer containing at most 255 UTF-8 bytes.",
+          "maxLength": 255,
+          "minLength": 1
         },
         "consent_date": {
           "type": "string"

@@ -237,7 +237,10 @@ message ChatCompletionRequest {
   string model = 1;
   repeated ChatMessage messages = 2;
   bool stream = 3;
-  optional int32 max_tokens = 4;
+  optional int32 max_tokens = 4 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    minimum: 1
+    maximum: 32768
+  }];
   optional double temperature = 5;
   optional double top_p = 6;
   optional int32 top_k = 7;
@@ -251,8 +254,14 @@ message ChatCompletionRequest {
   google.protobuf.Value tool_choice = 15;
   repeated FunctionDefinition functions = 16;
   google.protobuf.Value function_call = 17;
-  optional int32 n = 18;
-  optional int32 max_completion_tokens = 19;
+  optional int32 n = 18 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    minimum: 1
+    maximum: 8
+  }];
+  optional int32 max_completion_tokens = 19 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    minimum: 1
+    maximum: 32768
+  }];
   google.protobuf.Struct response_format = 20;
   optional bool logprobs = 21;
   optional int32 top_logprobs = 22;
@@ -540,11 +549,18 @@ message AudioTextResponse {
 
 message SpeechRequest {
   string model = 1;
-  string input = 2;
+  string input = 2 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "Speech text containing at most 4096 UTF-8 bytes."
+    min_length: 1
+    max_length: 4096
+  }];
   string voice = 3;
   string response_format = 4;
   optional double speed = 5;
-  string instructions = 6;
+  string instructions = 6 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "Optional speaking instructions containing at most 4096 UTF-8 bytes."
+    max_length: 4096
+  }];
   string stream_format = 7;
   google.protobuf.Struct extra_body = 8;
 }
@@ -556,11 +572,19 @@ message AudioChunk {
 
 message VoiceCloneRequest {
   string model = 1;
-  string name = 2;
-  bytes sample = 3;
-  string filename = 4;
-  string content_type = 5;
-  string consent_signed_by = 6;
+  string name = 2 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "Display name containing at most 255 UTF-8 bytes."
+    min_length: 1
+    max_length: 255
+  }];
+  bytes sample = 3 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {description: "A raw voice sample of at most 30 MiB before transport encoding."}];
+  string filename = 4 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {max_length: 255}];
+  string content_type = 5 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {max_length: 255}];
+  string consent_signed_by = 6 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "Consent signer containing at most 255 UTF-8 bytes."
+    min_length: 1
+    max_length: 255
+  }];
   string consent_date = 7;
   google.protobuf.Struct extra_body = 8;
 }
