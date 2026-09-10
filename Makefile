@@ -40,3 +40,4 @@ verify-docker:
 	docker run --rm -v "$(CURDIR):/workspace" -w /workspace $(OPENAPI_VALIDATOR_IMAGE) python scripts/validate_openapi.py
 	docker run --rm -v "$(CURDIR):/workspace" -w /workspace $(OPENAPI_VALIDATOR_IMAGE) python scripts/validate_product_access.py
 	docker run --rm -v "$(CURDIR):/workspace" -w /workspace $(OPENAPI_VALIDATOR_IMAGE) python scripts/validate_agent_host_templates.py
+	python3 -m unittest discover -s scripts -p 'test_*.py'
