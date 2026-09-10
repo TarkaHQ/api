@@ -21,7 +21,11 @@ concurrency:
 jobs:
   analyze:
     name: Analyze Python
-    runs-on: ubuntu-latest
+    # Public fork pull requests use disposable GitHub-hosted runners.
+    runs-on: >-
+      ${{ fromJSON(github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name != github.repository &&
+          '["ubuntu-latest"]' || '["self-hosted", "Linux", "ARM64", "tarka-fin1"]') }}
     timeout-minutes: 15
     steps:
       - name: Checkout
@@ -30,9 +34,9 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
+        uses: github/codeql-action/init@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4.38.0 (Linux ARM64 support)
         with:
           languages: python
           queries: security-extended
       - name: Analyze
-        uses: github/codeql-action/analyze@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
+        uses: github/codeql-action/analyze@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4.38.0 (Linux ARM64 support)
