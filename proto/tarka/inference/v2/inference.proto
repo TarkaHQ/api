@@ -394,7 +394,10 @@ message OCRRequest {
   }];
   string prompt = 4;
   bool stream = 5;
-  optional int32 max_tokens = 6;
+  optional int32 max_tokens = 6 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    minimum: 1
+    maximum: 32768
+  }];
   optional double temperature = 7;
   google.protobuf.Struct extra_body = 8;
   // Controls the top-level text representation while structured page data is

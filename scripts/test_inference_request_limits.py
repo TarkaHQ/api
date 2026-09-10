@@ -14,11 +14,14 @@ AUTHORED_CONTRACTS = (
 )
 GENERATED_CONTRACT = ROOT / "openapi" / "tarka-inference-v2.swagger.json"
 
-FIELD_LIMITS = {
+TYPED_FIELD_LIMITS = {
     "ChatCompletionRequest": {
         "max_tokens": {"minimum": 1, "maximum": 32768},
         "max_completion_tokens": {"minimum": 1, "maximum": 32768},
         "n": {"minimum": 1, "maximum": 8},
+    },
+    "OCRRequest": {
+        "max_tokens": {"minimum": 1, "maximum": 32768},
     },
     "SpeechRequest": {
         "input": {"minLength": 1, "maxLength": 4096},
@@ -27,6 +30,12 @@ FIELD_LIMITS = {
     "VoiceCloneRequest": {
         "name": {"minLength": 1, "maxLength": 255},
         "consent_signed_by": {"minLength": 1, "maxLength": 255},
+    },
+}
+
+AUTHORED_ONLY_FIELD_LIMITS = {
+    "ResponseCreateRequest": {
+        "max_output_tokens": {"minimum": 1, "maximum": 32768},
     },
 }
 
@@ -46,10 +55,11 @@ GENERATED_ONLY_LIMITS = {
 def assert_limits(
     testcase: unittest.TestCase,
     schemas: dict[str, Any],
+    limits: dict[str, dict[str, dict[str, int]]],
     *,
     generated: bool,
 ) -> None:
-    for schema_name, fields in FIELD_LIMITS.items():
+    for schema_name, fields in limits.items():
         resolved_name = f"v2{schema_name}" if generated else schema_name
         properties = schemas[resolved_name]["properties"]
         for field_name, expected in fields.items():
@@ -64,7 +74,14 @@ class InferenceRequestLimitContractTests(unittest.TestCase):
         for path in AUTHORED_CONTRACTS:
             with self.subTest(path=path.name):
                 document = load_json_object(path)
-                assert_limits(self, document["components"]["schemas"], generated=False)
+                schemas = document["components"]["schemas"]
+                assert_limits(self, schemas, TYPED_FIELD_LIMITS, generated=False)
+                assert_limits(
+                    self,
+                    schemas,
+                    AUTHORED_ONLY_FIELD_LIMITS,
+                    generated=False,
+                )
                 sample = document["components"]["schemas"]["VoiceCloneRequest"][
                     "properties"
                 ]["sample"]
@@ -85,7 +102,7 @@ class InferenceRequestLimitContractTests(unittest.TestCase):
     def test_generated_contract_preserves_typed_rpc_limits(self) -> None:
         document = load_json_object(GENERATED_CONTRACT)
         definitions = document["definitions"]
-        assert_limits(self, definitions, generated=True)
+        assert_limits(self, definitions, TYPED_FIELD_LIMITS, generated=True)
         for schema_name, fields in GENERATED_ONLY_LIMITS.items():
             properties = definitions[schema_name]["properties"]
             for field_name, expected in fields.items():

@@ -945,7 +945,7 @@
               {"type": "array", "items": {"type": "object", "additionalProperties": true}}
             ]
           },
-          "max_output_tokens": {"type": "integer", "minimum": 1},
+          "max_output_tokens": {"type": "integer", "minimum": 1, "maximum": 32768},
           "metadata": {"type": "object", "additionalProperties": {"type": "string"}},
           "parallel_tool_calls": {"type": "boolean"},
           "previous_response_id": {"type": ["string", "null"]},
@@ -1056,7 +1056,7 @@
           },
           "prompt": {"type": "string"},
           "stream": {"type": "boolean", "default": false},
-          "max_tokens": {"type": "integer", "minimum": 1},
+          "max_tokens": {"type": "integer", "minimum": 1, "maximum": 32768},
           "temperature": {"type": "number", "minimum": 0, "default": 0},
           "output_format": {
             "type": "string",

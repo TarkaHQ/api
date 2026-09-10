@@ -1670,7 +1670,9 @@
         },
         "max_tokens": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "maximum": 32768,
+          "minimum": 1
         },
         "temperature": {
           "type": "number",
