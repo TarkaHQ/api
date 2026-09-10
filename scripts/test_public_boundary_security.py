@@ -37,10 +37,13 @@ class PublicBoundarySecretTests(unittest.TestCase):
 
         self.assertEqual(secret_findings("README.md", placeholders.encode()), [])
 
-    def test_ignores_binary_files(self) -> None:
+    def test_detects_ascii_credentials_inside_binary_files(self) -> None:
         credential = "".join(("cfat_", "B" * 48)).encode()
 
-        self.assertEqual(secret_findings("asset.bin", b"\x00" + credential), [])
+        findings = secret_findings("asset.bin", b"\x00" + credential)
+
+        self.assertEqual(findings, ["possible Cloudflare API token in asset.bin:1"])
+        self.assertNotIn(credential.decode(), repr(findings))
 
     def test_detects_credentials_removed_from_the_worktree(self) -> None:
         credential = "".join(("hf_", "C" * 40))
@@ -77,6 +80,43 @@ class PublicBoundarySecretTests(unittest.TestCase):
 
         self.assertEqual(len(findings), 1)
         self.assertIn("possible Hugging Face token in historical blob", findings[0])
+        self.assertNotIn(credential, findings[0])
+
+    def test_detects_credentials_removed_from_binary_history(self) -> None:
+        credential = "".join(("cfat_", "D" * 48))
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory)
+            subprocess.run(["git", "init", "-q"], cwd=repository, check=True)
+            subprocess.run(
+                ["git", "config", "user.name", "Security Test"],
+                cwd=repository,
+                check=True,
+            )
+            subprocess.run(
+                ["git", "config", "user.email", "security@test.invalid"],
+                cwd=repository,
+                check=True,
+            )
+            leaked = repository / "removed-binary.bin"
+            leaked.write_bytes(b"\x00token=" + credential.encode() + b"\n")
+            subprocess.run(["git", "add", leaked.name], cwd=repository, check=True)
+            subprocess.run(
+                ["git", "commit", "-q", "-m", "add removed binary"],
+                cwd=repository,
+                check=True,
+            )
+            leaked.unlink()
+            subprocess.run(["git", "add", "-u"], cwd=repository, check=True)
+            subprocess.run(
+                ["git", "commit", "-q", "-m", "remove binary"],
+                cwd=repository,
+                check=True,
+            )
+
+            findings = history_secret_findings(repository)
+
+        self.assertEqual(len(findings), 1)
+        self.assertIn("possible Cloudflare API token in historical blob", findings[0])
         self.assertNotIn(credential, findings[0])
 
     def test_allows_only_public_contract_file_types(self) -> None:

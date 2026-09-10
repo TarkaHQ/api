@@ -63,8 +63,6 @@ def tracked_entries() -> list[tuple[str, str]]:
 
 
 def secret_findings(name: str, content: bytes) -> list[str]:
-    if b"\0" in content:
-        return []
     text = content.decode("utf-8", errors="replace")
     findings: list[str] = []
     for label, pattern in SECRET_PATTERNS.items():
