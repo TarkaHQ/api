@@ -156,6 +156,11 @@ the route or request message.
 | `GetAgentHostGatewayPairing` | `GET /control/v1/orgs/{org_id}/agent-hosts/{agent_host_id}/gateways/{gateway_id}/pairing` | Create a short-lived post-deploy gateway pairing artifact without exposing its private runtime |
 | `CreateAgentHost` | `POST /control/v1/orgs/{org_id}/agent-hosts` | Apply a template, inline Compose stack, or backward-compatible single image after beta approval |
 | `GetAgentHostConfiguration` | `GET /control/v1/orgs/{org_id}/agent-hosts/{agent_host_id}/configuration` | Read the editable active revision with every secret value redacted |
+| `ListAgentHostTerminalTargets` | `GET /control/v1/orgs/{org_id}/agent-hosts/{agent_host_id}/terminal-targets` | List running application containers available for interactive shells |
+| `CreateAgentHostTerminal` | `POST /control/v1/orgs/{org_id}/agent-hosts/{agent_host_id}/terminals` | Open a bounded, owner-bound PTY session |
+| `ReadAgentHostTerminal` | `GET /control/v1/orgs/{org_id}/agent-hosts/{agent_host_id}/terminals/{terminal_id}` | Read output from a byte cursor, optionally waiting up to 20 seconds |
+| `WriteAgentHostTerminal` | `POST /control/v1/orgs/{org_id}/agent-hosts/{agent_host_id}/terminals/{terminal_id}:write` | Deliver ordered input bytes or resize the terminal; retries of the last sequence are idempotent |
+| `CloseAgentHostTerminal` | `DELETE /control/v1/orgs/{org_id}/agent-hosts/{agent_host_id}/terminals/{terminal_id}` | Disconnect an interactive shell |
 | `DeleteAgentHost` | `DELETE /control/v1/orgs/{org_id}/agent-hosts/{agent_host_id}` | Request deletion of an Agent Host stack |
 | `CreateJob` | `POST /control/v1/orgs/{org_id}/jobs` | Apply Batch Job desired state after beta approval |
 
