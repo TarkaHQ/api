@@ -19,7 +19,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Tarka Control API"
     description: "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management."
-    version: "1.8.0"
+    version: "1.9.0"
   }
   host: "tarka.rest"
   schemes: HTTPS
@@ -141,6 +141,48 @@ service ProvisioningService {
   // Agent Host namespace and is never exposed directly to the Internet.
   rpc GetAgentHostGatewayPairing(GetAgentHostGatewayPairingRequest) returns (AgentHostGatewayPairing) {
     option (google.api.http) = {get: "/control/v1/orgs/{org_id}/agent-hosts/{agent_host_id}/gateways/{gateway_id}/pairing"};
+  }
+
+  // ListAgentHostTerminalTargets lists running application containers in this
+  // host. Platform gateways and initialization containers are excluded.
+  rpc ListAgentHostTerminalTargets(ListAgentHostTerminalTargetsRequest) returns (ListAgentHostTerminalTargetsResponse) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/agent-hosts/{agent_host_id}/terminal-targets"};
+  }
+
+  // CreateAgentHostTerminal opens a real interactive PTY in a selected running
+  // container. Sessions belong to the authenticated user and this host; opening
+  // another session never resumes a different user's shell. Requires a resource
+  // manager role and active agents access. No command or output is audit logged.
+  rpc CreateAgentHostTerminal(CreateAgentHostTerminalRequest) returns (AgentHostTerminal) {
+    option (google.api.http) = {
+      post: "/control/v1/orgs/{org_id}/agent-hosts/{agent_host_id}/terminals"
+      body: "*"
+    };
+  }
+
+  // ReadAgentHostTerminal reads bounded raw terminal bytes after a byte offset.
+  // It may wait up to 20 seconds for output. Old bytes can be evicted; callers
+  // must advance to next_offset and indicate output_lost to the user.
+  rpc ReadAgentHostTerminal(ReadAgentHostTerminalRequest) returns (AgentHostTerminalOutput) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/agent-hosts/{agent_host_id}/terminals/{terminal_id}"};
+  }
+
+  // WriteAgentHostTerminal sends up to 16 KiB of raw input and/or a PTY resize.
+  // Each write uses a strictly increasing input_sequence starting at 1. An exact
+  // retry of the last write is acknowledged without replaying its input; a
+  // reused sequence with different content or a sequence gap is rejected.
+  rpc WriteAgentHostTerminal(WriteAgentHostTerminalRequest) returns (WriteAgentHostTerminalResponse) {
+    option (google.api.http) = {
+      post: "/control/v1/orgs/{org_id}/agent-hosts/{agent_host_id}/terminals/{terminal_id}:write"
+      body: "*"
+    };
+  }
+
+  // CloseAgentHostTerminal closes only the caller's session and its exec
+  // connection. Expired or already closed sessions are safe to close again.
+  // Closing a terminal does not delete the host or its persistent files.
+  rpc CloseAgentHostTerminal(CloseAgentHostTerminalRequest) returns (CloseAgentHostTerminalResponse) {
+    option (google.api.http) = {delete: "/control/v1/orgs/{org_id}/agent-hosts/{agent_host_id}/terminals/{terminal_id}"};
   }
 
   // DeleteAgentHost requests deletion of an Agent Host and every namespaced
@@ -1054,3 +1096,88 @@ message GitRepository {
   google.protobuf.Timestamp created_at = 9;
   google.protobuf.Timestamp updated_at = 10;
 }
+
+// ListAgentHostTerminalTargetsRequest selects a host visible to the caller.
+message ListAgentHostTerminalTargetsRequest {
+  string org_id = 1;
+  string agent_host_id = 2;
+}
+
+// AgentHostTerminalTarget identifies one currently running application container.
+// Names are informational, not authority to access arbitrary Kubernetes pods.
+message AgentHostTerminalTarget {
+  string service = 1;
+  string pod_name = 2;
+  string container_name = 3;
+}
+
+message ListAgentHostTerminalTargetsResponse {
+  repeated AgentHostTerminalTarget targets = 1;
+}
+
+message CreateAgentHostTerminalRequest {
+  string org_id = 1;
+  string agent_host_id = 2;
+  string pod_name = 3;
+  string container_name = 4;
+  // auto selects bash when available and otherwise sh. Also accepts sh or bash.
+  string shell = 5;
+  // Terminal dimensions: 20..400 columns and 5..200 rows; zero uses 100x30.
+  uint32 cols = 6;
+  uint32 rows = 7;
+}
+
+// AgentHostTerminal contains no reusable infrastructure credential. The opaque
+// ID is usable only with the same authenticated user, organization, and host.
+// Sessions expire after 15 minutes without input or one hour in total; the
+// broker can also terminate a session during restart or after 64 MiB of output.
+message AgentHostTerminal {
+  string terminal_id = 1;
+  AgentHostTerminalTarget target = 2;
+  google.protobuf.Timestamp expires_at = 3;
+}
+
+message ReadAgentHostTerminalRequest {
+  string org_id = 1;
+  string agent_host_id = 2;
+  string terminal_id = 3;
+  uint64 offset = 4;
+  // Zero returns immediately; maximum 20 seconds.
+  uint32 wait_seconds = 5;
+}
+
+// AgentHostTerminalOutput contains at most 64 KiB of raw PTY output. REST bytes
+// are base64 encoded; clients must not interpret output as HTML or log it.
+message AgentHostTerminalOutput {
+  bytes data = 1;
+  uint64 next_offset = 2;
+  bool output_lost = 3;
+  bool closed = 4;
+  int32 exit_code = 5;
+  // Stable, non-secret reason such as shell_unavailable, session_expired,
+  // output_limit, or connection_closed. An empty value indicates normal exit.
+  string error_code = 6;
+}
+
+message WriteAgentHostTerminalRequest {
+  string org_id = 1;
+  string agent_host_id = 2;
+  string terminal_id = 3;
+  bytes data = 4;
+  uint64 input_sequence = 5;
+  // Both zero preserves the current size; otherwise the create bounds apply.
+  uint32 cols = 6;
+  uint32 rows = 7;
+}
+
+message WriteAgentHostTerminalResponse {
+  uint64 acknowledged_sequence = 1;
+}
+
+message CloseAgentHostTerminalRequest {
+  string org_id = 1;
+  string agent_host_id = 2;
+  string terminal_id = 3;
+}
+
+message CloseAgentHostTerminalResponse {}

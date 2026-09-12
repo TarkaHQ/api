@@ -3,7 +3,7 @@
   "info": {
     "title": "Tarka Control API",
     "description": "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management.",
-    "version": "1.8.0"
+    "version": "1.9.0"
   },
   "tags": [
     {
@@ -457,6 +457,238 @@
             "in": "path",
             "required": true,
             "type": "string"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/agent-hosts/{agent_host_id}/terminal-targets": {
+      "get": {
+        "summary": "ListAgentHostTerminalTargets lists running application containers in this\nhost. Platform gateways and initialization containers are excluded.",
+        "operationId": "ProvisioningService_ListAgentHostTerminalTargets",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListAgentHostTerminalTargetsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "agent_host_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/agent-hosts/{agent_host_id}/terminals": {
+      "post": {
+        "summary": "CreateAgentHostTerminal opens a real interactive PTY in a selected running\ncontainer. Sessions belong to the authenticated user and this host; opening\nanother session never resumes a different user's shell. Requires a resource\nmanager role and active agents access. No command or output is audit logged.",
+        "operationId": "ProvisioningService_CreateAgentHostTerminal",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1AgentHostTerminal"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "agent_host_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProvisioningServiceCreateAgentHostTerminalBody"
+            }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/agent-hosts/{agent_host_id}/terminals/{terminal_id}": {
+      "get": {
+        "summary": "ReadAgentHostTerminal reads bounded raw terminal bytes after a byte offset.\nIt may wait up to 20 seconds for output. Old bytes can be evicted; callers\nmust advance to next_offset and indicate output_lost to the user.",
+        "operationId": "ProvisioningService_ReadAgentHostTerminal",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1AgentHostTerminalOutput"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "agent_host_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "terminal_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "wait_seconds",
+            "description": "Zero returns immediately; maximum 20 seconds.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      },
+      "delete": {
+        "summary": "CloseAgentHostTerminal closes only the caller's session and its exec\nconnection. Expired or already closed sessions are safe to close again.\nClosing a terminal does not delete the host or its persistent files.",
+        "operationId": "ProvisioningService_CloseAgentHostTerminal",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CloseAgentHostTerminalResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "agent_host_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "terminal_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/agent-hosts/{agent_host_id}/terminals/{terminal_id}:write": {
+      "post": {
+        "summary": "WriteAgentHostTerminal sends up to 16 KiB of raw input and/or a PTY resize.\nEach write uses a strictly increasing input_sequence starting at 1. An exact\nretry of the last write is acknowledged without replaying its input; a\nreused sequence with different content or a sequence gap is rejected.",
+        "operationId": "ProvisioningService_WriteAgentHostTerminal",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1WriteAgentHostTerminalResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "agent_host_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "terminal_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProvisioningServiceWriteAgentHostTerminalBody"
+            }
           }
         ],
         "tags": [
@@ -1758,6 +1990,30 @@
       },
       "description": "CreateAgentHostRequest applies desired state for a complete Agent Host\nCompose stack. Existing single-image callers remain supported and are\nnormalized into a one-service stack."
     },
+    "ProvisioningServiceCreateAgentHostTerminalBody": {
+      "type": "object",
+      "properties": {
+        "pod_name": {
+          "type": "string"
+        },
+        "container_name": {
+          "type": "string"
+        },
+        "shell": {
+          "type": "string",
+          "description": "auto selects bash when available and otherwise sh. Also accepts sh or bash."
+        },
+        "cols": {
+          "type": "integer",
+          "format": "int64",
+          "description": "Terminal dimensions: 20..400 columns and 5..200 rows; zero uses 100x30."
+        },
+        "rows": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
     "ProvisioningServiceCreateApiKeyBody": {
       "type": "object",
       "properties": {
@@ -1966,6 +2222,28 @@
         }
       },
       "description": "UpdateQuotaPolicyRequest replaces the organization's inference policy."
+    },
+    "ProvisioningServiceWriteAgentHostTerminalBody": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "string",
+          "format": "byte"
+        },
+        "input_sequence": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "cols": {
+          "type": "integer",
+          "format": "int64",
+          "description": "Both zero preserves the current size; otherwise the create bounds apply."
+        },
+        "rows": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
     },
     "SandboxServiceCreateSandboxBody": {
       "type": "object",
@@ -2312,6 +2590,65 @@
       },
       "description": "AgentHostTemplateVariable documents one configurable template value without\nexposing a runtime secret."
     },
+    "v1AgentHostTerminal": {
+      "type": "object",
+      "properties": {
+        "terminal_id": {
+          "type": "string"
+        },
+        "target": {
+          "$ref": "#/definitions/v1AgentHostTerminalTarget"
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "description": "AgentHostTerminal contains no reusable infrastructure credential. The opaque\nID is usable only with the same authenticated user, organization, and host.\nSessions expire after 15 minutes without input or one hour in total; the\nbroker can also terminate a session during restart or after 64 MiB of output."
+    },
+    "v1AgentHostTerminalOutput": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "string",
+          "format": "byte"
+        },
+        "next_offset": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "output_lost": {
+          "type": "boolean"
+        },
+        "closed": {
+          "type": "boolean"
+        },
+        "exit_code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "error_code": {
+          "type": "string",
+          "description": "Stable, non-secret reason such as shell_unavailable, session_expired,\noutput_limit, or connection_closed. An empty value indicates normal exit."
+        }
+      },
+      "description": "AgentHostTerminalOutput contains at most 64 KiB of raw PTY output. REST bytes\nare base64 encoded; clients must not interpret output as HTML or log it."
+    },
+    "v1AgentHostTerminalTarget": {
+      "type": "object",
+      "properties": {
+        "service": {
+          "type": "string"
+        },
+        "pod_name": {
+          "type": "string"
+        },
+        "container_name": {
+          "type": "string"
+        }
+      },
+      "description": "AgentHostTerminalTarget identifies one currently running application container.\nNames are informational, not authority to access arbitrary Kubernetes pods."
+    },
     "v1AgentHostVariable": {
       "type": "object",
       "properties": {
@@ -2397,6 +2734,9 @@
         }
       },
       "description": "BootstrapCurrentUserRequest customizes the first organization created for an\nidentity. An empty org_name lets the server derive a display name."
+    },
+    "v1CloseAgentHostTerminalResponse": {
+      "type": "object"
     },
     "v1CodeSandbox": {
       "type": "object",
@@ -2716,6 +3056,18 @@
         }
       },
       "description": "ListAgentHostTemplatesResponse contains stable template metadata."
+    },
+    "v1ListAgentHostTerminalTargetsResponse": {
+      "type": "object",
+      "properties": {
+        "targets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1AgentHostTerminalTarget"
+          }
+        }
+      }
     },
     "v1ListApiKeysResponse": {
       "type": "object",
@@ -3402,6 +3754,15 @@
         }
       },
       "description": "UsageSummary aggregates metering over a half-open UTC time interval."
+    },
+    "v1WriteAgentHostTerminalResponse": {
+      "type": "object",
+      "properties": {
+        "acknowledged_sequence": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
     }
   },
   "securityDefinitions": {
