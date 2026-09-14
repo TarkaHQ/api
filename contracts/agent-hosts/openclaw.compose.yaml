@@ -24,7 +24,7 @@ x-tarka:
     managed_model: true
     default_model_alias: qwen3.8-flash-next
     context_token_limit: 81920
-    compaction_threshold_tokens: 65536
+    compaction_threshold_tokens: 61920
     utility_modalities: [stt, ocr, tts, embedding, rerank]
     platform_services: [openclaw]
   gateways:
