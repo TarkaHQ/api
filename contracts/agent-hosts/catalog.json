@@ -3,11 +3,11 @@
   "templates": [
     {
       "id": "hermes",
-      "version": "2026.5.29-tarka.4",
+      "version": "0.21.2-tarka.1",
       "tier": "core",
       "service_count": 2,
       "file": "hermes.compose.yaml",
-      "sha256": "e43dca251165d0b777c6c540b394a3db7da9e4a69642ee0d19620a73bc1e4c5c"
+      "sha256": "26e84d9589fa75cdc507c9d07f1b9bb327dacf374f9e8b4986f362c4bd8189ed"
     },
     {
       "id": "onyx",
@@ -19,11 +19,11 @@
     },
     {
       "id": "openclaw",
-      "version": "2026.2.6-tarka.4",
+      "version": "2026.9.4-tarka.1",
       "tier": "core",
       "service_count": 2,
       "file": "openclaw.compose.yaml",
-      "sha256": "1b7541b9a1d104dfe73c30b3bd3d1f627f605fd6796821bdfc764bc5125aac37"
+      "sha256": "74267fd61f0ca754e81e5ed50dea87668f28cc096260a2199f83f40578875058"
     }
   ]
 }

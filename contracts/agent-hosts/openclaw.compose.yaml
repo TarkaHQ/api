@@ -2,7 +2,7 @@ x-tarka:
   id: openclaw
   title: OpenClaw
   description: OpenClaw with a persistent workspace and isolated browser automation.
-  version: "2026.2.6-tarka.4"
+  version: "2026.9.4-tarka.1"
   tier: core
   routes:
     - service: openclaw
@@ -71,7 +71,7 @@ x-tarka:
 
 services:
   openclaw:
-    image: coollabsio/openclaw@sha256:a43ffaca3cc802ec28c16afa37c9d4cd28a9040ddd84aa386467bd09740e3dee
+    image: coollabsio/openclaw@sha256:c18fb1db3c42a13a9823c8a889a7f48f7be3e138b3c14d67415a1241a4848d59
     environment:
       AUTH_USERNAME: ${AUTH_USERNAME}
       AUTH_PASSWORD: ${AUTH_PASSWORD}
@@ -79,7 +79,7 @@ services:
       TARKA_API_URL: http://tarka/v1
       PORT: "8080"
       OPENCLAW_GATEWAY_PORT: "18789"
-      OPENCLAW_GATEWAY_BIND: lan
+      OPENCLAW_GATEWAY_BIND: loopback
       OPENCLAW_STATE_DIR: /data/.openclaw
       OPENCLAW_WORKSPACE_DIR: /data/workspace
       BROWSER_CDP_URL: http://browser:9223
