@@ -92,7 +92,7 @@ services:
       browser:
         condition: service_healthy
     healthcheck:
-      test: [CMD, curl, -sf, http://127.0.0.1:8080/healthz]
+      test: [CMD-SHELL, "curl -fsS -o /dev/null http://127.0.0.1:18789/readyz && curl -fsS -o /dev/null http://127.0.0.1:8080/healthz"]
       interval: 10s
       timeout: 10s
       retries: 5

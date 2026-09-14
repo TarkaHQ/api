@@ -23,7 +23,7 @@
       "tier": "core",
       "service_count": 2,
       "file": "openclaw.compose.yaml",
-      "sha256": "5b6a88368332a04f712a41832b70a0123c156174db911025ab85ee86a0c9e4b7"
+      "sha256": "c432d40d29fb0d54d6562bd576561e4949fa4a624fa0f6e619a1d1f9f87ec314"
     }
   ]
 }
