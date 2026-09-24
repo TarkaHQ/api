@@ -213,6 +213,20 @@ class PublicBoundarySecretTests(unittest.TestCase):
         self.assertFalse(contract_path_allowed("contracts/bad\nname.json"))
         self.assertFalse(contract_path_allowed("contracts/path with space/spec.json"))
 
+    def test_allows_only_the_two_skill_example_files(self) -> None:
+        self.assertTrue(contract_path_allowed("examples/tarka-control-api/SKILL.md"))
+        self.assertTrue(contract_path_allowed("examples/tarka-control-api/scripts/request.py"))
+        for name in (
+            "examples/tarka-control-api/scripts/server.py",
+            "examples/tarka-control-api/requirements.txt",
+            "examples/tarka-control-api/Dockerfile",
+            "examples/tarka-control-api/credentials.json",
+            "examples/another-skill/SKILL.md",
+            "examples/tarka-control-api/scripts/../request.py",
+        ):
+            with self.subTest(name=name):
+                self.assertFalse(contract_path_allowed(name))
+
     def test_accepts_revision_pinned_approved_remote_plugin(self) -> None:
         content = (
             "version: v2\nplugins:\n"
