@@ -11,8 +11,9 @@ bindings and no Tarka implementation code.
 
 ## Public contract boundary
 
-Only externally observable API contracts belong here. Service handlers,
-business rules, authentication and authorization implementation, persistence,
+Externally observable API contracts and the small client skill example below
+belong here. Service handlers, business rules, authentication and authorization
+implementation, persistence,
 controllers, gateway hooks, runtime code, container definitions, and deployment
 manifests remain in Tarka's private infrastructure repository. Generated
 bindings used by Tarka are produced inside that private build.
@@ -31,6 +32,7 @@ deployment manifests, and repository dependencies.
 | `openapi/tarka-inference-v2.openapi.json` | Authored OpenAPI 3.1 contract for the deprecated `/v2` REST alias |
 | `openapi/tarka-inference-v2.swagger.json` | Generated OpenAPI v2 description of protobuf-bound inference methods |
 | `contracts/agent-hosts` | Versioned OpenClaw, Hermes, and Onyx Compose contracts plus their machine-readable release catalog |
+| `examples/tarka-control-api` | Copyable Claude Code / Codex skill with a dependency-free Control API helper |
 | `buf.yaml` | Buf module, lint, dependency, and compatibility policy |
 | `buf.gen.yaml` | Pinned generator for the derived control OpenAPI document |
 
@@ -289,6 +291,66 @@ including requests sent through `/chat/completions`.
 Tarka implements the subset documented in
 `openapi/tarka-inference-v1.openapi.json`; OpenAI endpoints absent from that
 document are not part of Tarka's stable public contract.
+
+## Example agent skill
+
+A useful skill can be just a Markdown file and a small script. The
+[`tarka-control-api` example](examples/tarka-control-api/SKILL.md) shows how to
+teach Claude Code or Codex to use Tarka's entire public Control API:
+
+```text
+examples/tarka-control-api/
+├── SKILL.md             # When to use the skill and how to work with the API
+└── scripts/request.py   # Authenticated HTTP requests using Python's standard library
+```
+
+The skill explains organization selection and API workflows; the helper handles
+HTTP requests. Exact routes and fields come from the existing public contract,
+so there is no second endpoint catalog to maintain. Copy the folder, adjust the
+description and instructions for your workflow, and you have your own skill.
+
+### Try it
+
+You need Python 3.9+ and an existing Tarka account access token. A `tk_live_`
+inference key cannot access the general Control API; sandbox-scoped keys can
+access SandboxService only. This example does not implement login or token
+refresh. Supply the token through your environment, for example with this
+hidden terminal prompt, then run a read-only request from the API repo root:
+
+```bash
+export TARKA_ACCESS_TOKEN="$(python3 -c 'from getpass import getpass; print(getpass("Tarka account access token: "))')"
+python3 examples/tarka-control-api/scripts/request.py GET /me
+```
+
+Start your agent from that terminal so it inherits the environment. Copy the
+**whole folder** into your project's skills directory (replace the project
+path below):
+
+```bash
+# Codex
+mkdir -p /path/to/your-project/.agents/skills
+cp -R examples/tarka-control-api /path/to/your-project/.agents/skills/
+
+# Claude Code
+mkdir -p /path/to/your-project/.claude/skills
+cp -R examples/tarka-control-api /path/to/your-project/.claude/skills/
+```
+
+See the official [Codex skill documentation](https://learn.chatgpt.com/docs/build-skills)
+and [Claude Code skill documentation](https://code.claude.com/docs/en/skills)
+for discovery and invocation options. The copied skill uses public documentation
+links and works without keeping this repository cloned.
+
+Try prompts such as:
+
+- "Use the tarka-control-api skill to list my organizations and their resources."
+- "Use the tarka-control-api skill to create an OpenClaw Agent Host named demo in my development organization."
+- "Use the tarka-control-api skill to run a Python hello-world in a sandbox in my development organization, then delete the sandbox."
+
+The latter two prompts create resources. Keep credentials out of chat and
+committed files; the skill explains how to save one-time credential responses
+privately. For a narrower skill, change the description and keep only the
+workflow guidance your use case needs.
 
 ## Generate your own client
 

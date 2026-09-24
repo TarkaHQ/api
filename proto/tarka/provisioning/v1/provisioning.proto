@@ -628,6 +628,28 @@ message CreateAgentHostRequest {
   // files, and the Compose services that receive the managed environment.
   // It is optional for backward compatibility.
   AgentHostRuntimeConfiguration runtime = 14;
+  // github_registry_credentials controls private ghcr.io pulls for custom Compose
+  // only. Omission preserves the saved credentials; replacement requires both
+  // username and token. Plaintext tokens are write-only and never echoed.
+  AgentHostGitHubRegistryCredentials github_registry_credentials = 15;
+}
+
+// AgentHostGitHubRegistryCredentials changes this host's ghcr.io credentials.
+// A classic GitHub PAT needs read:packages and access to every referenced image.
+message AgentHostGitHubRegistryCredentials {
+  // username is the token owner's GitHub login, not the package organization.
+  string username = 1;
+  // token is a write-only classic PAT. It is encrypted before persistence.
+  string token = 2;
+  // remove clears saved credentials and is mutually exclusive with username/token.
+  // The resulting Compose images must be accessible anonymously.
+  bool remove = 3;
+}
+
+// AgentHostGitHubRegistryAccess contains only non-secret saved credential metadata.
+message AgentHostGitHubRegistryAccess {
+  string username = 1;
+  bool configured = 2;
 }
 
 // AgentHostVariable is one Compose interpolation value. Values marked secret
@@ -744,6 +766,8 @@ message AgentHostConfiguration {
   int32 public_port = 9;
   string tier = 10;
   AgentHostRuntimeConfiguration runtime = 11;
+  // github_registry_access never contains the saved token.
+  AgentHostGitHubRegistryAccess github_registry_access = 12;
 }
 
 // GetAgentHostGatewayPairingRequest selects a configured post-deploy gateway.
