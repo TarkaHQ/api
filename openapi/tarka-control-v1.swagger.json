@@ -3,7 +3,7 @@
   "info": {
     "title": "Tarka Control API",
     "description": "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management.",
-    "version": "1.9.0"
+    "version": "1.10.0"
   },
   "tags": [
     {
@@ -907,6 +907,74 @@
             "in": "path",
             "required": true,
             "type": "string"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/inference-capture": {
+      "get": {
+        "summary": "GetInferenceCapture returns this organization's optional bucket-capture\nconfiguration and recent delivery health. It never exposes internal archives.",
+        "operationId": "ProvisioningService_GetInferenceCapture",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1InferenceCapture"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      },
+      "put": {
+        "summary": "UpdateInferenceCapture enables or disables customer-owned capture for all\nmodel calls. Requires an organization owner/admin and storage access.\nEnabling idempotently provisions the organization's inference-history bucket.",
+        "operationId": "ProvisioningService_UpdateInferenceCapture",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1InferenceCapture"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProvisioningServiceUpdateInferenceCaptureBody"
+            }
           }
         ],
         "tags": [
@@ -2178,6 +2246,20 @@
       "type": "object",
       "description": "RevokeStorageCredentialRequest selects one bucket credential."
     },
+    "ProvisioningServiceUpdateInferenceCaptureBody": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "retention_days": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Zero retains objects until deletion; other supported values are 7, 30, 90."
+        }
+      },
+      "description": "UpdateInferenceCaptureRequest replaces the organization-wide capture setting.\nDisabling stops new capture and does not delete existing objects."
+    },
     "ProvisioningServiceUpdateOrgBody": {
       "type": "object",
       "properties": {
@@ -3043,6 +3125,48 @@
         }
       },
       "description": "HostedGitAccess describes the caller's hosted Git identity."
+    },
+    "v1InferenceCapture": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "retention_days": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "bucket_id": {
+          "type": "string"
+        },
+        "bucket_name": {
+          "type": "string"
+        },
+        "delivered_last_24h": {
+          "type": "string",
+          "format": "int64"
+        },
+        "failed_last_24h": {
+          "type": "string",
+          "format": "int64"
+        },
+        "pending": {
+          "type": "string",
+          "format": "int64"
+        },
+        "last_delivered_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "last_error_code": {
+          "type": "string",
+          "description": "A fixed diagnostic code; never includes payload content or storage secrets."
+        }
+      },
+      "description": "InferenceCapture describes customer-controlled S3 delivery, independent of\nResponses store:true and free Himalaya's Tarka-owned evaluation archive."
     },
     "v1ListAgentHostTemplatesResponse": {
       "type": "object",
