@@ -19,7 +19,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Tarka Control API"
     description: "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management."
-    version: "1.9.0"
+    version: "1.10.0"
   }
   host: "tarka.rest"
   schemes: HTTPS
@@ -48,6 +48,22 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
 // quotas, metering, object storage, hosted Git, and desired-state compute
 // resources.
 service ProvisioningService {
+  // GetInferenceCapture returns this organization's optional bucket-capture
+  // configuration and recent delivery health. It never exposes internal archives.
+  rpc GetInferenceCapture(GetInferenceCaptureRequest) returns (InferenceCapture) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/inference-capture"};
+  }
+
+  // UpdateInferenceCapture enables or disables customer-owned capture for all
+  // model calls. Requires an organization owner/admin and storage access.
+  // Enabling idempotently provisions the organization's inference-history bucket.
+  rpc UpdateInferenceCapture(UpdateInferenceCaptureRequest) returns (InferenceCapture) {
+    option (google.api.http) = {
+      put: "/control/v1/orgs/{org_id}/inference-capture"
+      body: "*"
+    };
+  }
+
   // GetCurrentUser returns the authenticated identity and its active
   // organization memberships.
   rpc GetCurrentUser(GetCurrentUserRequest) returns (CurrentUser) {
@@ -332,6 +348,37 @@ service ProvisioningService {
   rpc DeleteGitRepository(DeleteGitRepositoryRequest) returns (GitRepository) {
     option (google.api.http) = {delete: "/control/v1/orgs/{org_id}/git-repositories/{repository_id}"};
   }
+}
+
+// GetInferenceCaptureRequest identifies the organization, not a bucket supplied
+// by the caller. Existing organization membership checks apply.
+message GetInferenceCaptureRequest {
+  string org_id = 1;
+}
+
+// UpdateInferenceCaptureRequest replaces the organization-wide capture setting.
+// Disabling stops new capture and does not delete existing objects.
+message UpdateInferenceCaptureRequest {
+  string org_id = 1;
+  bool enabled = 2;
+  // Zero retains objects until deletion; other supported values are 7, 30, 90.
+  int32 retention_days = 3;
+}
+
+// InferenceCapture describes customer-controlled S3 delivery, independent of
+// Responses store:true and free Himalaya's Tarka-owned evaluation archive.
+message InferenceCapture {
+  string org_id = 1;
+  bool enabled = 2;
+  int32 retention_days = 3;
+  string bucket_id = 4;
+  string bucket_name = 5;
+  int64 delivered_last_24h = 6;
+  int64 failed_last_24h = 7;
+  int64 pending = 8;
+  google.protobuf.Timestamp last_delivered_at = 9;
+  // A fixed diagnostic code; never includes payload content or storage secrets.
+  string last_error_code = 10;
 }
 
 // GetCurrentUserRequest has no parameters; identity comes from authentication.
