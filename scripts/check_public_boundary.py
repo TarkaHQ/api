@@ -29,6 +29,11 @@ ALLOWED_DIRECTORY_SUFFIXES = {
     "proto": {".proto"},
     "scripts": {".py"},
 }
+# The copyable client example is deliberately limited to these two files.
+ALLOWED_EXAMPLE_FILES = {
+    "examples/tarka-control-api/SKILL.md",
+    "examples/tarka-control-api/scripts/request.py",
+}
 SAFE_PATH_COMPONENT = re.compile(r"^[A-Za-z0-9._-]+$")
 REQUIRED_PINNED_IMAGES = {"BUF_IMAGE", "OPENAPI_VALIDATOR_IMAGE"}
 APPROVED_REMOTE_PLUGIN = "buf.build/grpc-ecosystem/openapiv2:v2.30.0"
@@ -239,6 +244,8 @@ def contract_path_allowed(name: str) -> bool:
         return False
     if len(path.parts) == 1:
         return name in ALLOWED_ROOT_FILES
+    if path.parts[0] == "examples":
+        return name in ALLOWED_EXAMPLE_FILES
     if path.parts[0] == ".github":
         if name == ".github/CODEOWNERS":
             return True
