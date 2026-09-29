@@ -3,7 +3,7 @@
   "info": {
     "title": "Tarka Control API",
     "description": "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management.",
-    "version": "1.10.0"
+    "version": "1.11.0"
   },
   "tags": [
     {
@@ -199,6 +199,72 @@
             "in": "query",
             "required": false,
             "type": "string"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/org-invitations/accept": {
+      "post": {
+        "summary": "AcceptOrgInvitation atomically consumes a link and creates the membership.\nRetrying with the same recipient is safe and never changes an existing role.",
+        "operationId": "ProvisioningService_AcceptOrgInvitation",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Org"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1AcceptOrgInvitationRequest"
+            }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/org-invitations/preview": {
+      "post": {
+        "summary": "PreviewOrgInvitation requires the verified recipient identity. Pending platform\naccounts may preview and accept; invitations never grant product entitlements.",
+        "operationId": "ProvisioningService_PreviewOrgInvitation",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1OrgInvitation"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1PreviewOrgInvitationRequest"
+            }
           }
         ],
         "tags": [
@@ -1014,6 +1080,111 @@
             "schema": {
               "$ref": "#/definitions/ProvisioningServiceCreateInferenceServiceBody"
             }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/invitations": {
+      "get": {
+        "summary": "ListOrgInvitations returns invitation history to organization administrators.",
+        "operationId": "ProvisioningService_ListOrgInvitations",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListOrgInvitationsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      },
+      "post": {
+        "summary": "CreateOrgInvitation issues a seven-day invitation or replaces a previous link.\nOwners may invite admins; owners and admins may invite other non-owner roles.\nThe token is returned once for delivery by a trusted email client. Never log it.",
+        "operationId": "ProvisioningService_CreateOrgInvitation",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CreateOrgInvitationResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProvisioningServiceCreateOrgInvitationBody"
+            }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/invitations/{invitation_id}": {
+      "delete": {
+        "summary": "RevokeOrgInvitation invalidates an outstanding link.",
+        "operationId": "ProvisioningService_RevokeOrgInvitation",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1OrgInvitation"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "invitation_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
           }
         ],
         "tags": [
@@ -2193,6 +2364,18 @@
       },
       "description": "CreateJobRequest defines desired state for a finite-duration container job."
     },
+    "ProvisioningServiceCreateOrgInvitationBody": {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string",
+          "description": "admin, operator, member, or viewer. Defaults to member."
+        }
+      }
+    },
     "ProvisioningServiceCreateStorageBucketBody": {
       "type": "object",
       "properties": {
@@ -2436,6 +2619,14 @@
             "type": "object",
             "$ref": "#/definitions/protobufAny"
           }
+        }
+      }
+    },
+    "v1AcceptOrgInvitationRequest": {
+      "type": "object",
+      "properties": {
+        "token": {
+          "type": "string"
         }
       }
     },
@@ -2968,6 +3159,18 @@
       },
       "description": "CreateInferenceServiceRequest defines desired state for an inference service."
     },
+    "v1CreateOrgInvitationResponse": {
+      "type": "object",
+      "properties": {
+        "invitation": {
+          "$ref": "#/definitions/v1OrgInvitation"
+        },
+        "token": {
+          "type": "string",
+          "description": "One-time delivery secret. Only its SHA-256 hash is stored."
+        }
+      }
+    },
     "v1CreateOrgRequest": {
       "type": "object",
       "properties": {
@@ -3270,6 +3473,18 @@
       },
       "description": "ListModelsResponse contains the active model catalog."
     },
+    "v1ListOrgInvitationsResponse": {
+      "type": "object",
+      "properties": {
+        "invitations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1OrgInvitation"
+          }
+        }
+      }
+    },
     "v1ListOrgMembersResponse": {
       "type": "object",
       "properties": {
@@ -3466,6 +3681,38 @@
       },
       "description": "Org is an organization as visible to the authenticated caller."
     },
+    "v1OrgInvitation": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "org_id": {
+          "type": "string"
+        },
+        "org_name": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "description": "OrgInvitation excludes the secret token and reports expiry as a status."
+    },
     "v1OrgMember": {
       "type": "object",
       "properties": {
@@ -3487,6 +3734,14 @@
         }
       },
       "description": "OrgMember describes one identity's access to an organization. Email is\nincluded so organization members can identify collaborators in the console."
+    },
+    "v1PreviewOrgInvitationRequest": {
+      "type": "object",
+      "properties": {
+        "token": {
+          "type": "string"
+        }
+      }
     },
     "v1ProductAccessRequest": {
       "type": "object",
