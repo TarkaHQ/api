@@ -19,7 +19,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Tarka Control API"
     description: "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management."
-    version: "1.10.0"
+    version: "1.11.0"
   }
   host: "tarka.rest"
   schemes: HTTPS
@@ -246,6 +246,40 @@ service ProvisioningService {
   rpc UpdateOrg(UpdateOrgRequest) returns (Org) {
     option (google.api.http) = {
       patch: "/control/v1/orgs/{org_id}"
+      body: "*"
+    };
+  }
+
+  // CreateOrgInvitation issues a seven-day invitation or replaces a previous link.
+  // Owners may invite admins; owners and admins may invite other non-owner roles.
+  // The token is returned once for delivery by a trusted email client. Never log it.
+  rpc CreateOrgInvitation(CreateOrgInvitationRequest) returns (CreateOrgInvitationResponse) {
+    option (google.api.http) = {
+      post: "/control/v1/orgs/{org_id}/invitations"
+      body: "*"
+    };
+  }
+  // ListOrgInvitations returns invitation history to organization administrators.
+  rpc ListOrgInvitations(ListOrgInvitationsRequest) returns (ListOrgInvitationsResponse) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/invitations"};
+  }
+  // RevokeOrgInvitation invalidates an outstanding link.
+  rpc RevokeOrgInvitation(RevokeOrgInvitationRequest) returns (OrgInvitation) {
+    option (google.api.http) = {delete: "/control/v1/orgs/{org_id}/invitations/{invitation_id}"};
+  }
+  // PreviewOrgInvitation requires the verified recipient identity. Pending platform
+  // accounts may preview and accept; invitations never grant product entitlements.
+  rpc PreviewOrgInvitation(PreviewOrgInvitationRequest) returns (OrgInvitation) {
+    option (google.api.http) = {
+      post: "/control/v1/org-invitations/preview"
+      body: "*"
+    };
+  }
+  // AcceptOrgInvitation atomically consumes a link and creates the membership.
+  // Retrying with the same recipient is safe and never changes an existing role.
+  rpc AcceptOrgInvitation(AcceptOrgInvitationRequest) returns (Org) {
+    option (google.api.http) = {
+      post: "/control/v1/org-invitations/accept"
       body: "*"
     };
   }
@@ -1252,3 +1286,42 @@ message CloseAgentHostTerminalRequest {
 }
 
 message CloseAgentHostTerminalResponse {}
+
+// OrgInvitation excludes the secret token and reports expiry as a status.
+message OrgInvitation {
+  string id = 1;
+  string org_id = 2;
+  string org_name = 3;
+  string email = 4;
+  string role = 5;
+  string status = 6;
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp expires_at = 8;
+}
+message CreateOrgInvitationRequest {
+  string org_id = 1;
+  string email = 2;
+  // admin, operator, member, or viewer. Defaults to member.
+  string role = 3;
+}
+message CreateOrgInvitationResponse {
+  OrgInvitation invitation = 1;
+  // One-time delivery secret. Only its SHA-256 hash is stored.
+  string token = 2;
+}
+message ListOrgInvitationsRequest {
+  string org_id = 1;
+}
+message ListOrgInvitationsResponse {
+  repeated OrgInvitation invitations = 1;
+}
+message RevokeOrgInvitationRequest {
+  string org_id = 1;
+  string invitation_id = 2;
+}
+message PreviewOrgInvitationRequest {
+  string token = 1;
+}
+message AcceptOrgInvitationRequest {
+  string token = 1;
+}
