@@ -73,6 +73,7 @@ SENSITIVE_ENVIRONMENT_NAME = re.compile(
 INTERPOLATION_PATTERN = re.compile(r"\$\{([A-Z][A-Z0-9_]*)[^}]*}")
 NAMED_VOLUME_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
 EXPECTED_PUBLIC_ROUTES = {
+    "n8n": ("n8n", 5678, "/"),
     "openclaw": ("openclaw", 8080, "/"),
     "hermes": ("hermes-webui", 8787, "/"),
     "onyx": ("web-server", 3000, "/"),
@@ -570,6 +571,29 @@ def validate_onyx_authentication_boundary(
         )
 
 
+def validate_n8n_authentication_boundary(document: str, metadata: str, source: Path) -> None:
+    """The public editor must never serve n8n's unclaimed owner setup screen."""
+
+    required = {"N8N_OWNER_EMAIL", "N8N_OWNER_PASSWORD"}
+    if not required.issubset(declared_variables(metadata)):
+        raise ValueError(f"{source.name}: n8n owner inputs are missing")
+    invariants = (
+        "N8N_LISTEN_ADDRESS: '127.0.0.1', N8N_PORT: '5677'",
+        "await request('/rest/owner/setup'",
+        "showSetupOnFirstLoad !== false",
+        "unset N8N_OWNER_EMAIL N8N_OWNER_PASSWORD\n        exec n8n start",
+        "http://127.0.0.1:5678/healthz/readiness",
+        "id: 'tarkaInference'",
+        "apiKey: 'tarka-local', url: 'http://tarka/v1'",
+        'N8N_SECURE_COOKIE: "true"',
+        'N8N_SSRF_PROTECTION_ENABLED: "true"',
+        'N8N_SSRF_ALLOWED_HOSTNAMES: tarka',
+    )
+    for invariant in invariants:
+        if invariant not in document:
+            raise ValueError(f"{source.name}: n8n bootstrap/authentication invariant is missing")
+
+
 def main() -> None:
     catalog = load_json_object(CATALOG)
     if catalog.get("schema_version") != 2:
@@ -608,6 +632,8 @@ def main() -> None:
         validate_compose_security(document, metadata, path)
         if actual["id"] == "onyx":
             validate_onyx_authentication_boundary(document, metadata, path)
+        if actual["id"] == "n8n":
+            validate_n8n_authentication_boundary(document, metadata, path)
         runtime = section(metadata, "runtime_profile")
         if nested_scalar(runtime, "managed_model") != "true":
             raise ValueError(f"{path.name}: managed_model must be true")

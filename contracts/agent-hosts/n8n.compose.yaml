@@ -1,0 +1,172 @@
+x-tarka:
+  id: n8n
+  title: n8n
+  description: Workflow automation with a persistent editor and preconfigured Tarka inference credentials.
+  version: "2.41.3-tarka.1"
+  tier: core
+  routes:
+    - service: n8n
+      port: 5678
+      path: /
+  variables:
+    - name: N8N_OWNER_EMAIL
+      label: Owner email
+      description: Initial owner account. Later account changes are managed in n8n.
+      required: true
+    - name: N8N_OWNER_PASSWORD
+      label: Initial owner password
+      description: 16–64 characters including an uppercase letter and a number; at most 72 UTF-8 bytes.
+      secret: true
+      required: true
+    - name: GENERIC_TIMEZONE
+      label: Workflow timezone
+      default: UTC
+  runtime_profile:
+    managed_model: true
+    default_model_alias: qwen3.8-flash-next
+    context_token_limit: 81920
+    compaction_threshold_tokens: 65536
+    utility_modalities: [stt, ocr, tts, embedding, rerank]
+    platform_services: [n8n]
+  volume_sizes:
+    n8n-data: 10Gi
+
+services:
+  n8n:
+    image: docker.n8n.io/n8nio/n8n@sha256:fdce8f852ac7abbb2f31a53170bc3c2eeec45c37c0692a99f2d6c11b3822cd98
+    user: "1000:1000"
+    entrypoint: [tini, --, /bin/sh, -ec]
+    command:
+      - |
+        node --input-type=module <<'TARKA_BOOTSTRAP'
+        import { spawn, spawnSync } from 'node:child_process';
+        import { once } from 'node:events';
+        import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+        import { tmpdir } from 'node:os';
+        import { join } from 'node:path';
+        import { createRequire } from 'node:module';
+        const { N8N_OWNER_EMAIL, N8N_OWNER_PASSWORD, ...runtimeEnv } = process.env;
+        const base = 'http://127.0.0.1:5677';
+        let child;
+        let stopped;
+        let stopping = false;
+        const temporary = mkdtempSync(join(tmpdir(), 'tarka-n8n-'));
+        const stop = async () => {
+          if (!child || child.exitCode !== null || child.signalCode !== null) return;
+          stopping = true;
+          child.kill('SIGTERM');
+          const timeout = setTimeout(() => child.kill('SIGKILL'), 15000);
+          await stopped;
+          clearTimeout(timeout);
+        };
+        for (const signal of ['SIGTERM', 'SIGINT']) {
+          process.on(signal, async () => { await stop(); process.exit(1); });
+        }
+        async function request(path, body) {
+          const response = await fetch(base + path, {
+            method: body ? 'POST' : 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            body: body ? JSON.stringify(body) : undefined,
+            signal: AbortSignal.timeout(10000),
+          });
+          if (!response.ok) throw new Error('n8n bootstrap request failed');
+          return (await response.json()).data;
+        }
+        // Read only the owner-presence boolean using the pinned n8n SQLite driver.
+        // Avoid starting schedulers twice on restarts of an initialized instance.
+        async function hasOwner() {
+          const sqlite = createRequire('/usr/local/lib/node_modules/n8n/package.json')('sqlite3');
+          return await new Promise((resolve, reject) => {
+            const db = new sqlite.Database('/home/node/.n8n/database.sqlite', sqlite.OPEN_READONLY, error => {
+              if (error) return reject(error);
+              db.get('SELECT EXISTS (SELECT 1 FROM "user" WHERE "roleSlug" = ? AND ("password" IS NOT NULL OR "lastActiveAt" IS NOT NULL)) AS owner', ['global:owner'], (error, row) => {
+                db.close(closeError => {
+                  if (error || closeError || ![0, 1].includes(row?.owner)) return reject(new Error('Owner state unavailable'));
+                  resolve(row.owner === 1);
+                });
+              });
+            });
+          });
+        }
+        try {
+          // This marker is not a platform credential. The local gateway replaces it.
+          const input = join(temporary, 'credentials.json');
+          writeFileSync(input, JSON.stringify([{
+            id: 'tarkaInference', name: 'Tarka Inference', type: 'openAiApi',
+            data: { apiKey: 'tarka-local', url: 'http://tarka/v1' },
+          }]), { mode: 0o600 });
+          const imported = spawnSync('n8n', ['import:credentials', '--input=' + input], {
+            env: runtimeEnv, encoding: 'utf8', timeout: 180000, maxBuffer: 10485760,
+          });
+          // The upstream CLI can catch import errors without a nonzero exit code.
+          if (imported.status !== 0 || !imported.stdout?.includes('Successfully imported 1 credential.')) {
+            throw new Error('Tarka credential import failed');
+          }
+          if (!await hasOwner()) {
+            child = spawn('n8n', ['start'], {
+              env: { ...runtimeEnv, N8N_LISTEN_ADDRESS: '127.0.0.1', N8N_PORT: '5677' },
+              stdio: ['ignore', 'inherit', 'inherit'],
+            });
+            stopped = once(child, 'exit');
+            child.on('error', () => process.exit(1));
+            child.on('exit', () => { if (!stopping) process.exit(1); });
+            let settings;
+            for (let attempt = 0; attempt < 120; attempt++) {
+              try { settings = await request('/rest/settings'); break; } catch {}
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+            const needsOwner = settings?.userManagement?.showSetupOnFirstLoad;
+            if (typeof needsOwner !== 'boolean') throw new Error('n8n owner state unavailable');
+            if (needsOwner) {
+              await request('/rest/owner/setup', {
+                email: N8N_OWNER_EMAIL, password: N8N_OWNER_PASSWORD,
+                firstName: 'Tarka', lastName: 'Owner',
+              });
+            }
+            settings = await request('/rest/settings');
+            if (settings?.userManagement?.showSetupOnFirstLoad !== false) {
+              throw new Error('n8n owner setup is incomplete');
+            }
+            await stop();
+          }
+        } catch {
+          await stop();
+          console.error('n8n bootstrap failed; public listener remains closed. Check owner inputs and persistent storage.');
+          process.exitCode = 1;
+        } finally {
+          rmSync(temporary, { recursive: true, force: true });
+        }
+        TARKA_BOOTSTRAP
+        unset N8N_OWNER_EMAIL N8N_OWNER_PASSWORD
+        exec n8n start
+    environment:
+      N8N_OWNER_EMAIL: ${N8N_OWNER_EMAIL}
+      N8N_OWNER_PASSWORD: ${N8N_OWNER_PASSWORD}
+      GENERIC_TIMEZONE: ${GENERIC_TIMEZONE}
+      N8N_LISTEN_ADDRESS: 0.0.0.0
+      N8N_PORT: "5678"
+      N8N_PROTOCOL: https
+      N8N_PROXY_HOPS: "1"
+      N8N_SECURE_COOKIE: "true"
+      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "true"
+      N8N_DIAGNOSTICS_ENABLED: "false"
+      N8N_PERSONALIZATION_ENABLED: "false"
+      N8N_VERSION_NOTIFICATIONS_ENABLED: "false"
+      N8N_SSRF_PROTECTION_ENABLED: "true"
+      N8N_SSRF_ALLOWED_HOSTNAMES: tarka
+      EXECUTIONS_DATA_PRUNE: "true"
+      EXECUTIONS_DATA_MAX_AGE: "168"
+    volumes:
+      - n8n-data:/home/node/.n8n
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:5678/healthz/readiness').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        reservations: {cpus: "0.5", memory: 1G}
+        limits: {cpus: "2", memory: 3G}
+
+volumes:
+  n8n-data:

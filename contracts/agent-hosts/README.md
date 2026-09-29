@@ -9,6 +9,7 @@ sizes, and template-driven onboarding metadata.
 | --- | --- | ---: | --- |
 | OpenClaw | Core | 2 | [Coolify OpenClaw](https://github.com/coollabsio/coolify/blob/main/templates/compose/openclaw.yaml) |
 | Hermes Agent | Core | 2 | [Coolify Hermes Agent with Web UI](https://github.com/coollabsio/coolify/blob/main/templates/compose/hermes-agent-with-webui.yaml) |
+| n8n | Core | 1 | [Official n8n Docker image](https://github.com/n8n-io/n8n/tree/n8n%402.41.3/docker/images/n8n) |
 | Onyx | Pro | 9 | [biralo-studio/onyx-docker-compose](https://github.com/biralo-studio/onyx-docker-compose/blob/main/docker-compose.yml) |
 
 Tarka adapts the upstream files for the managed Kubernetes runtime: images are
@@ -39,6 +40,30 @@ and other credentials are supplied as separately encrypted variables.
 `catalog.json` is the machine-readable release index. Its SHA-256 checksums
 cover the exact Compose bytes consumed by the infrastructure repository. CI
 rejects mutable image references, metadata/catalog drift, and checksum drift.
+
+## n8n
+
+The n8n template creates the initial owner using `N8N_OWNER_EMAIL` and the
+encrypted `N8N_OWNER_PASSWORD` input before opening its public listener. Later
+password, email, and MFA changes belong in n8n and survive host restarts. The
+initial inputs do not reset an existing owner. The controller supplies the
+public editor and webhook URLs from the assigned hostname.
+
+Select **Tarka Inference** as the OpenAI credential in a workflow. This native
+credential points at `http://tarka/v1`; its `tarka-local` key is a non-secret
+SDK compatibility marker, replaced by the private platform gateway. The
+reserved credential ID `tarkaInference` is refreshed on startup; create a
+separate credential for other providers. Use Chat Completions and a live Tarka
+model such as `qwen3.8-flash-next`. Support for the OpenAI Responses API,
+Assistants, or other provider-specific APIs is not implied.
+
+SQLite, workflows, encrypted credentials, and n8n's generated encryption key
+persist together on the 10 GiB `n8n-data` volume. The template runs one instance
+and prunes execution history after seven days. Back up the whole volume,
+including its encryption key. n8n workflow nodes control their own context
+and memory; the platform runtime profile does not install automatic workflow
+compaction. The default model and utility aliases are available in the managed
+runtime environment.
 
 ## Custom stacks
 

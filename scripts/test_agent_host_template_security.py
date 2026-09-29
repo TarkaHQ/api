@@ -43,6 +43,21 @@ volumes:
 
 
 class AgentHostTemplateSecurityTests(unittest.TestCase):
+    def test_n8n_bootstrap_boundary(self) -> None:
+        source = VALIDATOR.CONTRACTS / "n8n.compose.yaml"
+        document = source.read_text()
+        metadata = document.split("\nservices:", 1)[0]
+        VALIDATOR.validate_n8n_authentication_boundary(document, metadata, source)
+        for before, after in (
+            ("N8N_LISTEN_ADDRESS: '127.0.0.1'", "N8N_LISTEN_ADDRESS: '0.0.0.0'"),
+            ("showSetupOnFirstLoad !== false", "false"),
+            ("unset N8N_OWNER_EMAIL N8N_OWNER_PASSWORD", "true"),
+            ("http://127.0.0.1:5678/healthz/readiness", "http://127.0.0.1:5677/healthz/readiness"),
+            ("url: 'http://tarka/v1'", "url: 'https://api.openai.com/v1'"),
+        ):
+            with self.subTest(before=before), self.assertRaises(ValueError):
+                VALIDATOR.validate_n8n_authentication_boundary(document.replace(before, after), metadata, source)
+
     def validate(self, document: str) -> None:
         VALIDATOR.validate_compose_security(document, METADATA, Path("test.yaml"))
 

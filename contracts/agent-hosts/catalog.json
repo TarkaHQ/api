@@ -10,6 +10,14 @@
       "sha256": "26e84d9589fa75cdc507c9d07f1b9bb327dacf374f9e8b4986f362c4bd8189ed"
     },
     {
+      "id": "n8n",
+      "version": "2.41.3-tarka.1",
+      "tier": "core",
+      "service_count": 1,
+      "file": "n8n.compose.yaml",
+      "sha256": "5212c9b1f6805d86b9503d64f894d4311de70cf474b17cecdbd83750ee688517"
+    },
+    {
       "id": "onyx",
       "version": "tarka.4",
       "tier": "pro",
