@@ -201,13 +201,23 @@ message OpenAIStreamEvent {
 }
 
 message ResponseIDRequest {
-  string response_id = 1;
+  string response_id = 1 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "Stored response identifier returned by the Responses API."
+    min_length: 21
+    max_length: 133
+    pattern: "^resp_[A-Za-z0-9_-]{16,128}$"
+  }];
 }
 
 message ListModelsRequest {}
 
 message RetrieveModelRequest {
-  string model = 1;
+  string model = 1 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "Lowercase model alias containing 3 to 128 ASCII bytes."
+    min_length: 3
+    max_length: 128
+    pattern: "^[a-z0-9][a-z0-9._/-]{1,126}[a-z0-9]$"
+  }];
 }
 
 message ListModelsResponse {
@@ -224,10 +234,18 @@ message Model {
 }
 
 message ChatCompletionRequest {
-  string model = 1;
+  string model = 1 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "Lowercase model alias containing 3 to 128 ASCII bytes."
+    min_length: 3
+    max_length: 128
+    pattern: "^[a-z0-9][a-z0-9._/-]{1,126}[a-z0-9]$"
+  }];
   repeated ChatMessage messages = 2;
   bool stream = 3;
-  optional int32 max_tokens = 4;
+  optional int32 max_tokens = 4 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    minimum: 1
+    maximum: 32768
+  }];
   optional double temperature = 5;
   optional double top_p = 6;
   optional int32 top_k = 7;
@@ -241,8 +259,14 @@ message ChatCompletionRequest {
   google.protobuf.Value tool_choice = 15;
   repeated FunctionDefinition functions = 16;
   google.protobuf.Value function_call = 17;
-  optional int32 n = 18;
-  optional int32 max_completion_tokens = 19;
+  optional int32 n = 18 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    minimum: 1
+    maximum: 8
+  }];
+  optional int32 max_completion_tokens = 19 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    minimum: 1
+    maximum: 32768
+  }];
   google.protobuf.Struct response_format = 20;
   optional bool logprobs = 21;
   optional int32 top_logprobs = 22;
@@ -361,7 +385,12 @@ message OCRRequest {
     json_schema: {description: "OCR request with either one image or an images array. Public REST JSON request bodies are limited to 8 MiB in total. Each image may contain at most 32 MiB after base64 decoding on transports that permit a larger envelope."}
   };
 
-  string model = 1;
+  string model = 1 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "Lowercase model alias containing 3 to 128 ASCII bytes."
+    min_length: 3
+    max_length: 128
+    pattern: "^[a-z0-9][a-z0-9._/-]{1,126}[a-z0-9]$"
+  }];
   string image = 2 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
     description: "A base64 value or base64 data URL for one image. Remote URLs are not accepted."
     min_length: 1
@@ -375,7 +404,10 @@ message OCRRequest {
   }];
   string prompt = 4;
   bool stream = 5;
-  optional int32 max_tokens = 6;
+  optional int32 max_tokens = 6 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    minimum: 1
+    maximum: 32768
+  }];
   optional double temperature = 7;
   google.protobuf.Struct extra_body = 8;
   // Controls the top-level text representation while structured page data is
@@ -443,7 +475,12 @@ message BoundingBox {
 }
 
 message DocumentLayoutRequest {
-  string model = 1;
+  string model = 1 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "Lowercase model alias containing 3 to 128 ASCII bytes."
+    min_length: 3
+    max_length: 128
+    pattern: "^[a-z0-9][a-z0-9._/-]{1,126}[a-z0-9]$"
+  }];
   string image = 2 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
     description: "A base64 value or base64 data URL for an image of at most 32 MiB after decoding. Remote URLs are not accepted."
     min_length: 1
@@ -488,7 +525,12 @@ message AudioTranscriptionRequest {
   bytes file = 1;
   string filename = 2;
   string content_type = 3;
-  string model = 4;
+  string model = 4 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "Lowercase model alias containing 3 to 128 ASCII bytes."
+    min_length: 3
+    max_length: 128
+    pattern: "^[a-z0-9][a-z0-9._/-]{1,126}[a-z0-9]$"
+  }];
   string language = 5;
   string prompt = 6;
   string response_format = 7;
@@ -505,7 +547,12 @@ message AudioTranslationRequest {
   bytes file = 1;
   string filename = 2;
   string content_type = 3;
-  string model = 4;
+  string model = 4 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "Lowercase model alias containing 3 to 128 ASCII bytes."
+    min_length: 3
+    max_length: 128
+    pattern: "^[a-z0-9][a-z0-9._/-]{1,126}[a-z0-9]$"
+  }];
   string prompt = 5;
   string response_format = 6;
   optional double temperature = 7 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
@@ -529,12 +576,24 @@ message AudioTextResponse {
 }
 
 message SpeechRequest {
-  string model = 1;
-  string input = 2;
+  string model = 1 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "Lowercase model alias containing 3 to 128 ASCII bytes."
+    min_length: 3
+    max_length: 128
+    pattern: "^[a-z0-9][a-z0-9._/-]{1,126}[a-z0-9]$"
+  }];
+  string input = 2 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "Speech text containing at most 4096 UTF-8 bytes."
+    min_length: 1
+    max_length: 4096
+  }];
   string voice = 3;
   string response_format = 4;
   optional double speed = 5;
-  string instructions = 6;
+  string instructions = 6 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "Optional speaking instructions containing at most 4096 UTF-8 bytes."
+    max_length: 4096
+  }];
   string stream_format = 7;
   google.protobuf.Struct extra_body = 8;
 }
@@ -545,12 +604,25 @@ message AudioChunk {
 }
 
 message VoiceCloneRequest {
-  string model = 1;
-  string name = 2;
-  bytes sample = 3;
-  string filename = 4;
-  string content_type = 5;
-  string consent_signed_by = 6;
+  string model = 1 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "Lowercase model alias containing 3 to 128 ASCII bytes."
+    min_length: 3
+    max_length: 128
+    pattern: "^[a-z0-9][a-z0-9._/-]{1,126}[a-z0-9]$"
+  }];
+  string name = 2 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "Display name containing at most 255 UTF-8 bytes."
+    min_length: 1
+    max_length: 255
+  }];
+  bytes sample = 3 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {description: "A raw voice sample of at most 30 MiB before transport encoding."}];
+  string filename = 4 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {max_length: 255}];
+  string content_type = 5 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {max_length: 255}];
+  string consent_signed_by = 6 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "Consent signer containing at most 255 UTF-8 bytes."
+    min_length: 1
+    max_length: 255
+  }];
   string consent_date = 7;
   google.protobuf.Struct extra_body = 8;
 }
@@ -566,9 +638,19 @@ message VoiceClone {
 }
 
 message GetVoiceCloneRequest {
-  string voice_id = 1;
+  string voice_id = 1 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "Tenant-scoped voice clone identifier."
+    min_length: 38
+    max_length: 38
+    pattern: "^voice_[0-9a-f]{32}$"
+  }];
 }
 
 message DeleteVoiceCloneRequest {
-  string voice_id = 1;
+  string voice_id = 1 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "Tenant-scoped voice clone identifier."
+    min_length: 38
+    max_length: 38
+    pattern: "^voice_[0-9a-f]{32}$"
+  }];
 }

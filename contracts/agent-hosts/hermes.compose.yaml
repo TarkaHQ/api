@@ -2,7 +2,7 @@ x-tarka:
   id: hermes
   title: Hermes Agent
   description: Hermes autonomous agent with persistent memory, scheduling and its web UI.
-  version: "2026.5.29-tarka.4"
+  version: "0.21.2-tarka.1"
   tier: core
   routes:
     - service: hermes-webui
@@ -73,7 +73,7 @@ x-tarka:
 
 services:
   hermes-agent:
-    image: nousresearch/hermes-agent@sha256:2f1f2f1725e5dc9a61cf6a2dea5aca52a776ec4d022cb29679e6aa3ff303e77a
+    image: nousresearch/hermes-agent@sha256:9469b3e78b9545b6d576eb8887a95352e9a0ea83730eaf31431cf862ca1010e1
     command: gateway run
     environment:
       HERMES_HOME: /home/hermes/.hermes
@@ -93,7 +93,7 @@ services:
         reservations: {cpus: "1", memory: 2G}
         limits: {cpus: "3", memory: 6G}
   hermes-webui:
-    image: ghcr.io/nesquena/hermes-webui@sha256:d6665a09b783a0fcc58136e67cdd40588ca2c21421ea97b3cfc5302d81effbec
+    image: ghcr.io/nesquena/hermes-webui@sha256:48ba6ee4a837079955c00e997b751065cc0324ae6eaa0f2fec592c8f4b2a746e
     depends_on:
       hermes-agent:
         condition: service_started

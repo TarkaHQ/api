@@ -178,9 +178,11 @@
         "parameters": [
           {
             "name": "voice_id",
+            "description": "Tenant-scoped voice clone identifier.",
             "in": "path",
             "required": true,
-            "type": "string"
+            "type": "string",
+            "pattern": "^voice_[0-9a-f]{32}$"
           }
         ],
         "tags": [
@@ -207,9 +209,11 @@
         "parameters": [
           {
             "name": "voice_id",
+            "description": "Tenant-scoped voice clone identifier.",
             "in": "path",
             "required": true,
-            "type": "string"
+            "type": "string",
+            "pattern": "^voice_[0-9a-f]{32}$"
           }
         ],
         "tags": [
@@ -323,9 +327,11 @@
         "parameters": [
           {
             "name": "model",
+            "description": "Lowercase model alias containing 3 to 128 ASCII bytes.",
             "in": "path",
             "required": true,
-            "type": "string"
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._/-]{1,126}[a-z0-9]$"
           }
         ],
         "tags": [
@@ -419,9 +425,11 @@
         "parameters": [
           {
             "name": "response_id",
+            "description": "Stored response identifier returned by the Responses API.",
             "in": "path",
             "required": true,
-            "type": "string"
+            "type": "string",
+            "pattern": "^resp_[A-Za-z0-9_-]{16,128}$"
           }
         ],
         "tags": [
@@ -447,9 +455,11 @@
         "parameters": [
           {
             "name": "response_id",
+            "description": "Stored response identifier returned by the Responses API.",
             "in": "path",
             "required": true,
-            "type": "string"
+            "type": "string",
+            "pattern": "^resp_[A-Za-z0-9_-]{16,128}$"
           }
         ],
         "tags": [
@@ -477,9 +487,11 @@
         "parameters": [
           {
             "name": "response_id",
+            "description": "Stored response identifier returned by the Responses API.",
             "in": "path",
             "required": true,
-            "type": "string"
+            "type": "string",
+            "pattern": "^resp_[A-Za-z0-9_-]{16,128}$"
           },
           {
             "name": "body",
@@ -652,9 +664,11 @@
         "parameters": [
           {
             "name": "voice_id",
+            "description": "Tenant-scoped voice clone identifier.",
             "in": "path",
             "required": true,
-            "type": "string"
+            "type": "string",
+            "pattern": "^voice_[0-9a-f]{32}$"
           }
         ],
         "tags": [
@@ -681,9 +695,11 @@
         "parameters": [
           {
             "name": "voice_id",
+            "description": "Tenant-scoped voice clone identifier.",
             "in": "path",
             "required": true,
-            "type": "string"
+            "type": "string",
+            "pattern": "^voice_[0-9a-f]{32}$"
           }
         ],
         "tags": [
@@ -797,9 +813,11 @@
         "parameters": [
           {
             "name": "model",
+            "description": "Lowercase model alias containing 3 to 128 ASCII bytes.",
             "in": "path",
             "required": true,
-            "type": "string"
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._/-]{1,126}[a-z0-9]$"
           }
         ],
         "tags": [
@@ -893,9 +911,11 @@
         "parameters": [
           {
             "name": "response_id",
+            "description": "Stored response identifier returned by the Responses API.",
             "in": "path",
             "required": true,
-            "type": "string"
+            "type": "string",
+            "pattern": "^resp_[A-Za-z0-9_-]{16,128}$"
           }
         ],
         "tags": [
@@ -921,9 +941,11 @@
         "parameters": [
           {
             "name": "response_id",
+            "description": "Stored response identifier returned by the Responses API.",
             "in": "path",
             "required": true,
-            "type": "string"
+            "type": "string",
+            "pattern": "^resp_[A-Za-z0-9_-]{16,128}$"
           }
         ],
         "tags": [
@@ -951,9 +973,11 @@
         "parameters": [
           {
             "name": "response_id",
+            "description": "Stored response identifier returned by the Responses API.",
             "in": "path",
             "required": true,
-            "type": "string"
+            "type": "string",
+            "pattern": "^resp_[A-Za-z0-9_-]{16,128}$"
           },
           {
             "name": "body",
@@ -1072,7 +1096,11 @@
           "type": "string"
         },
         "model": {
-          "type": "string"
+          "type": "string",
+          "description": "Lowercase model alias containing 3 to 128 ASCII bytes.",
+          "maxLength": 128,
+          "minLength": 3,
+          "pattern": "^[a-z0-9][a-z0-9._/-]{1,126}[a-z0-9]$"
         },
         "language": {
           "type": "string"
@@ -1114,7 +1142,11 @@
           "type": "string"
         },
         "model": {
-          "type": "string"
+          "type": "string",
+          "description": "Lowercase model alias containing 3 to 128 ASCII bytes.",
+          "maxLength": 128,
+          "minLength": 3,
+          "pattern": "^[a-z0-9][a-z0-9._/-]{1,126}[a-z0-9]$"
         },
         "prompt": {
           "type": "string"
@@ -1219,7 +1251,11 @@
       "type": "object",
       "properties": {
         "model": {
-          "type": "string"
+          "type": "string",
+          "description": "Lowercase model alias containing 3 to 128 ASCII bytes.",
+          "maxLength": 128,
+          "minLength": 3,
+          "pattern": "^[a-z0-9][a-z0-9._/-]{1,126}[a-z0-9]$"
         },
         "messages": {
           "type": "array",
@@ -1233,7 +1269,9 @@
         },
         "max_tokens": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "maximum": 32768,
+          "minimum": 1
         },
         "temperature": {
           "type": "number",
@@ -1285,11 +1323,15 @@
         "function_call": {},
         "n": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "maximum": 8,
+          "minimum": 1
         },
         "max_completion_tokens": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "maximum": 32768,
+          "minimum": 1
         },
         "response_format": {
           "type": "object"
@@ -1410,7 +1452,11 @@
       "type": "object",
       "properties": {
         "model": {
-          "type": "string"
+          "type": "string",
+          "description": "Lowercase model alias containing 3 to 128 ASCII bytes.",
+          "maxLength": 128,
+          "minLength": 3,
+          "pattern": "^[a-z0-9][a-z0-9._/-]{1,126}[a-z0-9]$"
         },
         "image": {
           "type": "string",
@@ -1614,7 +1660,11 @@
       "type": "object",
       "properties": {
         "model": {
-          "type": "string"
+          "type": "string",
+          "description": "Lowercase model alias containing 3 to 128 ASCII bytes.",
+          "maxLength": 128,
+          "minLength": 3,
+          "pattern": "^[a-z0-9][a-z0-9._/-]{1,126}[a-z0-9]$"
         },
         "image": {
           "type": "string",
@@ -1640,7 +1690,9 @@
         },
         "max_tokens": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "maximum": 32768,
+          "minimum": 1
         },
         "temperature": {
           "type": "number",
@@ -1735,10 +1787,17 @@
       "type": "object",
       "properties": {
         "model": {
-          "type": "string"
+          "type": "string",
+          "description": "Lowercase model alias containing 3 to 128 ASCII bytes.",
+          "maxLength": 128,
+          "minLength": 3,
+          "pattern": "^[a-z0-9][a-z0-9._/-]{1,126}[a-z0-9]$"
         },
         "input": {
-          "type": "string"
+          "type": "string",
+          "description": "Speech text containing at most 4096 UTF-8 bytes.",
+          "maxLength": 4096,
+          "minLength": 1
         },
         "voice": {
           "type": "string"
@@ -1751,7 +1810,9 @@
           "format": "double"
         },
         "instructions": {
-          "type": "string"
+          "type": "string",
+          "description": "Optional speaking instructions containing at most 4096 UTF-8 bytes.",
+          "maxLength": 4096
         },
         "stream_format": {
           "type": "string"
@@ -1865,23 +1926,36 @@
       "type": "object",
       "properties": {
         "model": {
-          "type": "string"
+          "type": "string",
+          "description": "Lowercase model alias containing 3 to 128 ASCII bytes.",
+          "maxLength": 128,
+          "minLength": 3,
+          "pattern": "^[a-z0-9][a-z0-9._/-]{1,126}[a-z0-9]$"
         },
         "name": {
-          "type": "string"
+          "type": "string",
+          "description": "Display name containing at most 255 UTF-8 bytes.",
+          "maxLength": 255,
+          "minLength": 1
         },
         "sample": {
           "type": "string",
-          "format": "byte"
+          "format": "byte",
+          "description": "A raw voice sample of at most 30 MiB before transport encoding."
         },
         "filename": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 255
         },
         "content_type": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 255
         },
         "consent_signed_by": {
-          "type": "string"
+          "type": "string",
+          "description": "Consent signer containing at most 255 UTF-8 bytes.",
+          "maxLength": 255,
+          "minLength": 1
         },
         "consent_date": {
           "type": "string"

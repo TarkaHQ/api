@@ -19,7 +19,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Tarka Control API"
     description: "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management."
-    version: "1.8.0"
+    version: "1.11.0"
   }
   host: "tarka.rest"
   schemes: HTTPS
@@ -48,6 +48,22 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
 // quotas, metering, object storage, hosted Git, and desired-state compute
 // resources.
 service ProvisioningService {
+  // GetInferenceCapture returns this organization's optional bucket-capture
+  // configuration and recent delivery health. It never exposes internal archives.
+  rpc GetInferenceCapture(GetInferenceCaptureRequest) returns (InferenceCapture) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/inference-capture"};
+  }
+
+  // UpdateInferenceCapture enables or disables customer-owned capture for all
+  // model calls. Requires an organization owner/admin and storage access.
+  // Enabling idempotently provisions the organization's inference-history bucket.
+  rpc UpdateInferenceCapture(UpdateInferenceCaptureRequest) returns (InferenceCapture) {
+    option (google.api.http) = {
+      put: "/control/v1/orgs/{org_id}/inference-capture"
+      body: "*"
+    };
+  }
+
   // GetCurrentUser returns the authenticated identity and its active
   // organization memberships.
   rpc GetCurrentUser(GetCurrentUserRequest) returns (CurrentUser) {
@@ -143,6 +159,48 @@ service ProvisioningService {
     option (google.api.http) = {get: "/control/v1/orgs/{org_id}/agent-hosts/{agent_host_id}/gateways/{gateway_id}/pairing"};
   }
 
+  // ListAgentHostTerminalTargets lists running application containers in this
+  // host. Platform gateways and initialization containers are excluded.
+  rpc ListAgentHostTerminalTargets(ListAgentHostTerminalTargetsRequest) returns (ListAgentHostTerminalTargetsResponse) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/agent-hosts/{agent_host_id}/terminal-targets"};
+  }
+
+  // CreateAgentHostTerminal opens a real interactive PTY in a selected running
+  // container. Sessions belong to the authenticated user and this host; opening
+  // another session never resumes a different user's shell. Requires a resource
+  // manager role and active agents access. No command or output is audit logged.
+  rpc CreateAgentHostTerminal(CreateAgentHostTerminalRequest) returns (AgentHostTerminal) {
+    option (google.api.http) = {
+      post: "/control/v1/orgs/{org_id}/agent-hosts/{agent_host_id}/terminals"
+      body: "*"
+    };
+  }
+
+  // ReadAgentHostTerminal reads bounded raw terminal bytes after a byte offset.
+  // It may wait up to 20 seconds for output. Old bytes can be evicted; callers
+  // must advance to next_offset and indicate output_lost to the user.
+  rpc ReadAgentHostTerminal(ReadAgentHostTerminalRequest) returns (AgentHostTerminalOutput) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/agent-hosts/{agent_host_id}/terminals/{terminal_id}"};
+  }
+
+  // WriteAgentHostTerminal sends up to 16 KiB of raw input and/or a PTY resize.
+  // Each write uses a strictly increasing input_sequence starting at 1. An exact
+  // retry of the last write is acknowledged without replaying its input; a
+  // reused sequence with different content or a sequence gap is rejected.
+  rpc WriteAgentHostTerminal(WriteAgentHostTerminalRequest) returns (WriteAgentHostTerminalResponse) {
+    option (google.api.http) = {
+      post: "/control/v1/orgs/{org_id}/agent-hosts/{agent_host_id}/terminals/{terminal_id}:write"
+      body: "*"
+    };
+  }
+
+  // CloseAgentHostTerminal closes only the caller's session and its exec
+  // connection. Expired or already closed sessions are safe to close again.
+  // Closing a terminal does not delete the host or its persistent files.
+  rpc CloseAgentHostTerminal(CloseAgentHostTerminalRequest) returns (CloseAgentHostTerminalResponse) {
+    option (google.api.http) = {delete: "/control/v1/orgs/{org_id}/agent-hosts/{agent_host_id}/terminals/{terminal_id}"};
+  }
+
   // DeleteAgentHost requests deletion of an Agent Host and every namespaced
   // workload owned by it. Retained volume data follows the platform policy.
   rpc DeleteAgentHost(DeleteAgentHostRequest) returns (ProvisionedResource) {
@@ -188,6 +246,40 @@ service ProvisioningService {
   rpc UpdateOrg(UpdateOrgRequest) returns (Org) {
     option (google.api.http) = {
       patch: "/control/v1/orgs/{org_id}"
+      body: "*"
+    };
+  }
+
+  // CreateOrgInvitation issues a seven-day invitation or replaces a previous link.
+  // Owners may invite admins; owners and admins may invite other non-owner roles.
+  // The token is returned once for delivery by a trusted email client. Never log it.
+  rpc CreateOrgInvitation(CreateOrgInvitationRequest) returns (CreateOrgInvitationResponse) {
+    option (google.api.http) = {
+      post: "/control/v1/orgs/{org_id}/invitations"
+      body: "*"
+    };
+  }
+  // ListOrgInvitations returns invitation history to organization administrators.
+  rpc ListOrgInvitations(ListOrgInvitationsRequest) returns (ListOrgInvitationsResponse) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/invitations"};
+  }
+  // RevokeOrgInvitation invalidates an outstanding link.
+  rpc RevokeOrgInvitation(RevokeOrgInvitationRequest) returns (OrgInvitation) {
+    option (google.api.http) = {delete: "/control/v1/orgs/{org_id}/invitations/{invitation_id}"};
+  }
+  // PreviewOrgInvitation requires the verified recipient identity. Pending platform
+  // accounts may preview and accept; invitations never grant product entitlements.
+  rpc PreviewOrgInvitation(PreviewOrgInvitationRequest) returns (OrgInvitation) {
+    option (google.api.http) = {
+      post: "/control/v1/org-invitations/preview"
+      body: "*"
+    };
+  }
+  // AcceptOrgInvitation atomically consumes a link and creates the membership.
+  // Retrying with the same recipient is safe and never changes an existing role.
+  rpc AcceptOrgInvitation(AcceptOrgInvitationRequest) returns (Org) {
+    option (google.api.http) = {
+      post: "/control/v1/org-invitations/accept"
       body: "*"
     };
   }
@@ -290,6 +382,37 @@ service ProvisioningService {
   rpc DeleteGitRepository(DeleteGitRepositoryRequest) returns (GitRepository) {
     option (google.api.http) = {delete: "/control/v1/orgs/{org_id}/git-repositories/{repository_id}"};
   }
+}
+
+// GetInferenceCaptureRequest identifies the organization, not a bucket supplied
+// by the caller. Existing organization membership checks apply.
+message GetInferenceCaptureRequest {
+  string org_id = 1;
+}
+
+// UpdateInferenceCaptureRequest replaces the organization-wide capture setting.
+// Disabling stops new capture and does not delete existing objects.
+message UpdateInferenceCaptureRequest {
+  string org_id = 1;
+  bool enabled = 2;
+  // Zero retains objects until deletion; other supported values are 7, 30, 90.
+  int32 retention_days = 3;
+}
+
+// InferenceCapture describes customer-controlled S3 delivery, independent of
+// Responses store:true and free Himalaya's Tarka-owned evaluation archive.
+message InferenceCapture {
+  string org_id = 1;
+  bool enabled = 2;
+  int32 retention_days = 3;
+  string bucket_id = 4;
+  string bucket_name = 5;
+  int64 delivered_last_24h = 6;
+  int64 failed_last_24h = 7;
+  int64 pending = 8;
+  google.protobuf.Timestamp last_delivered_at = 9;
+  // A fixed diagnostic code; never includes payload content or storage secrets.
+  string last_error_code = 10;
 }
 
 // GetCurrentUserRequest has no parameters; identity comes from authentication.
@@ -539,6 +662,28 @@ message CreateAgentHostRequest {
   // files, and the Compose services that receive the managed environment.
   // It is optional for backward compatibility.
   AgentHostRuntimeConfiguration runtime = 14;
+  // github_registry_credentials controls private ghcr.io pulls for custom Compose
+  // only. Omission preserves the saved credentials; replacement requires both
+  // username and token. Plaintext tokens are write-only and never echoed.
+  AgentHostGitHubRegistryCredentials github_registry_credentials = 15;
+}
+
+// AgentHostGitHubRegistryCredentials changes this host's ghcr.io credentials.
+// A classic GitHub PAT needs read:packages and access to every referenced image.
+message AgentHostGitHubRegistryCredentials {
+  // username is the token owner's GitHub login, not the package organization.
+  string username = 1;
+  // token is a write-only classic PAT. It is encrypted before persistence.
+  string token = 2;
+  // remove clears saved credentials and is mutually exclusive with username/token.
+  // The resulting Compose images must be accessible anonymously.
+  bool remove = 3;
+}
+
+// AgentHostGitHubRegistryAccess contains only non-secret saved credential metadata.
+message AgentHostGitHubRegistryAccess {
+  string username = 1;
+  bool configured = 2;
 }
 
 // AgentHostVariable is one Compose interpolation value. Values marked secret
@@ -655,6 +800,8 @@ message AgentHostConfiguration {
   int32 public_port = 9;
   string tier = 10;
   AgentHostRuntimeConfiguration runtime = 11;
+  // github_registry_access never contains the saved token.
+  AgentHostGitHubRegistryAccess github_registry_access = 12;
 }
 
 // GetAgentHostGatewayPairingRequest selects a configured post-deploy gateway.
@@ -723,8 +870,15 @@ message CreateApiKeyRequest {
   // label is an optional human-readable purpose for the credential.
   string label = 2;
   // allowed_model_aliases narrows model access. Empty uses the organization
-  // policy rather than overriding it.
-  repeated string allowed_model_aliases = 3;
+  // policy rather than overriding it. At most 128 aliases may be submitted;
+  // duplicate entries still count toward that request limit.
+  repeated string allowed_model_aliases = 3 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "Up to 128 lowercase model aliases, each containing 3 to 128 ASCII bytes. Empty uses the organization policy rather than overriding it."
+    min_length: 3
+    max_length: 128
+    max_items: 128
+    pattern: "^[a-z0-9][a-z0-9._/-]{1,126}[a-z0-9]$"
+  }];
   // scopes grants product capabilities. Model scopes are "himalaya",
   // "inference", and "utilities"; "sandboxes" grants code-sandbox access.
   // Empty preserves the historical "inference" default.
@@ -803,8 +957,16 @@ message UpdateQuotaPolicyRequest {
   string org_id = 1;
   // max_concurrent_requests is unlimited when absent.
   optional int32 max_concurrent_requests = 2;
-  // allowed_model_aliases is required when allow_all_models is false.
-  repeated string allowed_model_aliases = 3;
+  // allowed_model_aliases is required when allow_all_models is false. At most
+  // 128 aliases may be submitted; duplicate entries still count toward that
+  // request limit.
+  repeated string allowed_model_aliases = 3 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "Up to 128 lowercase model aliases, each containing 3 to 128 ASCII bytes. Required when allow_all_models is false."
+    min_length: 3
+    max_length: 128
+    max_items: 128
+    pattern: "^[a-z0-9][a-z0-9._/-]{1,126}[a-z0-9]$"
+  }];
   bool allow_all_models = 4;
   // monthly_request_budget is unlimited when absent.
   optional int64 monthly_request_budget = 5;
@@ -1038,4 +1200,128 @@ message GitRepository {
   bool lfs_enabled = 8;
   google.protobuf.Timestamp created_at = 9;
   google.protobuf.Timestamp updated_at = 10;
+}
+
+// ListAgentHostTerminalTargetsRequest selects a host visible to the caller.
+message ListAgentHostTerminalTargetsRequest {
+  string org_id = 1;
+  string agent_host_id = 2;
+}
+
+// AgentHostTerminalTarget identifies one currently running application container.
+// Names are informational, not authority to access arbitrary Kubernetes pods.
+message AgentHostTerminalTarget {
+  string service = 1;
+  string pod_name = 2;
+  string container_name = 3;
+}
+
+message ListAgentHostTerminalTargetsResponse {
+  repeated AgentHostTerminalTarget targets = 1;
+}
+
+message CreateAgentHostTerminalRequest {
+  string org_id = 1;
+  string agent_host_id = 2;
+  string pod_name = 3;
+  string container_name = 4;
+  // auto selects bash when available and otherwise sh. Also accepts sh or bash.
+  string shell = 5;
+  // Terminal dimensions: 20..400 columns and 5..200 rows; zero uses 100x30.
+  uint32 cols = 6;
+  uint32 rows = 7;
+}
+
+// AgentHostTerminal contains no reusable infrastructure credential. The opaque
+// ID is usable only with the same authenticated user, organization, and host.
+// Sessions expire after 15 minutes without input or one hour in total; the
+// broker can also terminate a session during restart or after 64 MiB of output.
+message AgentHostTerminal {
+  string terminal_id = 1;
+  AgentHostTerminalTarget target = 2;
+  google.protobuf.Timestamp expires_at = 3;
+}
+
+message ReadAgentHostTerminalRequest {
+  string org_id = 1;
+  string agent_host_id = 2;
+  string terminal_id = 3;
+  uint64 offset = 4;
+  // Zero returns immediately; maximum 20 seconds.
+  uint32 wait_seconds = 5;
+}
+
+// AgentHostTerminalOutput contains at most 64 KiB of raw PTY output. REST bytes
+// are base64 encoded; clients must not interpret output as HTML or log it.
+message AgentHostTerminalOutput {
+  bytes data = 1;
+  uint64 next_offset = 2;
+  bool output_lost = 3;
+  bool closed = 4;
+  int32 exit_code = 5;
+  // Stable, non-secret reason such as shell_unavailable, session_expired,
+  // output_limit, or connection_closed. An empty value indicates normal exit.
+  string error_code = 6;
+}
+
+message WriteAgentHostTerminalRequest {
+  string org_id = 1;
+  string agent_host_id = 2;
+  string terminal_id = 3;
+  bytes data = 4;
+  uint64 input_sequence = 5;
+  // Both zero preserves the current size; otherwise the create bounds apply.
+  uint32 cols = 6;
+  uint32 rows = 7;
+}
+
+message WriteAgentHostTerminalResponse {
+  uint64 acknowledged_sequence = 1;
+}
+
+message CloseAgentHostTerminalRequest {
+  string org_id = 1;
+  string agent_host_id = 2;
+  string terminal_id = 3;
+}
+
+message CloseAgentHostTerminalResponse {}
+
+// OrgInvitation excludes the secret token and reports expiry as a status.
+message OrgInvitation {
+  string id = 1;
+  string org_id = 2;
+  string org_name = 3;
+  string email = 4;
+  string role = 5;
+  string status = 6;
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp expires_at = 8;
+}
+message CreateOrgInvitationRequest {
+  string org_id = 1;
+  string email = 2;
+  // admin, operator, member, or viewer. Defaults to member.
+  string role = 3;
+}
+message CreateOrgInvitationResponse {
+  OrgInvitation invitation = 1;
+  // One-time delivery secret. Only its SHA-256 hash is stored.
+  string token = 2;
+}
+message ListOrgInvitationsRequest {
+  string org_id = 1;
+}
+message ListOrgInvitationsResponse {
+  repeated OrgInvitation invitations = 1;
+}
+message RevokeOrgInvitationRequest {
+  string org_id = 1;
+  string invitation_id = 2;
+}
+message PreviewOrgInvitationRequest {
+  string token = 1;
+}
+message AcceptOrgInvitationRequest {
+  string token = 1;
 }

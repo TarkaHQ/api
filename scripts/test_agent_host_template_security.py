@@ -242,6 +242,38 @@ services:
         with self.assertRaisesRegex(ValueError, "sensitive environment variable"):
             self.validate(SAFE.replace("${APP_PASSWORD}", "hard-coded"))
 
+    def test_lowercase_literal_secret_is_rejected(self) -> None:
+        document = SAFE.replace(
+            "APP_PASSWORD: ${APP_PASSWORD}",
+            "password: hard-coded",
+        )
+        with self.assertRaisesRegex(ValueError, "sensitive environment variable"):
+            self.validate(document)
+
+    def test_hyphenated_literal_secret_is_rejected(self) -> None:
+        document = SAFE.replace(
+            "APP_PASSWORD: ${APP_PASSWORD}",
+            "PASSWORD-DATA: hard-coded",
+        )
+        with self.assertRaisesRegex(ValueError, "sensitive environment variable"):
+            self.validate(document)
+
+    def test_dotted_api_key_literal_is_rejected(self) -> None:
+        document = SAFE.replace(
+            "APP_PASSWORD: ${APP_PASSWORD}",
+            "api.key: hard-coded",
+        )
+        with self.assertRaisesRegex(ValueError, "sensitive environment variable"):
+            self.validate(document)
+
+    def test_lowercase_environment_name_can_use_declared_secret(self) -> None:
+        self.validate(
+            SAFE.replace(
+                "APP_PASSWORD: ${APP_PASSWORD}",
+                "password: ${APP_PASSWORD}",
+            )
+        )
+
     def test_list_style_literal_secret_is_rejected(self) -> None:
         document = SAFE.replace(
             "      APP_PASSWORD: ${APP_PASSWORD}",
@@ -249,6 +281,25 @@ services:
         )
         with self.assertRaisesRegex(ValueError, "must use mapping syntax"):
             self.validate(document)
+
+    def test_lowercase_list_style_literal_secret_is_rejected(self) -> None:
+        document = SAFE.replace(
+            "      APP_PASSWORD: ${APP_PASSWORD}",
+            '      - "password=hard-coded"',
+        )
+        with self.assertRaisesRegex(ValueError, "must use mapping syntax"):
+            self.validate(document)
+
+    def test_hyphenated_list_style_literal_secret_is_rejected(self) -> None:
+        document = SAFE.replace(
+            "      APP_PASSWORD: ${APP_PASSWORD}",
+            '      - "api-key=hard-coded"',
+        )
+        with self.assertRaisesRegex(ValueError, "must use mapping syntax"):
+            self.validate(document)
+
+    def test_sensitive_word_in_named_volume_is_not_an_environment_value(self) -> None:
+        self.validate(SAFE.replace("app-data", "password-data"))
 
     def test_flow_style_literal_secret_is_rejected(self) -> None:
         document = SAFE.replace(
