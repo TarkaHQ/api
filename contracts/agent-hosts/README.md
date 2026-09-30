@@ -41,6 +41,34 @@ and other credentials are supplied as separately encrypted variables.
 cover the exact Compose bytes consumed by the infrastructure repository. CI
 rejects mutable image references, metadata/catalog drift, and checksum drift.
 
+## CPU and memory
+
+The standard managed templates share a two-vCPU maximum across their application
+services. Their CPU scheduling requests are lower so idle hosts do not reserve
+two full cores:
+
+| Template | CPU request | CPU limit | Memory request | Memory limit |
+| --- | ---: | ---: | ---: | ---: |
+| Hermes Agent | 625m | 2 vCPU | 2.25 GiB | 7 GiB |
+| OpenClaw, including browser | 750m | 2 vCPU | 3 GiB | 8 GiB |
+| n8n | 500m | 2 vCPU | 1 GiB | 3 GiB |
+
+These are aggregate application resources. The private platform gateway and
+optional Signal bridge have separate, bounded overhead. Onyx remains a larger
+multi-service template with its existing resource profile.
+
+The core tier's 10 GiB memory quota is an upper bound, not an allocation of
+physical RAM. Processes use physical memory as needed; a memory limit does not
+preallocate empty pages. Kubernetes still accounts for each explicit memory
+request when scheduling and admitting workloads. Requests are not automatically
+reduced while a host is idle, and a process that retains allocations may need
+to release them before its actual memory usage falls.
+
+Hermes `0.21.2-tarka.2` and OpenClaw `2026.9.4-tarka.2` reduce CPU only; their
+memory requests, memory limits, persistent volumes, and image digests are
+unchanged. Existing saved revisions keep their previous CPU resources until
+the owner applies the updated template through the normal configuration flow.
+
 ## n8n
 
 The n8n template creates the initial owner using `N8N_OWNER_EMAIL` and the

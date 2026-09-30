@@ -2,7 +2,7 @@ x-tarka:
   id: openclaw
   title: OpenClaw
   description: OpenClaw with a persistent workspace and isolated browser automation.
-  version: "2026.9.4-tarka.1"
+  version: "2026.9.4-tarka.2"
   tier: core
   routes:
     - service: openclaw
@@ -99,10 +99,10 @@ services:
     deploy:
       resources:
         reservations:
-          cpus: "1"
+          cpus: "0.5"
           memory: 2G
         limits:
-          cpus: "3"
+          cpus: "1.5"
           memory: 6G
   browser:
     image: coollabsio/openclaw-browser@sha256:c5f8a9d812992429be2c5a0b6b8f5d70d63e81cc1b381c5475e067a91e0d3179
@@ -123,10 +123,10 @@ services:
     deploy:
       resources:
         reservations:
-          cpus: "0.5"
+          cpus: "0.25"
           memory: 1G
         limits:
-          cpus: "1"
+          cpus: "0.5"
           memory: 2G
 
 volumes:
