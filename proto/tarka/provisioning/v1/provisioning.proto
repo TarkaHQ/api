@@ -19,7 +19,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Tarka Control API"
     description: "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management."
-    version: "1.11.0"
+    version: "1.12.0"
   }
   host: "tarka.rest"
   schemes: HTTPS
@@ -322,6 +322,17 @@ service ProvisioningService {
   // GetProvisionedResource returns one desired-state resource by identifier.
   rpc GetProvisionedResource(GetProvisionedResourceRequest) returns (ProvisionedResource) {
     option (google.api.http) = {get: "/control/v1/orgs/{org_id}/resources/{resource_id}"};
+  }
+
+  // ListLocations returns the locations where Tarka can place sandboxes,
+  // Agent Hosts and storage buckets, with the products each one offers. With
+  // an organization, preview locations that organization may use are
+  // included.
+  rpc ListLocations(ListLocationsRequest) returns (ListLocationsResponse) {
+    option (google.api.http) = {
+      get: "/control/v1/locations"
+      additional_bindings: {get: "/control/v1/orgs/{org_id}/locations"}
+    };
   }
 
   // CreateStorageBucket provisions a private, versioned S3-compatible bucket.
@@ -666,6 +677,15 @@ message CreateAgentHostRequest {
   // only. Omission preserves the saved credentials; replacement requires both
   // username and token. Plaintext tokens are write-only and never echoed.
   AgentHostGitHubRegistryCredentials github_registry_credentials = 15;
+  // location selects where the host runs, such as "eu-1" or "us-1" (see
+  // ListLocations). Empty selects the default location for a new host and
+  // keeps the current location for an existing one. A host cannot move:
+  // changing the location of an existing host is rejected.
+  string location = 16 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "Placement location such as \"eu-1\" or \"us-1\" (see ListLocations). Empty selects the default location."
+    max_length: 16
+    pattern: "^([a-z]{2}-[0-9]{1,3})?$"
+  }];
 }
 
 // AgentHostGitHubRegistryCredentials changes this host's ghcr.io credentials.
@@ -862,6 +882,8 @@ message ProvisionedResource {
   google.protobuf.Struct status_detail = 9;
   google.protobuf.Timestamp created_at = 10;
   google.protobuf.Timestamp updated_at = 11;
+  // location is where the resource runs, such as "eu-1" or "us-1".
+  string location = 12;
 }
 
 // CreateApiKeyRequest creates an organization-scoped customer credential.
@@ -1063,12 +1085,52 @@ message GetProvisionedResourceRequest {
   string resource_id = 2;
 }
 
+// ListLocationsRequest optionally selects an organization so that preview
+// locations it may use are included.
+message ListLocationsRequest {
+  string org_id = 1;
+}
+
+// ListLocationsResponse lists placement locations, default first.
+message ListLocationsResponse {
+  repeated Location locations = 1;
+}
+
+// Location is a place where Tarka runs customer workloads and stores data.
+// Identifiers are stable and provider-neutral: a location keeps its id if the
+// hardware or provider behind it changes.
+message Location {
+  // id is the stable identifier, such as "eu-1" or "us-1".
+  string id = 1;
+  // display_name is a human-readable name, such as "Europe (Germany)".
+  string display_name = 2;
+  // country_code is the ISO 3166-1 alpha-2 country where workloads run.
+  string country_code = 3;
+  // is_default is true for the location used when a request omits location.
+  bool is_default = 4;
+  // products lists what can be placed here: "sandboxes", "agent_hosts" and
+  // "object_storage".
+  repeated string products = 5;
+  // status is "available", or "preview" when only admitted organizations may
+  // place resources here.
+  string status = 6;
+}
+
 // CreateStorageBucketRequest defines a private S3-compatible bucket.
 message CreateStorageBucketRequest {
   string org_id = 1;
   // name is the customer-visible, URL-safe bucket name within the
   // organization. Tarka maps it to a globally unique physical bucket.
   string name = 2;
+  // location selects where the bucket's data is stored, such as "eu-1" or
+  // "us-1" (see ListLocations). Empty selects the default location for a new
+  // bucket and keeps the current location for an existing one. A bucket
+  // cannot move: a different location for an existing name is rejected.
+  string location = 3 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "Placement location such as \"eu-1\" or \"us-1\" (see ListLocations). Empty selects the default location."
+    max_length: 16
+    pattern: "^([a-z]{2}-[0-9]{1,3})?$"
+  }];
 }
 
 // ListStorageBucketsRequest selects one organization.
@@ -1098,6 +1160,8 @@ message StorageBucket {
   string status = 4;
   // endpoint is the public S3-compatible API endpoint.
   string endpoint = 5;
+  // region is the S3 signing region to configure in S3 clients. It is not
+  // the Tarka location; see location.
   string region = 6;
   bool versioning_enabled = 7;
   google.protobuf.Timestamp created_at = 8;
@@ -1105,6 +1169,9 @@ message StorageBucket {
   // s3_bucket_name is the globally unique bucket identifier to send to S3
   // data-plane clients. name remains the organization-local display name.
   string s3_bucket_name = 10;
+  // location is the Tarka location that stores the bucket, such as "eu-1"
+  // or "us-1".
+  string location = 11;
 }
 
 // CreateStorageCredentialRequest creates one access key scoped to a bucket.
