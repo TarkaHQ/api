@@ -4297,6 +4297,11 @@
           "type": "string",
           "format": "date-time",
           "description": "updated_at is when the limits last changed. Absent if never set."
+        },
+        "as_of": {
+          "type": "string",
+          "format": "date-time",
+          "description": "as_of is when the spend in this message was measured."
         }
       },
       "description": "SpendLimits is an organization's monthly spend limits and what it has been\ncharged in the current UTC calendar month. Every amount is in microcents of\ncurrency: one unit is 0.00000001 of it."

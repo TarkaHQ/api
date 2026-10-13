@@ -1091,6 +1091,8 @@ message SpendLimits {
   google.protobuf.Timestamp period_end = 7;
   // updated_at is when the limits last changed. Absent if never set.
   google.protobuf.Timestamp updated_at = 8;
+  // as_of is when the spend in this message was measured.
+  google.protobuf.Timestamp as_of = 9;
 }
 
 // ProductSpend is one product's spend limit and what it has been charged.
