@@ -110,8 +110,8 @@ The API has three credential boundaries:
 
 Account access must be approved, the organization must be active, and the
 caller must have an active organization membership. Read operations generally
-accept every organization role. Organization metadata and quota changes require
-an owner or admin. API-key, compute, storage, and repository mutations require
+accept every organization role. Organization metadata, quota and spend-limit changes
+require an owner or admin. API-key, compute, storage, and repository mutations require
 an owner, admin, or operator. Product entitlements add a second gate for
 private-beta model categories, Agent Hosts, Batch Jobs, Sandboxes, Object
 Storage, and Hosted Git. A key scope cannot exceed its creator's current product
@@ -149,6 +149,8 @@ the route or request message.
 | `RevokeApiKey` | `POST /control/v1/orgs/{org_id}/api-keys/{api_key_id}:revoke` | Permanently revoke a key |
 | `GetQuotaPolicy` | `GET /control/v1/orgs/{org_id}/quota-policy` | Read effective concurrency, request, token, and model policy |
 | `UpdateQuotaPolicy` | `PUT /control/v1/orgs/{org_id}/quota-policy` | Replace the organization quota policy |
+| `GetSpendLimits` | `GET /control/v1/orgs/{org_id}/spend-limits` | Read the monthly spend limit, per-product limits, and what each has been charged this UTC calendar month |
+| `UpdateSpendLimits` | `PUT /control/v1/orgs/{org_id}/spend-limits` | Replace the monthly spend limits; priced inference past a limit is refused with HTTP `402` and `spend_limit_reached` |
 | `ListUsageEvents` | `GET /control/v1/orgs/{org_id}/usage/events` | Read newest metered requests; `limit` defaults to 25 and caps at 100 |
 | `GetUsageSummary` | `GET /control/v1/orgs/{org_id}/usage/summary` | Aggregate the current UTC calendar month |
 | `ListProvisionedResources` | `GET /control/v1/orgs/{org_id}/resources` | List desired-state resources, optionally by `resource_type` |

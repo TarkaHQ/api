@@ -36,6 +36,18 @@ class ControlRequestLimitTests(unittest.TestCase):
             with self.subTest(schema=schema_name):
                 self.assert_allowed_model_aliases(definitions[schema_name])
 
+    def test_spend_limits_publish_bounds(self) -> None:
+        definitions = load_json_object(CONTROL_CONTRACT)["definitions"]
+        body = definitions["ProvisioningServiceUpdateSpendLimitsBody"]["properties"]
+        self.assertEqual(body["currency"].get("pattern"), "^(usd|eur)$")
+        self.assertEqual(body["monthly_limit_microcents"].get("format"), "int64")
+        limits = body["product_limits"]
+        self.assertEqual(limits.get("type"), "array")
+        self.assertEqual(limits.get("maxItems"), 16)
+        product = definitions["v1ProductSpendLimit"]["properties"]["product"]
+        self.assertEqual(product.get("maxLength"), 32)
+        self.assertEqual(product.get("pattern"), "^[a-z][a-z0-9_]{1,31}$")
+
 
 if __name__ == "__main__":
     unittest.main()
