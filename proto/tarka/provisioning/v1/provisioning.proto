@@ -1066,7 +1066,9 @@ message ProductSpendLimit {
     max_length: 32
     pattern: "^[a-z][a-z0-9_]{1,31}$"
   }];
-  int64 monthly_limit_microcents = 2;
+  // monthly_limit_microcents is required. A product limit sent without one
+  // fails with spend_limit_amount_required rather than reading as zero.
+  optional int64 monthly_limit_microcents = 2;
 }
 
 // SpendLimits is an organization's monthly spend limits and what it has been
@@ -1093,6 +1095,10 @@ message SpendLimits {
   google.protobuf.Timestamp updated_at = 8;
   // as_of is when the spend in this message was measured.
   google.protobuf.Timestamp as_of = 9;
+  // held_microcents is what priced calls in flight have reserved: the most
+  // each can cost. It counts against the limits, on top of spent_microcents,
+  // until those calls finish and are charged what they really cost.
+  int64 held_microcents = 10;
 }
 
 // ProductSpend is one product's spend limit and what it has been charged.

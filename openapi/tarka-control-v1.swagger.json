@@ -4067,7 +4067,8 @@
         },
         "monthly_limit_microcents": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "description": "monthly_limit_microcents is required. A product limit sent without one\nfails with spend_limit_amount_required rather than reading as zero."
         }
       },
       "description": "ProductSpendLimit caps one product's charges in a UTC calendar month."
@@ -4302,6 +4303,11 @@
           "type": "string",
           "format": "date-time",
           "description": "as_of is when the spend in this message was measured."
+        },
+        "held_microcents": {
+          "type": "string",
+          "format": "int64",
+          "description": "held_microcents is what priced calls in flight have reserved: the most\neach can cost. It counts against the limits, on top of spent_microcents,\nuntil those calls finish and are charged what they really cost."
         }
       },
       "description": "SpendLimits is an organization's monthly spend limits and what it has been\ncharged in the current UTC calendar month. Every amount is in microcents of\ncurrency: one unit is 0.00000001 of it."
