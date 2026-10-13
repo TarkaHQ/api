@@ -3,7 +3,7 @@
   "info": {
     "title": "Tarka Control API",
     "description": "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management.",
-    "version": "1.11.0"
+    "version": "1.12.0"
   },
   "tags": [
     {
@@ -76,6 +76,37 @@
             "schema": {
               "$ref": "#/definitions/v1CreateInferenceServiceRequest"
             }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/locations": {
+      "get": {
+        "summary": "ListLocations returns the locations where Tarka can place sandboxes,\nAgent Hosts and storage buckets, with the products each one offers. With\nan organization, preview locations that organization may use are\nincluded.",
+        "operationId": "ProvisioningService_ListLocations",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListLocationsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
           }
         ],
         "tags": [
@@ -1231,6 +1262,37 @@
         ]
       }
     },
+    "/control/v1/orgs/{org_id}/locations": {
+      "get": {
+        "summary": "ListLocations returns the locations where Tarka can place sandboxes,\nAgent Hosts and storage buckets, with the products each one offers. With\nan organization, preview locations that organization may use are\nincluded.",
+        "operationId": "ProvisioningService_ListLocations2",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListLocationsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
     "/control/v1/orgs/{org_id}/members": {
       "get": {
         "summary": "ListOrgMembers returns active and inactive memberships visible to an\norganization member.",
@@ -2229,6 +2291,12 @@
         "github_registry_credentials": {
           "$ref": "#/definitions/v1AgentHostGitHubRegistryCredentials",
           "description": "github_registry_credentials controls private ghcr.io pulls for custom Compose\nonly. Omission preserves the saved credentials; replacement requires both\nusername and token. Plaintext tokens are write-only and never echoed."
+        },
+        "location": {
+          "type": "string",
+          "description": "Placement location such as \"eu-1\" or \"us-1\" (see ListLocations). Empty selects the default location.",
+          "maxLength": 16,
+          "pattern": "^([a-z]{2}-[0-9]{1,3})?$"
         }
       },
       "description": "CreateAgentHostRequest applies desired state for a complete Agent Host\nCompose stack. Existing single-image callers remain supported and are\nnormalized into a one-service stack."
@@ -2382,6 +2450,12 @@
         "name": {
           "type": "string",
           "description": "name is the customer-visible, URL-safe bucket name within the\norganization. Tarka maps it to a globally unique physical bucket."
+        },
+        "location": {
+          "type": "string",
+          "description": "Placement location such as \"eu-1\" or \"us-1\" (see ListLocations). Empty selects the default location.",
+          "maxLength": 16,
+          "pattern": "^([a-z]{2}-[0-9]{1,3})?$"
         }
       },
       "description": "CreateStorageBucketRequest defines a private S3-compatible bucket."
@@ -2529,6 +2603,12 @@
         "idempotency_key": {
           "type": "string",
           "description": "idempotency_key safely retries this mutation for 24 hours. The same key\ncannot be reused with different request content."
+        },
+        "location": {
+          "type": "string",
+          "description": "Placement location such as \"eu-1\" or \"us-1\" (see ListLocations). Empty selects the default location.",
+          "maxLength": 16,
+          "pattern": "^([a-z]{2}-[0-9]{1,3})?$"
         }
       },
       "description": "CreateCodeSandboxRequest starts a sandbox from a ready template."
@@ -3095,6 +3175,10 @@
         "failure_code": {
           "type": "string",
           "description": "failure_code is a stable machine-readable lifecycle failure code."
+        },
+        "location": {
+          "type": "string",
+          "description": "location is where the sandbox runs, such as \"eu-1\" or \"us-1\"."
         }
       },
       "description": "CodeSandbox is an isolated, time-bounded execution environment."
@@ -3460,6 +3544,19 @@
       },
       "description": "ListGitRepositoriesResponse contains hosted Git repository metadata."
     },
+    "v1ListLocationsResponse": {
+      "type": "object",
+      "properties": {
+        "locations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Location"
+          }
+        }
+      },
+      "description": "ListLocationsResponse lists placement locations, default first."
+    },
     "v1ListModelsResponse": {
       "type": "object",
       "properties": {
@@ -3588,6 +3685,39 @@
         }
       },
       "description": "ListUsageEventsResponse contains records in newest-first order."
+    },
+    "v1Location": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "id is the stable identifier, such as \"eu-1\" or \"us-1\"."
+        },
+        "display_name": {
+          "type": "string",
+          "description": "display_name is a human-readable name, such as \"Europe (Germany)\"."
+        },
+        "country_code": {
+          "type": "string",
+          "description": "country_code is the ISO 3166-1 alpha-2 country where workloads run."
+        },
+        "is_default": {
+          "type": "boolean",
+          "description": "is_default is true for the location used when a request omits location."
+        },
+        "products": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "products lists what can be placed here: \"sandboxes\", \"agent_hosts\" and\n\"object_storage\"."
+        },
+        "status": {
+          "type": "string",
+          "description": "status is \"available\", or \"preview\" when only admitted organizations may\nplace resources here."
+        }
+      },
+      "description": "Location is a place where Tarka runs customer workloads and stores data.\nIdentifiers are stable and provider-neutral: a location keeps its id if the\nhardware or provider behind it changes."
     },
     "v1Model": {
       "type": "object",
@@ -3852,6 +3982,10 @@
         "updated_at": {
           "type": "string",
           "format": "date-time"
+        },
+        "location": {
+          "type": "string",
+          "description": "location is where the resource runs, such as \"eu-1\" or \"us-1\"."
         }
       },
       "description": "ProvisionedResource is the recorded desired and observed state for a managed\nresource."
@@ -4010,7 +4144,8 @@
           "description": "endpoint is the public S3-compatible API endpoint."
         },
         "region": {
-          "type": "string"
+          "type": "string",
+          "description": "region is the S3 signing region to configure in S3 clients. It is not\nthe Tarka location; see location."
         },
         "versioning_enabled": {
           "type": "boolean"
@@ -4026,6 +4161,10 @@
         "s3_bucket_name": {
           "type": "string",
           "description": "s3_bucket_name is the globally unique bucket identifier to send to S3\ndata-plane clients. name remains the organization-local display name."
+        },
+        "location": {
+          "type": "string",
+          "description": "location is the Tarka location that stores the bucket, such as \"eu-1\"\nor \"us-1\"."
         }
       },
       "description": "StorageBucket describes a private Tarka-managed S3-compatible bucket."
