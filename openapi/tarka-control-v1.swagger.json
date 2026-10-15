@@ -3,7 +3,7 @@
   "info": {
     "title": "Tarka Control API",
     "description": "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management.",
-    "version": "1.12.0"
+    "version": "1.13.0"
   },
   "tags": [
     {
@@ -1918,6 +1918,74 @@
         ]
       }
     },
+    "/control/v1/orgs/{org_id}/spend-limits": {
+      "get": {
+        "summary": "GetSpendLimits returns an organization's monthly spend limits and what it\nhas been charged against each in the current UTC calendar month.",
+        "operationId": "ProvisioningService_GetSpendLimits",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1SpendLimits"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      },
+      "put": {
+        "summary": "UpdateSpendLimits replaces an organization's monthly spend limits. Once a\npriced request could take spend past a limit that applies to it, the\nInference API refuses the request with HTTP 402 and the error code\nspend_limit_reached.",
+        "operationId": "ProvisioningService_UpdateSpendLimits",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1SpendLimits"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProvisioningServiceUpdateSpendLimitsBody"
+            }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
     "/control/v1/orgs/{org_id}/storage/buckets": {
       "get": {
         "summary": "ListStorageBuckets returns object-storage buckets in an organization.",
@@ -2565,6 +2633,31 @@
         }
       },
       "description": "UpdateQuotaPolicyRequest replaces the organization's inference policy."
+    },
+    "ProvisioningServiceUpdateSpendLimitsBody": {
+      "type": "object",
+      "properties": {
+        "currency": {
+          "type": "string",
+          "description": "The organization's billing currency as GetSpendLimits returns it: \"usd\" or \"eur\".",
+          "pattern": "^(usd|eur)$"
+        },
+        "monthly_limit_microcents": {
+          "type": "string",
+          "format": "int64",
+          "description": "monthly_limit_microcents caps everything the organization is charged in a\nUTC calendar month. Absent means no overall limit."
+        },
+        "product_limits": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1ProductSpendLimit"
+          },
+          "description": "At most one entry per metered product.",
+          "maxItems": 16
+        }
+      },
+      "description": "UpdateSpendLimitsRequest replaces every spend limit of an organization.\nAmounts are microcents of currency: one unit is 0.00000001 of it. A limit\nmay be zero, which stops all priced usage it applies to, and at most\n1,000,000,000,000,000 (10 million in the currency)."
     },
     "ProvisioningServiceWriteAgentHostTerminalBody": {
       "type": "object",
@@ -3939,6 +4032,47 @@
       },
       "description": "ProductEntitlement describes one user-level product access decision."
     },
+    "v1ProductSpend": {
+      "type": "object",
+      "properties": {
+        "product": {
+          "type": "string",
+          "description": "product is a product identifier from the product-access catalog."
+        },
+        "metered": {
+          "type": "boolean",
+          "description": "metered is true when the product's usage is charged and its limits are\nenforced. A product that is not metered cannot take a limit yet."
+        },
+        "monthly_limit_microcents": {
+          "type": "string",
+          "format": "int64",
+          "description": "monthly_limit_microcents is absent when the product has no limit of its\nown and draws on the overall limit only."
+        },
+        "spent_microcents": {
+          "type": "string",
+          "format": "int64",
+          "description": "spent_microcents is what the product has been charged since\nperiod_start."
+        }
+      },
+      "description": "ProductSpend is one product's spend limit and what it has been charged."
+    },
+    "v1ProductSpendLimit": {
+      "type": "object",
+      "properties": {
+        "product": {
+          "type": "string",
+          "description": "Product identifier from the product-access catalog.",
+          "maxLength": 32,
+          "pattern": "^[a-z][a-z0-9_]{1,31}$"
+        },
+        "monthly_limit_microcents": {
+          "type": "string",
+          "format": "int64",
+          "description": "monthly_limit_microcents is required. A product limit sent without one\nfails with spend_limit_amount_required rather than reading as zero."
+        }
+      },
+      "description": "ProductSpendLimit caps one product's charges in a UTC calendar month."
+    },
     "v1ProvisionedResource": {
       "type": "object",
       "properties": {
@@ -4121,6 +4255,62 @@
       ],
       "default": "SANDBOX_TEMPLATE_STATUS_UNSPECIFIED",
       "description": "SandboxTemplateStatus is the lifecycle of a reusable sandbox template."
+    },
+    "v1SpendLimits": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "currency": {
+          "type": "string",
+          "description": "currency is the organization's billing currency, \"usd\" or \"eur\": that of\nits live billing account, otherwise \"usd\"."
+        },
+        "monthly_limit_microcents": {
+          "type": "string",
+          "format": "int64",
+          "description": "monthly_limit_microcents is absent when there is no overall limit."
+        },
+        "spent_microcents": {
+          "type": "string",
+          "format": "int64",
+          "description": "spent_microcents is what priced usage has been charged since\nperiod_start, across every product."
+        },
+        "products": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1ProductSpend"
+          },
+          "description": "products lists every product whose usage is charged or can be, each\nwith its own limit and spend."
+        },
+        "period_start": {
+          "type": "string",
+          "format": "date-time",
+          "description": "period_start is inclusive."
+        },
+        "period_end": {
+          "type": "string",
+          "format": "date-time",
+          "description": "period_end is exclusive. Spend counts from zero again from then."
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "updated_at is when the limits last changed. Absent if never set."
+        },
+        "as_of": {
+          "type": "string",
+          "format": "date-time",
+          "description": "as_of is when the spend in this message was measured."
+        },
+        "held_microcents": {
+          "type": "string",
+          "format": "int64",
+          "description": "held_microcents is what priced calls in flight have reserved: the most\neach can cost. It counts against the limits, on top of spent_microcents,\nuntil those calls finish and are charged what they really cost."
+        }
+      },
+      "description": "SpendLimits is an organization's monthly spend limits and what it has been\ncharged in the current UTC calendar month. Every amount is in microcents of\ncurrency: one unit is 0.00000001 of it."
     },
     "v1StorageBucket": {
       "type": "object",

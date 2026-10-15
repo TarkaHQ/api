@@ -19,7 +19,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Tarka Control API"
     description: "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management."
-    version: "1.12.0"
+    version: "1.13.0"
   }
   host: "tarka.rest"
   schemes: HTTPS
@@ -299,6 +299,23 @@ service ProvisioningService {
   rpc UpdateQuotaPolicy(UpdateQuotaPolicyRequest) returns (QuotaPolicy) {
     option (google.api.http) = {
       put: "/control/v1/orgs/{org_id}/quota-policy"
+      body: "*"
+    };
+  }
+
+  // GetSpendLimits returns an organization's monthly spend limits and what it
+  // has been charged against each in the current UTC calendar month.
+  rpc GetSpendLimits(GetSpendLimitsRequest) returns (SpendLimits) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/spend-limits"};
+  }
+
+  // UpdateSpendLimits replaces an organization's monthly spend limits. Once a
+  // priced request could take spend past a limit that applies to it, the
+  // Inference API refuses the request with HTTP 402 and the error code
+  // spend_limit_reached.
+  rpc UpdateSpendLimits(UpdateSpendLimitsRequest) returns (SpendLimits) {
+    option (google.api.http) = {
+      put: "/control/v1/orgs/{org_id}/spend-limits"
       body: "*"
     };
   }
@@ -1008,6 +1025,95 @@ message QuotaPolicy {
   // monthly_token_budget is unlimited when absent.
   optional int64 monthly_token_budget = 6;
   google.protobuf.Timestamp updated_at = 7;
+}
+
+// GetSpendLimitsRequest selects an organization visible to the caller.
+message GetSpendLimitsRequest {
+  string org_id = 1;
+}
+
+// UpdateSpendLimitsRequest replaces every spend limit of an organization.
+// Amounts are microcents of currency: one unit is 0.00000001 of it. A limit
+// may be zero, which stops all priced usage it applies to, and at most
+// 1,000,000,000,000,000 (10 million in the currency).
+message UpdateSpendLimitsRequest {
+  string org_id = 1;
+  // currency must equal SpendLimits.currency, the organization's billing
+  // currency, so an amount is never applied in a currency the caller did not
+  // read. A mismatch fails with spend_limit_currency_mismatch.
+  string currency = 2 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "The organization's billing currency as GetSpendLimits returns it: \"usd\" or \"eur\"."
+    pattern: "^(usd|eur)$"
+  }];
+  // monthly_limit_microcents caps everything the organization is charged in a
+  // UTC calendar month. Absent means no overall limit.
+  optional int64 monthly_limit_microcents = 3;
+  // product_limits caps single products, each also bounded by the overall
+  // limit. A product without an entry draws on the overall limit only. Each
+  // product may appear once and must be metered (ProductSpend.metered).
+  repeated ProductSpendLimit product_limits = 4 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "At most one entry per metered product."
+    max_items: 16
+  }];
+}
+
+// ProductSpendLimit caps one product's charges in a UTC calendar month.
+message ProductSpendLimit {
+  // product is a product identifier from the product-access catalog, such as
+  // "inference" or "utilities".
+  string product = 1 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "Product identifier from the product-access catalog."
+    max_length: 32
+    pattern: "^[a-z][a-z0-9_]{1,31}$"
+  }];
+  // monthly_limit_microcents is required. A product limit sent without one
+  // fails with spend_limit_amount_required rather than reading as zero.
+  optional int64 monthly_limit_microcents = 2;
+}
+
+// SpendLimits is an organization's monthly spend limits and what it has been
+// charged in the current UTC calendar month. Every amount is in microcents of
+// currency: one unit is 0.00000001 of it.
+message SpendLimits {
+  string org_id = 1;
+  // currency is the organization's billing currency, "usd" or "eur": that of
+  // its live billing account, otherwise "usd".
+  string currency = 2;
+  // monthly_limit_microcents is absent when there is no overall limit.
+  optional int64 monthly_limit_microcents = 3;
+  // spent_microcents is what priced usage has been charged since
+  // period_start, across every product.
+  int64 spent_microcents = 4;
+  // products lists every product whose usage is charged or can be, each
+  // with its own limit and spend.
+  repeated ProductSpend products = 5;
+  // period_start is inclusive.
+  google.protobuf.Timestamp period_start = 6;
+  // period_end is exclusive. Spend counts from zero again from then.
+  google.protobuf.Timestamp period_end = 7;
+  // updated_at is when the limits last changed. Absent if never set.
+  google.protobuf.Timestamp updated_at = 8;
+  // as_of is when the spend in this message was measured.
+  google.protobuf.Timestamp as_of = 9;
+  // held_microcents is what priced calls in flight have reserved: the most
+  // each can cost. It counts against the limits, on top of spent_microcents,
+  // until those calls finish and are charged what they really cost.
+  int64 held_microcents = 10;
+}
+
+// ProductSpend is one product's spend limit and what it has been charged.
+message ProductSpend {
+  // product is a product identifier from the product-access catalog.
+  string product = 1;
+  // metered is true when the product's usage is charged and its limits are
+  // enforced. A product that is not metered cannot take a limit yet.
+  bool metered = 2;
+  // monthly_limit_microcents is absent when the product has no limit of its
+  // own and draws on the overall limit only.
+  optional int64 monthly_limit_microcents = 3;
+  // spent_microcents is what the product has been charged since
+  // period_start.
+  int64 spent_microcents = 4;
 }
 
 // ListUsageEventsRequest selects recent metering records.
