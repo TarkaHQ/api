@@ -726,7 +726,7 @@ message CreateAgentHostRequest {
   AgentHostGitHubRegistryCredentials github_registry_credentials = 15;
   // Validate and return spec.billing_quote without creating or changing a host.
   // The quote is informational; admission reserves credit at apply time.
-  bool dry_run = 16;
+  bool dry_run = 17;
   // location selects where the host runs, such as "eu-1" or "us-1" (see
   // ListLocations). Empty selects the default location for a new host and
   // keeps the current location for an existing one. A host cannot move:

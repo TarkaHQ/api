@@ -2428,6 +2428,10 @@
           "$ref": "#/definitions/v1AgentHostGitHubRegistryCredentials",
           "description": "github_registry_credentials controls private ghcr.io pulls for custom Compose\nonly. Omission preserves the saved credentials; replacement requires both\nusername and token. Plaintext tokens are write-only and never echoed."
         },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Validate and return spec.billing_quote without creating or changing a host.\nThe quote is informational; admission reserves credit at apply time."
+        },
         "location": {
           "type": "string",
           "description": "Placement location such as \"eu-1\" or \"us-1\" (see ListLocations). Empty selects the default location.",
