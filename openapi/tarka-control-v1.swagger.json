@@ -3,7 +3,7 @@
   "info": {
     "title": "Tarka Control API",
     "description": "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management.",
-    "version": "1.13.0"
+    "version": "1.14.0"
   },
   "tags": [
     {
@@ -785,6 +785,51 @@
             "required": true,
             "schema": {
               "$ref": "#/definitions/ProvisioningServiceWriteAgentHostTerminalBody"
+            }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/agent-hosts/{agent_host_id}:running": {
+      "post": {
+        "summary": "Pausing retains persistent data. Resuming explicitly reserves prepaid credit;\ntopping up alone never resumes a paused host.",
+        "operationId": "ProvisioningService_SetAgentHostRunning",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ProvisionedResource"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "agent_host_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProvisioningServiceSetAgentHostRunningBody"
             }
           }
         ],
@@ -2291,6 +2336,29 @@
           "ProvisioningService"
         ]
       }
+    },
+    "/control/v1/pricing": {
+      "get": {
+        "summary": "GetPricingCatalog exposes the active USD retail catalog and currency factors.\nPublic, read-only; never includes credentials or upstream acquisition prices.",
+        "operationId": "ProvisioningService_GetPricingCatalog",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1PricingCatalog"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
     }
   },
   "definitions": {
@@ -2359,6 +2427,10 @@
         "github_registry_credentials": {
           "$ref": "#/definitions/v1AgentHostGitHubRegistryCredentials",
           "description": "github_registry_credentials controls private ghcr.io pulls for custom Compose\nonly. Omission preserves the saved credentials; replacement requires both\nusername and token. Plaintext tokens are write-only and never echoed."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Validate and return spec.billing_quote without creating or changing a host.\nThe quote is informational; admission reserves credit at apply time."
         },
         "location": {
           "type": "string",
@@ -2574,6 +2646,14 @@
     "ProvisioningServiceRevokeStorageCredentialBody": {
       "type": "object",
       "description": "RevokeStorageCredentialRequest selects one bucket credential."
+    },
+    "ProvisioningServiceSetAgentHostRunningBody": {
+      "type": "object",
+      "properties": {
+        "running": {
+          "type": "boolean"
+        }
+      }
     },
     "ProvisioningServiceUpdateInferenceCaptureBody": {
       "type": "object",
@@ -3869,6 +3949,21 @@
         "access_product": {
           "type": "string",
           "description": "access_product is the server-authoritative API-key scope and user\nentitlement required to use this model: himalaya, inference, or utilities."
+        },
+        "price_cached_input_microcents_per_million": {
+          "type": "string",
+          "format": "int64"
+        },
+        "price_audio_microcents_per_second": {
+          "type": "string",
+          "format": "int64"
+        },
+        "price_page_microcents": {
+          "type": "string",
+          "format": "int64"
+        },
+        "pricing_version": {
+          "type": "string"
         }
       },
       "description": "Model describes a stable Tarka model alias and its metering metadata."
@@ -3965,6 +4060,21 @@
           "type": "string"
         }
       }
+    },
+    "v1PricingCatalog": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string"
+        },
+        "active": {
+          "type": "boolean"
+        },
+        "catalog": {
+          "type": "object"
+        }
+      },
+      "description": "PricingCatalog is versioned. All monetary integers are USD microcents,\nwith explicit denominators for tokens, seconds and compute periods."
     },
     "v1ProductAccessRequest": {
       "type": "object",
@@ -4449,6 +4559,35 @@
         "created_at": {
           "type": "string",
           "format": "date-time"
+        },
+        "audio_seconds": {
+          "type": "number",
+          "format": "double"
+        },
+        "input_pages": {
+          "type": "string",
+          "format": "int64"
+        },
+        "access_product": {
+          "type": "string"
+        },
+        "resource_id": {
+          "type": "string"
+        },
+        "pricing_version": {
+          "type": "string"
+        },
+        "billed_currency": {
+          "type": "string",
+          "description": "Actual ledger amount, in billed_currency microcents, fixed at admission."
+        },
+        "billed_microcents": {
+          "type": "string",
+          "format": "int64"
+        },
+        "runtime_ms": {
+          "type": "string",
+          "format": "int64"
         }
       },
       "description": "UsageEvent is one metered inference request."
