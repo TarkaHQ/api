@@ -213,6 +213,15 @@ service ProvisioningService {
     option (google.api.http) = {delete: "/control/v1/orgs/{org_id}/agent-hosts/{agent_host_id}"};
   }
 
+  // Pausing retains persistent data. Resuming explicitly reserves prepaid credit;
+  // topping up alone never resumes a paused host.
+  rpc SetAgentHostRunning(SetAgentHostRunningRequest) returns (ProvisionedResource) {
+    option (google.api.http) = {
+      post: "/control/v1/orgs/{org_id}/agent-hosts/{agent_host_id}:running"
+      body: "*"
+    };
+  }
+
   // CreateJob records desired state for a managed finite-duration job.
   rpc CreateJob(CreateJobRequest) returns (ProvisionedResource) {
     option (google.api.http) = {
@@ -724,6 +733,12 @@ message CreateAgentHostRequest {
     max_length: 16
     pattern: "^([a-z]{2}-[0-9]{1,3})?$"
   }];
+}
+
+message SetAgentHostRunningRequest {
+  string org_id = 1;
+  string agent_host_id = 2;
+  bool running = 3;
 }
 
 // AgentHostGitHubRegistryCredentials changes this host's ghcr.io credentials.

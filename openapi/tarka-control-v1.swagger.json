@@ -793,6 +793,51 @@
         ]
       }
     },
+    "/control/v1/orgs/{org_id}/agent-hosts/{agent_host_id}:running": {
+      "post": {
+        "summary": "Pausing retains persistent data. Resuming explicitly reserves prepaid credit;\ntopping up alone never resumes a paused host.",
+        "operationId": "ProvisioningService_SetAgentHostRunning",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ProvisionedResource"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "agent_host_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProvisioningServiceSetAgentHostRunningBody"
+            }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
     "/control/v1/orgs/{org_id}/api-keys": {
       "get": {
         "summary": "ListApiKeys returns redacted API-key metadata for an organization.",
@@ -2597,6 +2642,14 @@
     "ProvisioningServiceRevokeStorageCredentialBody": {
       "type": "object",
       "description": "RevokeStorageCredentialRequest selects one bucket credential."
+    },
+    "ProvisioningServiceSetAgentHostRunningBody": {
+      "type": "object",
+      "properties": {
+        "running": {
+          "type": "boolean"
+        }
+      }
     },
     "ProvisioningServiceUpdateInferenceCaptureBody": {
       "type": "object",
