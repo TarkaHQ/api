@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 ALLOWED_ROOT_FILES = {
     ".editorconfig",
     ".gitignore",
+    "AGENTS.md",
     "CONTRIBUTING.md",
     "LICENSE",
     "Makefile",

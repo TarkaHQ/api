@@ -209,6 +209,11 @@ class PublicBoundarySecretTests(unittest.TestCase):
         self.assertFalse(contract_path_allowed("scripts/bootstrap.sh"))
         self.assertFalse(contract_path_allowed("contracts/runtime.wasm"))
 
+    def test_allows_root_agent_instructions_only(self) -> None:
+        self.assertTrue(contract_path_allowed("AGENTS.md"))
+        self.assertFalse(contract_path_allowed("CLAUDE.md"))
+        self.assertFalse(contract_path_allowed("proto/AGENTS.md"))
+
     def test_rejects_unsafe_path_components(self) -> None:
         self.assertFalse(contract_path_allowed("contracts/bad\nname.json"))
         self.assertFalse(contract_path_allowed("contracts/path with space/spec.json"))
