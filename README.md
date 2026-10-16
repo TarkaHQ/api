@@ -166,7 +166,12 @@ the route or request message.
 | `WriteAgentHostTerminal` | `POST /control/v1/orgs/{org_id}/agent-hosts/{agent_host_id}/terminals/{terminal_id}:write` | Deliver ordered input bytes or resize the terminal; retries of the last sequence are idempotent |
 | `CloseAgentHostTerminal` | `DELETE /control/v1/orgs/{org_id}/agent-hosts/{agent_host_id}/terminals/{terminal_id}` | Disconnect an interactive shell |
 | `DeleteAgentHost` | `DELETE /control/v1/orgs/{org_id}/agent-hosts/{agent_host_id}` | Request deletion of an Agent Host stack |
-| `CreateJob` | `POST /control/v1/orgs/{org_id}/jobs` | Apply Batch Job desired state after beta approval |
+| `CreateJob` | `POST /control/v1/orgs/{org_id}/jobs` | Queue an immutable job revision when its runtime is enabled |
+| `GetJob` | `GET /control/v1/orgs/{org_id}/jobs/{job_id}` | Read desired state and the latest run identifier |
+| `ListJobRuns` | `GET /control/v1/orgs/{org_id}/jobs/{job_id}/runs` | Page through one job's execution history |
+| `GetJobRun` | `GET /control/v1/orgs/{org_id}/jobs/{job_id}/runs/{run_id}` | Read execution status without downloading logs |
+| `CancelJobRun` | `POST /control/v1/orgs/{org_id}/jobs/{job_id}/runs/{run_id}:cancel` | Request idempotent cancellation and wait for confirmed termination |
+| `GetJobRunResult` | `GET /control/v1/orgs/{org_id}/jobs/{job_id}/runs/{run_id}/result` | Read terminal results and obtain a temporary log download |
 
 `CreateInferenceService`, `CreateAgentHost`, and `CreateJob` are desired-state
 apply operations: reusing an organization, resource type, and name creates a
@@ -196,6 +201,52 @@ S3 credentials are separate from Tarka API keys. `access_key_id` and
 `secret_access_key` are returned together only at credential creation; later
 list operations return redacted metadata. Hosted Git data-plane authentication
 uses an SSH key or a Forgejo personal access token, not a `tk_live_` key.
+
+### Queued compute contract and availability
+
+Control contract 1.15 adds the job lifecycle and queued sandbox semantics for
+an upcoming compute preview. These definitions do **not** enable the runtime,
+AWS placement or public access. `CreateJob` currently fails with
+`FAILED_PRECONDITION: jobs_runtime_unavailable`; new lifecycle RPCs require the
+corresponding backend deployment. Product approval alone does not activate an
+undeployed runtime. Check organization-scoped product and location discovery
+before offering placement choices in a client.
+
+For admitted preview organizations, an omitted compute location prefers
+available EU capacity and can fall back to qualified US capacity. Explicit
+placement is a hard constraint. The chosen location is returned and cannot
+change during retries or a failed launch. Existing resources retain placement;
+non-preview organizations remain EU-only. A location list is not a reservation.
+
+An accepted sandbox can be `QUEUED` while capacity starts. `queue_deadline`
+bounds waiting and setup, with a default of ten minutes. `expires_at` is unset
+until readiness, when it becomes `ready_at + timeout_seconds`. Queue/setup time
+is free; a capacity timeout releases the unused reservation. Clients should
+poll lifecycle state rather than assume a create response is ready to execute.
+
+Jobs request CPU, memory and ephemeral scratch through `JobResources`. Zero
+fields select 1000 millicores, 1024 MiB RAM and 1024 MiB scratch; explicit values
+must meet the bounds documented in the protobuf. Images are resolved to a
+permitted immutable digest before execution; embedded registry credentials,
+privileged/host access and arbitrary extension-field runtime overrides are
+not accepted. This preview supports public registries and Tarka's registry.
+
+A job's idempotency key retries the same mutation for 24 hours; changed content
+with the same key is rejected. Creating a new revision of an active job is a
+conflict. The default is one On-Demand attempt. Repeated attempts and Spot are
+explicit opt-ins for workloads whose external effects can safely repeat.
+Infrastructure retries are bounded to three attempts and wait for confirmed
+termination of prior work; queue delivery or a lost heartbeat does not imply
+permission to execute again. Nonzero exit status and execution timeout do not
+retry. Queue/setup time is free; reservation and usage account for the requested
+attempt budget and actual execution, respectively.
+
+Cancellation can return `STOPPING` while work terminates. Terminal metadata
+remains available after logs expire. Customer logs have seven-day retention;
+`GetJobRunResult` rechecks access and returns a log download valid for at most
+five minutes. Treat that URL as a bearer capability, and do not publish it.
+Jobs use account access tokens and the organization role/product checks; these
+additions do not make inference API keys valid for job-control methods.
 
 ### Code Sandboxes
 

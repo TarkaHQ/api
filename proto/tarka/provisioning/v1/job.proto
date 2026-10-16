@@ -1,0 +1,142 @@
+// Copyright 2026 Tarka
+// SPDX-License-Identifier: Apache-2.0
+
+syntax = "proto3";
+
+package tarka.provisioning.v1;
+
+import "google/protobuf/timestamp.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option csharp_namespace = "Tarka.Provisioning.V1";
+option go_package = "github.com/TarkaHQ/api/gen/go/tarka/provisioning/v1;provisioningv1";
+option java_multiple_files = true;
+option java_outer_classname = "JobProto";
+option java_package = "com.tarka.provisioning.v1";
+
+// JobResources bounds a single execution attempt. Zero selects the documented
+// default. The preview supports up to 6 vCPUs, 32 GiB RAM and 32 GiB scratch.
+// Memory and scratch are independent; scratch is ephemeral and not a volume.
+message JobResources {
+  // cpu_millis defaults to 1000; explicit values are 250..6000.
+  uint32 cpu_millis = 1 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {maximum: 6000}];
+  // memory_mib defaults to 1024; explicit values are 128..32768.
+  uint32 memory_mib = 2 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {maximum: 32768}];
+  // ephemeral_storage_mib defaults to 1024; explicit values are 512..32768.
+  uint32 ephemeral_storage_mib = 3 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {maximum: 32768}];
+}
+
+// JobRetryPolicy is explicit consent to possible repeated external effects.
+// Only qualified infrastructure interruptions can retry, after confirmed
+// termination of the old attempt. Exit failures and timeouts are not retried.
+// Queue redelivery and lease expiry alone never authorize another attempt.
+message JobRetryPolicy {
+  bool retryable = 1;
+  // max_attempts includes the first attempt. Zero selects one; 2..3 require
+  // retryable=true. Each attempt has its own execution timeout and usage.
+  uint32 max_attempts = 2 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {maximum: 3}];
+  // allow_spot requires retryable=true and max_attempts>=2. Unqualified Spot
+  // capacity is rejected; this flag never silently weakens isolation.
+  bool allow_spot = 3;
+}
+
+// JobRunStatus describes a single immutable revision and its bounded attempts.
+enum JobRunStatus {
+  JOB_RUN_STATUS_UNSPECIFIED = 0;
+  JOB_RUN_STATUS_QUEUED = 1;
+  JOB_RUN_STATUS_PROVISIONING = 2;
+  JOB_RUN_STATUS_RUNNING = 3;
+  JOB_RUN_STATUS_STOPPING = 4;
+  JOB_RUN_STATUS_SUCCEEDED = 5;
+  JOB_RUN_STATUS_FAILED = 6;
+  JOB_RUN_STATUS_CANCELLED = 7;
+  JOB_RUN_STATUS_EXPIRED = 8;
+}
+
+// JobRun is execution metadata, not a queue message or a credential container.
+message JobRun {
+  string id = 1;
+  string job_id = 2;
+  string org_id = 3;
+  int64 revision = 4;
+  JobRunStatus status = 5;
+  string location = 6;
+  // image_digest is the immutable image selected at admission.
+  string image_digest = 7;
+  JobResources resources = 8;
+  JobRetryPolicy retry_policy = 9;
+  // attempt is zero before the first claim and increases only after old work
+  // has been confirmed stopped. At most one attempt may execute at a time.
+  int32 attempt = 10;
+  int32 timeout_seconds = 11;
+  google.protobuf.Timestamp created_at = 12;
+  google.protobuf.Timestamp queue_deadline = 13;
+  // started_at is unset until execution actually starts; setup time is free.
+  google.protobuf.Timestamp started_at = 14;
+  google.protobuf.Timestamp finished_at = 15;
+  // failure_code is a stable bounded machine code, never customer logs.
+  string failure_code = 16;
+  // exit_code is present only when the runtime observed an exit status.
+  optional int32 exit_code = 17;
+}
+
+// GetJobRequest selects a job visible to the organization member.
+message GetJobRequest {
+  string org_id = 1;
+  string job_id = 2;
+}
+
+// ListJobRunsRequest selects one organization's job, newest revision first.
+message ListJobRunsRequest {
+  string org_id = 1;
+  string job_id = 2;
+  // page_size defaults to 50 and is capped at 100.
+  uint32 page_size = 3 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {maximum: 100}];
+  // page_token is opaque, at most 1024 bytes, and bound to the same
+  // organization and job.
+  string page_token = 4 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {max_length: 1024}];
+}
+
+// ListJobRunsResponse contains a bounded page of execution history.
+message ListJobRunsResponse {
+  repeated JobRun runs = 1;
+  string next_page_token = 2;
+}
+
+// GetJobRunRequest selects an immutable run belonging to the specified job.
+message GetJobRunRequest {
+  string org_id = 1;
+  string job_id = 2;
+  string run_id = 3;
+}
+
+// CancelJobRunRequest requires an organization owner, admin or operator.
+message CancelJobRunRequest {
+  string org_id = 1;
+  string job_id = 2;
+  string run_id = 3;
+}
+
+// GetJobRunResultRequest requires the same organization/product access as the
+// run. Nonterminal runs fail with FAILED_PRECONDITION; missing/expired logs do
+// not erase terminal metadata and never expose another organization's object.
+message GetJobRunResultRequest {
+  string org_id = 1;
+  string job_id = 2;
+  string run_id = 3;
+}
+
+// JobRunResult retains terminal metadata after the logs' seven-day retention.
+// Signed URLs are temporary bearer capabilities; clients must not publish them.
+message JobRunResult {
+  string run_id = 1;
+  JobRunStatus status = 2;
+  optional int32 exit_code = 3;
+  // logs_url is an HTTPS download of bounded combined stdout/stderr. It is
+  // empty if logs are unavailable or have expired, and is valid for <=5 minutes.
+  string logs_url = 4;
+  google.protobuf.Timestamp download_expires_at = 5;
+  google.protobuf.Timestamp logs_expires_at = 6;
+  bool logs_truncated = 7;
+  int64 logs_bytes = 8;
+}
