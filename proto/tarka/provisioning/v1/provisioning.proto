@@ -19,7 +19,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Tarka Control API"
     description: "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management."
-    version: "1.13.0"
+    version: "1.14.0"
   }
   host: "tarka.rest"
   schemes: HTTPS
@@ -48,6 +48,12 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
 // quotas, metering, object storage, hosted Git, and desired-state compute
 // resources.
 service ProvisioningService {
+  // GetPricingCatalog exposes the active USD retail catalog and currency factors.
+  // Public, read-only; never includes credentials or upstream acquisition prices.
+  rpc GetPricingCatalog(GetPricingCatalogRequest) returns (PricingCatalog) {
+    option (google.api.http) = {get: "/control/v1/pricing"};
+  }
+
   // GetInferenceCapture returns this organization's optional bucket-capture
   // configuration and recent delivery health. It never exposes internal archives.
   rpc GetInferenceCapture(GetInferenceCaptureRequest) returns (InferenceCapture) {
@@ -205,6 +211,15 @@ service ProvisioningService {
   // workload owned by it. Retained volume data follows the platform policy.
   rpc DeleteAgentHost(DeleteAgentHostRequest) returns (ProvisionedResource) {
     option (google.api.http) = {delete: "/control/v1/orgs/{org_id}/agent-hosts/{agent_host_id}"};
+  }
+
+  // Pausing retains persistent data. Resuming explicitly reserves prepaid credit;
+  // topping up alone never resumes a paused host.
+  rpc SetAgentHostRunning(SetAgentHostRunningRequest) returns (ProvisionedResource) {
+    option (google.api.http) = {
+      post: "/control/v1/orgs/{org_id}/agent-hosts/{agent_host_id}:running"
+      body: "*"
+    };
   }
 
   // CreateJob records desired state for a managed finite-duration job.
@@ -633,6 +648,21 @@ message Model {
   // access_product is the server-authoritative API-key scope and user
   // entitlement required to use this model: himalaya, inference, or utilities.
   string access_product = 13;
+  int64 price_cached_input_microcents_per_million = 14;
+  int64 price_audio_microcents_per_second = 15;
+  int64 price_page_microcents = 16;
+  string pricing_version = 17;
+}
+
+// GetPricingCatalogRequest reads the currently published retail prices.
+message GetPricingCatalogRequest {}
+
+// PricingCatalog is versioned. All monetary integers are USD microcents,
+// with explicit denominators for tokens, seconds and compute periods.
+message PricingCatalog {
+  string version = 1;
+  bool active = 2;
+  google.protobuf.Struct catalog = 3;
 }
 
 // CreateInferenceServiceRequest defines desired state for an inference service.
@@ -694,6 +724,9 @@ message CreateAgentHostRequest {
   // only. Omission preserves the saved credentials; replacement requires both
   // username and token. Plaintext tokens are write-only and never echoed.
   AgentHostGitHubRegistryCredentials github_registry_credentials = 15;
+  // Validate and return spec.billing_quote without creating or changing a host.
+  // The quote is informational; admission reserves credit at apply time.
+  bool dry_run = 17;
   // location selects where the host runs, such as "eu-1" or "us-1" (see
   // ListLocations). Empty selects the default location for a new host and
   // keeps the current location for an existing one. A host cannot move:
@@ -703,6 +736,12 @@ message CreateAgentHostRequest {
     max_length: 16
     pattern: "^([a-z]{2}-[0-9]{1,3})?$"
   }];
+}
+
+message SetAgentHostRunningRequest {
+  string org_id = 1;
+  string agent_host_id = 2;
+  bool running = 3;
 }
 
 // AgentHostGitHubRegistryCredentials changes this host's ghcr.io credentials.
@@ -1148,6 +1187,15 @@ message UsageEvent {
   // cost_microcents uses true microcents: one unit is USD 0.00000001.
   int64 cost_microcents = 13;
   google.protobuf.Timestamp created_at = 14;
+  double audio_seconds = 15;
+  int64 input_pages = 16;
+  string access_product = 17;
+  string resource_id = 18;
+  string pricing_version = 19;
+  // Actual ledger amount, in billed_currency microcents, fixed at admission.
+  string billed_currency = 20;
+  int64 billed_microcents = 21;
+  int64 runtime_ms = 22;
 }
 
 // GetUsageSummaryRequest selects an organization visible to the caller.
