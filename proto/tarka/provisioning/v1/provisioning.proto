@@ -9,6 +9,7 @@ import "google/api/annotations.proto";
 import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
+import "tarka/provisioning/v1/billing_quote.proto";
 import "tarka/provisioning/v1/job.proto";
 
 option csharp_namespace = "Tarka.Provisioning.V1";
@@ -53,6 +54,27 @@ service ProvisioningService {
   // Public, read-only; never includes credentials or upstream acquisition prices.
   rpc GetPricingCatalog(GetPricingCatalogRequest) returns (PricingCatalog) {
     option (google.api.http) = {get: "/control/v1/pricing"};
+  }
+
+  // CreateComputeQuote returns a five-minute quote without reserving funds.
+  rpc CreateComputeQuote(CreateComputeQuoteRequest) returns (ComputeQuote) {
+    option (google.api.http) = {
+      post: "/control/v1/orgs/{org_id}/compute-quotes"
+      body: "*"
+    };
+  }
+
+  // GetUsagePolicy returns current allowances and an owner acceptance estimate.
+  rpc GetUsagePolicy(GetUsagePolicyRequest) returns (UsagePolicy) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/usage-policy"};
+  }
+
+  // AcceptUsagePolicy enables prospective charging only after qualification.
+  rpc AcceptUsagePolicy(AcceptUsagePolicyRequest) returns (UsagePolicy) {
+    option (google.api.http) = {
+      post: "/control/v1/orgs/{org_id}/usage-policy/accept"
+      body: "*"
+    };
   }
 
   // GetInferenceCapture returns this organization's optional bucket-capture
@@ -761,8 +783,10 @@ message CreateAgentHostRequest {
   // username and token. Plaintext tokens are write-only and never echoed.
   AgentHostGitHubRegistryCredentials github_registry_credentials = 15;
   // Validate and return spec.billing_quote without creating or changing a host.
-  // The quote is informational; admission reserves credit at apply time.
+  // The quote uses the organization billing currency; admission reserves credit at apply time.
   bool dry_run = 17;
+  // Optional for legacy EU clients; binds the normalized allocation at creation.
+  string accepted_quote_id = 18;
   // location selects where the host runs, such as "eu-1" or "us-1" (see
   // ListLocations). Empty selects the default location for a new host and
   // keeps the current location for an existing one. A host cannot move:
@@ -951,9 +975,9 @@ message CreateJobRequest {
   int32 timeout_seconds = 5;
   // spec carries non-secret extension fields. Typed fields take precedence.
   google.protobuf.Struct spec = 6;
-  // location is a hard constraint when supplied. For preview organizations,
-  // omission prefers available EU capacity, then qualified US capacity. The
-  // selected location is immutable and returned on the resource and run.
+  // location is a hard constraint. Omission selects eu-1. AWS requires explicit
+  // us-1 and accepted_quote_id; there is no automatic AWS fallback. The selected
+  // location is immutable and returned on the resource and run.
   string location = 7 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
     max_length: 16
     pattern: "^([a-z]{2}-[0-9]{1,3})?$"
@@ -969,6 +993,10 @@ message CreateJobRequest {
   // queue_timeout_seconds bounds capacity wait, independently of execution.
   // Zero selects 600 seconds; explicit values must be between 30 and 3600.
   uint32 queue_timeout_seconds = 11 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {maximum: 3600}];
+  // Required for us-1; must match the request and be unexpired.
+  string accepted_quote_id = 12;
+  // Omission defaults to 1 GiB for AWS; zero disables networking.
+  optional uint64 max_network_bytes = 13;
 }
 
 // ProvisionedResource is the recorded desired and observed state for a managed

@@ -951,6 +951,45 @@
         ]
       }
     },
+    "/control/v1/orgs/{org_id}/compute-quotes": {
+      "post": {
+        "summary": "CreateComputeQuote returns a five-minute quote without reserving funds.",
+        "operationId": "ProvisioningService_CreateComputeQuote",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ComputeQuote"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProvisioningServiceCreateComputeQuoteBody"
+            }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
     "/control/v1/orgs/{org_id}/git-repositories": {
       "get": {
         "summary": "ListGitRepositories returns hosted Git repositories in an organization.",
@@ -2493,6 +2532,76 @@
         ]
       }
     },
+    "/control/v1/orgs/{org_id}/usage-policy": {
+      "get": {
+        "summary": "GetUsagePolicy returns current allowances and an owner acceptance estimate.",
+        "operationId": "ProvisioningService_GetUsagePolicy",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1UsagePolicy"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/usage-policy/accept": {
+      "post": {
+        "summary": "AcceptUsagePolicy enables prospective charging only after qualification.",
+        "operationId": "ProvisioningService_AcceptUsagePolicy",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1UsagePolicy"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProvisioningServiceAcceptUsagePolicyBody"
+            }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
     "/control/v1/orgs/{org_id}/usage/events": {
       "get": {
         "summary": "ListUsageEvents returns the organization's newest metered requests.",
@@ -2588,6 +2697,18 @@
     }
   },
   "definitions": {
+    "ProvisioningServiceAcceptUsagePolicyBody": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string"
+        },
+        "estimate_id": {
+          "type": "string"
+        }
+      },
+      "description": "AcceptUsagePolicyRequest requires the organization owner and the current\nunexpired estimate. Acceptance records version, owner, time and estimate.\nIt never creates unpaid debt or authorizes automatic deletion of data."
+    },
     "ProvisioningServiceCancelJobRunBody": {
       "type": "object",
       "description": "CancelJobRunRequest requires an organization owner, admin or operator."
@@ -2660,7 +2781,11 @@
         },
         "dry_run": {
           "type": "boolean",
-          "description": "Validate and return spec.billing_quote without creating or changing a host.\nThe quote is informational; admission reserves credit at apply time."
+          "description": "Validate and return spec.billing_quote without creating or changing a host.\nThe quote uses the organization billing currency; admission reserves credit at apply time."
+        },
+        "accepted_quote_id": {
+          "type": "string",
+          "description": "Optional for legacy EU clients; binds the normalized allocation at creation."
         },
         "location": {
           "type": "string",
@@ -2722,6 +2847,32 @@
         }
       },
       "description": "CreateApiKeyRequest creates an organization-scoped customer credential."
+    },
+    "ProvisioningServiceCreateComputeQuoteBody": {
+      "type": "object",
+      "properties": {
+        "product": {
+          "type": "string",
+          "description": "product is agents, sandboxes or jobs. AWS Agent Hosts are unavailable."
+        },
+        "location": {
+          "type": "string"
+        },
+        "resources": {
+          "$ref": "#/definitions/v1JobResources"
+        },
+        "max_runtime_seconds": {
+          "type": "integer",
+          "format": "int64",
+          "description": "max_runtime_seconds bounds the reservation. An Agent Host quote covers\nthe next prepaid lease; renewal is separately admitted at the same rates."
+        },
+        "max_network_bytes": {
+          "type": "string",
+          "format": "uint64",
+          "description": "max_network_bytes bounds combined forwarded upload and download bytes.\nAWS omission defaults to 1 GiB; explicit zero disables outbound networking."
+        }
+      },
+      "description": "CreateComputeQuoteRequest prices normalized resource allocation in the\norganization's billing currency. It does not reserve funds or create work.\nAn omitted location always means eu-1; AWS never receives implicit overflow."
     },
     "ProvisioningServiceCreateGitRepositoryBody": {
       "type": "object",
@@ -2801,7 +2952,7 @@
         },
         "location": {
           "type": "string",
-          "description": "location is a hard constraint when supplied. For preview organizations,\nomission prefers available EU capacity, then qualified US capacity. The\nselected location is immutable and returned on the resource and run.",
+          "description": "location is a hard constraint. Omission selects eu-1. AWS requires explicit\nus-1 and accepted_quote_id; there is no automatic AWS fallback. The selected\nlocation is immutable and returned on the resource and run.",
           "maxLength": 16,
           "pattern": "^([a-z]{2}-[0-9]{1,3})?$"
         },
@@ -2823,6 +2974,15 @@
           "format": "int64",
           "description": "queue_timeout_seconds bounds capacity wait, independently of execution.\nZero selects 600 seconds; explicit values must be between 30 and 3600.",
           "maximum": 3600
+        },
+        "accepted_quote_id": {
+          "type": "string",
+          "description": "Required for us-1; must match the request and be unexpired."
+        },
+        "max_network_bytes": {
+          "type": "string",
+          "format": "uint64",
+          "description": "Omission defaults to 1 GiB for AWS; zero disables networking."
         }
       },
       "description": "CreateJobRequest defines desired state for a finite-duration container job."
@@ -3034,9 +3194,22 @@
         },
         "location": {
           "type": "string",
-          "description": "Placement location such as \"eu-1\" or \"us-1\". Explicit placement is fixed; omission uses the organization placement policy.",
+          "description": "Placement location such as \"eu-1\" or \"us-1\". Explicit placement is fixed; omission selects eu-1.",
           "maxLength": 16,
           "pattern": "^([a-z]{2}-[0-9]{1,3})?$"
+        },
+        "accepted_quote_id": {
+          "type": "string",
+          "description": "Required for us-1; optional for legacy EU clients."
+        },
+        "resources": {
+          "$ref": "#/definitions/v1JobResources",
+          "description": "AWS allocation; EU sandboxes retain their fixed 1 vCPU / 1 GiB profile."
+        },
+        "max_network_bytes": {
+          "type": "string",
+          "format": "uint64",
+          "description": "AWS omission defaults to 1 GiB; zero disables outbound networking."
         }
       },
       "description": "CreateCodeSandboxRequest starts a sandbox from a ready template."
@@ -3632,6 +3805,77 @@
       ],
       "default": "CODE_SANDBOX_STATUS_UNSPECIFIED",
       "description": "CodeSandboxStatus is the lifecycle of an isolated sandbox instance.\n\n - CODE_SANDBOX_STATUS_QUEUED: Capacity has been reserved but the runtime is not ready. Queue/setup time\ndoes not consume the requested sandbox lifetime or incur compute usage."
+    },
+    "v1ComputeQuote": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "org_id": {
+          "type": "string"
+        },
+        "product": {
+          "type": "string"
+        },
+        "location": {
+          "type": "string"
+        },
+        "resources": {
+          "$ref": "#/definitions/v1JobResources"
+        },
+        "max_runtime_seconds": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "max_network_bytes": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "currency": {
+          "type": "string"
+        },
+        "hourly_microcents": {
+          "type": "string",
+          "format": "int64"
+        },
+        "minimum_runtime_seconds": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "minimum_charge_microcents": {
+          "type": "string",
+          "format": "int64"
+        },
+        "maximum_reservation_microcents": {
+          "type": "string",
+          "format": "int64"
+        },
+        "network_gib_microcents": {
+          "type": "string",
+          "format": "int64"
+        },
+        "pricing_version": {
+          "type": "string"
+        },
+        "fx_numerator": {
+          "type": "string",
+          "format": "int64"
+        },
+        "fx_denominator": {
+          "type": "string",
+          "format": "int64"
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "available": {
+          "type": "boolean",
+          "description": "available=false is an estimate only; it cannot authorize creation."
+        }
+      },
+      "description": "ComputeQuote is immutable and expires five minutes after issuance. Amounts\nuse the named currency's microcents (100,000,000 = one currency unit).\nAcceptance on creation binds org, product, location, resources and limits.\nA changed catalog, currency, expired quote or changed allocation needs a new\nquote. Legacy EU clients may omit acceptance; AWS callers must supply it."
     },
     "v1CreateApiKeyResponse": {
       "type": "object",
@@ -4948,6 +5192,41 @@
       },
       "description": "StorageCredential is redacted metadata for a bucket-scoped S3 access key."
     },
+    "v1UsageAllowance": {
+      "type": "object",
+      "properties": {
+        "meter": {
+          "type": "string",
+          "description": "meter is retained_bytes, volume_bytes, build_seconds or download_bytes."
+        },
+        "free_units": {
+          "type": "string",
+          "format": "int64"
+        },
+        "used_units": {
+          "type": "string",
+          "format": "int64"
+        },
+        "remaining_units": {
+          "type": "string",
+          "format": "int64"
+        },
+        "rate_microcents": {
+          "type": "string",
+          "format": "int64"
+        },
+        "unit_quantity": {
+          "type": "string",
+          "format": "int64",
+          "description": "unit_quantity and period_seconds describe the rate denominator."
+        },
+        "period_seconds": {
+          "type": "string",
+          "format": "int64"
+        }
+      },
+      "description": "UsageAllowance combines retained data continuously; time/transfer allowances\nreset at the UTC month boundary with no rollover. Grants are account-level\nand assigned to one organization, never multiplied by additional owners."
+    },
     "v1UsageEvent": {
       "type": "object",
       "properties": {
@@ -5036,6 +5315,58 @@
         }
       },
       "description": "UsageEvent is one metered inference request."
+    },
+    "v1UsagePolicy": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "currency": {
+          "type": "string"
+        },
+        "estimate_id": {
+          "type": "string"
+        },
+        "estimate_expires_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "estimated_720_hour_microcents": {
+          "type": "string",
+          "format": "int64"
+        },
+        "allowances": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1UsageAllowance"
+          }
+        },
+        "accepted_version": {
+          "type": "string"
+        },
+        "accepted_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "inventory_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "mode": {
+          "type": "string",
+          "description": "mode is shadow, awaiting_acceptance, active, read_only or meter_stale."
+        },
+        "charging_ready": {
+          "type": "boolean",
+          "description": "charging_ready follows the completed shadow-meter gate; acceptance is\nrejected until all backend enforcement and meters are qualified."
+        }
+      },
+      "description": "UsagePolicy is a quote for explicit owner acceptance of storage, Git,\nbuild, volume and EU download usage charging. Existing data is never billed\nbefore acceptance; stale inventory cannot authorize new paid growth."
     },
     "v1UsageSummary": {
       "type": "object",

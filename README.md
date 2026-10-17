@@ -469,3 +469,19 @@ document because its wire format is HTTP/JSON and SSE rather than protobuf.
 ## License
 
 Apache License 2.0. See [`LICENSE`](LICENSE).
+
+### Quotes and optional usage charging
+
+`POST /control/v1/orgs/{org_id}/compute-quotes` returns a five-minute quote in
+billing currency, including normalized allocation, runtime/network caps,
+minimum charge, maximum reservation and immutable price/FX version. Creation
+uses `accepted_quote_id`; AWS requires explicit `us-1`. No implicit overflow
+from EU is permitted. AWS Agent Hosts are unavailable. EU legacy clients remain
+compatible; the console shows quotes before creation.
+
+`GET /control/v1/orgs/{org_id}/usage-policy` reports allowances, inventory and
+an estimate. Only an owner can accept the current estimate using `/accept`, and
+only after shadow metering and backend enforcement qualify. Existing data is
+never billed retroactively. At exhausted funds data is read-only and retained;
+there is no automatic deletion or unpaid debt. Product availability remains a
+separate gate; these contracts do not announce customer launch.
