@@ -3873,6 +3873,11 @@
         "available": {
           "type": "boolean",
           "description": "available=false is an estimate only; it cannot authorize creation."
+        },
+        "allocated_memory_bytes": {
+          "type": "string",
+          "format": "uint64",
+          "description": "Exact Agent Host allocation; resources.memory_mib rounds up for display."
         }
       },
       "description": "ComputeQuote is immutable and expires five minutes after issuance. Amounts\nuse the named currency's microcents (100,000,000 = one currency unit).\nAcceptance on creation binds org, product, location, resources and limits.\nA changed catalog, currency, expired quote or changed allocation needs a new\nquote. Legacy EU clients may omit acceptance; AWS callers must supply it."

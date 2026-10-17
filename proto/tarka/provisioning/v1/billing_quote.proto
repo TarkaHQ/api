@@ -56,6 +56,8 @@ message ComputeQuote {
   google.protobuf.Timestamp expires_at = 17;
   // available=false is an estimate only; it cannot authorize creation.
   bool available = 18;
+  // Exact Agent Host allocation; resources.memory_mib rounds up for display.
+  uint64 allocated_memory_bytes = 19;
 }
 
 message GetUsagePolicyRequest {
