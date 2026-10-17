@@ -9,6 +9,8 @@ import "google/api/annotations.proto";
 import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
+import "tarka/provisioning/v1/billing_quote.proto";
+import "tarka/provisioning/v1/job.proto";
 
 option csharp_namespace = "Tarka.Provisioning.V1";
 option go_package = "github.com/TarkaHQ/api/gen/go/tarka/provisioning/v1;provisioningv1";
@@ -19,7 +21,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Tarka Control API"
     description: "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management."
-    version: "1.14.0"
+    version: "1.15.0"
   }
   host: "tarka.rest"
   schemes: HTTPS
@@ -52,6 +54,27 @@ service ProvisioningService {
   // Public, read-only; never includes credentials or upstream acquisition prices.
   rpc GetPricingCatalog(GetPricingCatalogRequest) returns (PricingCatalog) {
     option (google.api.http) = {get: "/control/v1/pricing"};
+  }
+
+  // CreateComputeQuote returns a five-minute quote without reserving funds.
+  rpc CreateComputeQuote(CreateComputeQuoteRequest) returns (ComputeQuote) {
+    option (google.api.http) = {
+      post: "/control/v1/orgs/{org_id}/compute-quotes"
+      body: "*"
+    };
+  }
+
+  // GetUsagePolicy returns current allowances and an owner acceptance estimate.
+  rpc GetUsagePolicy(GetUsagePolicyRequest) returns (UsagePolicy) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/usage-policy"};
+  }
+
+  // AcceptUsagePolicy enables prospective charging only after qualification.
+  rpc AcceptUsagePolicy(AcceptUsagePolicyRequest) returns (UsagePolicy) {
+    option (google.api.http) = {
+      post: "/control/v1/orgs/{org_id}/usage-policy/accept"
+      body: "*"
+    };
   }
 
   // GetInferenceCapture returns this organization's optional bucket-capture
@@ -222,12 +245,47 @@ service ProvisioningService {
     };
   }
 
-  // CreateJob records desired state for a managed finite-duration job.
+  // CreateJob records a finite job revision and queues its first run atomically.
+  // Exact idempotent retries return the original result. A changed revision of
+  // an active job is rejected. An accepted response is not execution readiness.
+  // The runtime remains feature-gated; unavailable products fail closed.
   rpc CreateJob(CreateJobRequest) returns (ProvisionedResource) {
     option (google.api.http) = {
       post: "/control/v1/orgs/{org_id}/jobs"
       body: "*"
     };
+  }
+
+  // GetJob reads an organization-owned job's current desired state. Listing
+  // jobs uses ListProvisionedResources with resource_type="job".
+  rpc GetJob(GetJobRequest) returns (ProvisionedResource) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/jobs/{job_id}"};
+  }
+
+  // ListJobRuns returns immutable revisions, newest first. A revision may have
+  // bounded infrastructure retries, but never overlapping execution attempts.
+  rpc ListJobRuns(ListJobRunsRequest) returns (ListJobRunsResponse) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/jobs/{job_id}/runs"};
+  }
+
+  // GetJobRun reads execution state without returning customer output.
+  rpc GetJobRun(GetJobRunRequest) returns (JobRun) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/jobs/{job_id}/runs/{run_id}"};
+  }
+
+  // CancelJobRun is idempotent. STOPPING retains its budget reservation until
+  // execution is confirmed stopped. A terminal run is returned unchanged.
+  rpc CancelJobRun(CancelJobRunRequest) returns (JobRun) {
+    option (google.api.http) = {
+      post: "/control/v1/orgs/{org_id}/jobs/{job_id}/runs/{run_id}:cancel"
+      body: "*"
+    };
+  }
+
+  // GetJobRunResult returns terminal result metadata and an optional signed log
+  // download. It rechecks organization and product access on every request.
+  rpc GetJobRunResult(GetJobRunResultRequest) returns (JobRunResult) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/jobs/{job_id}/runs/{run_id}/result"};
   }
 
   // CreateApiKey creates a customer API key. Its plaintext secret is returned
@@ -725,8 +783,10 @@ message CreateAgentHostRequest {
   // username and token. Plaintext tokens are write-only and never echoed.
   AgentHostGitHubRegistryCredentials github_registry_credentials = 15;
   // Validate and return spec.billing_quote without creating or changing a host.
-  // The quote is informational; admission reserves credit at apply time.
+  // The quote uses the organization billing currency; admission reserves credit at apply time.
   bool dry_run = 17;
+  // Optional for legacy EU clients; binds the normalized allocation at creation.
+  string accepted_quote_id = 18;
   // location selects where the host runs, such as "eu-1" or "us-1" (see
   // ListLocations). Empty selects the default location for a new host and
   // keeps the current location for an existing one. A host cannot move:
@@ -915,6 +975,28 @@ message CreateJobRequest {
   int32 timeout_seconds = 5;
   // spec carries non-secret extension fields. Typed fields take precedence.
   google.protobuf.Struct spec = 6;
+  // location is a hard constraint. Omission selects eu-1. AWS requires explicit
+  // us-1 and accepted_quote_id; there is no automatic AWS fallback. The selected
+  // location is immutable and returned on the resource and run.
+  string location = 7 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    max_length: 16
+    pattern: "^([a-z]{2}-[0-9]{1,3})?$"
+  }];
+  // resources has platform defaults when omitted; zero fields select defaults.
+  JobResources resources = 8;
+  // retry_policy defaults to one On-Demand attempt with no automatic retries.
+  JobRetryPolicy retry_policy = 9;
+  // idempotency_key safely retries creation for 24 hours. Reusing a key with
+  // changed content is rejected. A new key creates a new immutable revision
+  // only after the previous run is terminal.
+  string idempotency_key = 10 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {max_length: 128}];
+  // queue_timeout_seconds bounds capacity wait, independently of execution.
+  // Zero selects 600 seconds; explicit values must be between 30 and 3600.
+  uint32 queue_timeout_seconds = 11 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {maximum: 3600}];
+  // Required for us-1; must match the request and be unexpired.
+  string accepted_quote_id = 12;
+  // Omission defaults to 1 GiB for AWS; zero disables networking.
+  optional uint64 max_network_bytes = 13;
 }
 
 // ProvisionedResource is the recorded desired and observed state for a managed
@@ -940,6 +1022,8 @@ message ProvisionedResource {
   google.protobuf.Timestamp updated_at = 11;
   // location is where the resource runs, such as "eu-1" or "us-1".
   string location = 12;
+  // latest_run_id is populated for jobs; use GetJobRun for execution state.
+  string latest_run_id = 13;
 }
 
 // CreateApiKeyRequest creates an organization-scoped customer credential.
@@ -1262,8 +1346,9 @@ message Location {
   string country_code = 3;
   // is_default is true for the location used when a request omits location.
   bool is_default = 4;
-  // products lists what can be placed here: "sandboxes", "agent_hosts" and
-  // "object_storage".
+  // products lists enabled placement products: "sandboxes", "agent_hosts",
+  // "jobs" and "object_storage". A listed location does not by itself grant
+  // product access or promise immediately available capacity.
   repeated string products = 5;
   // status is "available", or "preview" when only admitted organizations may
   // place resources here.

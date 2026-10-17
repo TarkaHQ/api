@@ -8,6 +8,7 @@ package tarka.provisioning.v1;
 import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
+import "tarka/provisioning/v1/job.proto";
 
 option csharp_namespace = "Tarka.Provisioning.V1";
 option go_package = "github.com/TarkaHQ/api/gen/go/tarka/provisioning/v1;provisioningv1";
@@ -111,6 +112,9 @@ enum CodeSandboxStatus {
   CODE_SANDBOX_STATUS_FAILED = 6;
   CODE_SANDBOX_STATUS_EXPIRED = 7;
   CODE_SANDBOX_STATUS_DELETED = 8;
+  // Capacity has been reserved but the runtime is not ready. Queue/setup time
+  // does not consume the requested sandbox lifetime or incur compute usage.
+  CODE_SANDBOX_STATUS_QUEUED = 9;
 }
 
 // ExecutionStatus is the terminal or in-progress state of one execution.
@@ -203,7 +207,8 @@ message CodeSandbox {
   CodeSandboxStatus status = 6;
   // timeout_seconds is the requested maximum sandbox lifetime.
   int32 timeout_seconds = 7;
-  // expires_at is the enforced sandbox lifetime deadline.
+  // expires_at is the enforced sandbox lifetime deadline. Queued admission
+  // leaves it unset until readiness; then it is ready_at + timeout_seconds.
   google.protobuf.Timestamp expires_at = 8;
   google.protobuf.Timestamp created_at = 9;
   google.protobuf.Timestamp ready_at = 10;
@@ -212,6 +217,9 @@ message CodeSandbox {
   string failure_code = 12;
   // location is where the sandbox runs, such as "eu-1" or "us-1".
   string location = 13;
+  // queue_deadline bounds the capacity/setup wait, default ten minutes.
+  // Expiry fails the request and releases its unused reservation.
+  google.protobuf.Timestamp queue_deadline = 14;
 }
 
 // ListSandboxesRequest selects one organization.
@@ -235,13 +243,21 @@ message CreateCodeSandboxRequest {
   // cannot be reused with different request content.
   string idempotency_key = 4;
   // location selects where the sandbox runs, such as "eu-1" or "us-1" (see
-  // ProvisioningService.ListLocations). Empty selects the default location.
-  // The location is part of the idempotency fingerprint.
+  // ProvisioningService.ListLocations). Omission selects eu-1. AWS requires
+  // explicit us-1 placement and an accepted quote; no automatic fallback.
+  // Explicit location is a hard constraint. Once selected it never changes,
+  // including after a failed launch. Location is part of the fingerprint.
   string location = 5 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
-    description: "Placement location such as \"eu-1\" or \"us-1\" (see ListLocations). Empty selects the default location."
+    description: "Placement location such as \"eu-1\" or \"us-1\". Explicit placement is fixed; omission selects eu-1."
     max_length: 16
     pattern: "^([a-z]{2}-[0-9]{1,3})?$"
   }];
+  // Required for us-1; optional for legacy EU clients.
+  string accepted_quote_id = 6;
+  // AWS allocation; EU sandboxes retain their fixed 1 vCPU / 1 GiB profile.
+  JobResources resources = 7;
+  // AWS omission defaults to 1 GiB; zero disables outbound networking.
+  optional uint64 max_network_bytes = 8;
 }
 
 // GetCodeSandboxRequest selects one organization sandbox.

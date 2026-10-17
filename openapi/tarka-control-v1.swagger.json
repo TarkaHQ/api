@@ -3,7 +3,7 @@
   "info": {
     "title": "Tarka Control API",
     "description": "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management.",
-    "version": "1.14.0"
+    "version": "1.15.0"
   },
   "tags": [
     {
@@ -951,6 +951,45 @@
         ]
       }
     },
+    "/control/v1/orgs/{org_id}/compute-quotes": {
+      "post": {
+        "summary": "CreateComputeQuote returns a five-minute quote without reserving funds.",
+        "operationId": "ProvisioningService_CreateComputeQuote",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ComputeQuote"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProvisioningServiceCreateComputeQuoteBody"
+            }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
     "/control/v1/orgs/{org_id}/git-repositories": {
       "get": {
         "summary": "ListGitRepositories returns hosted Git repositories in an organization.",
@@ -1270,7 +1309,7 @@
     },
     "/control/v1/orgs/{org_id}/jobs": {
       "post": {
-        "summary": "CreateJob records desired state for a managed finite-duration job.",
+        "summary": "CreateJob records a finite job revision and queues its first run atomically.\nExact idempotent retries return the original result. A changed revision of\nan active job is rejected. An accepted response is not execution readiness.\nThe runtime remains feature-gated; unavailable products fail closed.",
         "operationId": "ProvisioningService_CreateJob",
         "responses": {
           "200": {
@@ -1299,6 +1338,232 @@
             "required": true,
             "schema": {
               "$ref": "#/definitions/ProvisioningServiceCreateJobBody"
+            }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/jobs/{job_id}": {
+      "get": {
+        "summary": "GetJob reads an organization-owned job's current desired state. Listing\njobs uses ListProvisionedResources with resource_type=\"job\".",
+        "operationId": "ProvisioningService_GetJob",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ProvisionedResource"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/jobs/{job_id}/runs": {
+      "get": {
+        "summary": "ListJobRuns returns immutable revisions, newest first. A revision may have\nbounded infrastructure retries, but never overlapping execution attempts.",
+        "operationId": "ProvisioningService_ListJobRuns",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListJobRunsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "page_size",
+            "description": "page_size defaults to 50 and is capped at 100.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "page_token",
+            "description": "page_token is opaque, at most 1024 bytes, and bound to the same\norganization and job.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/jobs/{job_id}/runs/{run_id}": {
+      "get": {
+        "summary": "GetJobRun reads execution state without returning customer output.",
+        "operationId": "ProvisioningService_GetJobRun",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1JobRun"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/jobs/{job_id}/runs/{run_id}/result": {
+      "get": {
+        "summary": "GetJobRunResult returns terminal result metadata and an optional signed log\ndownload. It rechecks organization and product access on every request.",
+        "operationId": "ProvisioningService_GetJobRunResult",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1JobRunResult"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/jobs/{job_id}/runs/{run_id}:cancel": {
+      "post": {
+        "summary": "CancelJobRun is idempotent. STOPPING retains its budget reservation until\nexecution is confirmed stopped. A terminal run is returned unchanged.",
+        "operationId": "ProvisioningService_CancelJobRun",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1JobRun"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProvisioningServiceCancelJobRunBody"
             }
           }
         ],
@@ -2267,6 +2532,76 @@
         ]
       }
     },
+    "/control/v1/orgs/{org_id}/usage-policy": {
+      "get": {
+        "summary": "GetUsagePolicy returns current allowances and an owner acceptance estimate.",
+        "operationId": "ProvisioningService_GetUsagePolicy",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1UsagePolicy"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/usage-policy/accept": {
+      "post": {
+        "summary": "AcceptUsagePolicy enables prospective charging only after qualification.",
+        "operationId": "ProvisioningService_AcceptUsagePolicy",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1UsagePolicy"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProvisioningServiceAcceptUsagePolicyBody"
+            }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
     "/control/v1/orgs/{org_id}/usage/events": {
       "get": {
         "summary": "ListUsageEvents returns the organization's newest metered requests.",
@@ -2362,6 +2697,22 @@
     }
   },
   "definitions": {
+    "ProvisioningServiceAcceptUsagePolicyBody": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string"
+        },
+        "estimate_id": {
+          "type": "string"
+        }
+      },
+      "description": "AcceptUsagePolicyRequest requires the organization owner and the current\nunexpired estimate. Acceptance records version, owner, time and estimate.\nIt never creates unpaid debt or authorizes automatic deletion of data."
+    },
+    "ProvisioningServiceCancelJobRunBody": {
+      "type": "object",
+      "description": "CancelJobRunRequest requires an organization owner, admin or operator."
+    },
     "ProvisioningServiceCreateAgentHostBody": {
       "type": "object",
       "properties": {
@@ -2430,7 +2781,11 @@
         },
         "dry_run": {
           "type": "boolean",
-          "description": "Validate and return spec.billing_quote without creating or changing a host.\nThe quote is informational; admission reserves credit at apply time."
+          "description": "Validate and return spec.billing_quote without creating or changing a host.\nThe quote uses the organization billing currency; admission reserves credit at apply time."
+        },
+        "accepted_quote_id": {
+          "type": "string",
+          "description": "Optional for legacy EU clients; binds the normalized allocation at creation."
         },
         "location": {
           "type": "string",
@@ -2492,6 +2847,32 @@
         }
       },
       "description": "CreateApiKeyRequest creates an organization-scoped customer credential."
+    },
+    "ProvisioningServiceCreateComputeQuoteBody": {
+      "type": "object",
+      "properties": {
+        "product": {
+          "type": "string",
+          "description": "product is agents, sandboxes or jobs. AWS Agent Hosts are unavailable."
+        },
+        "location": {
+          "type": "string"
+        },
+        "resources": {
+          "$ref": "#/definitions/v1JobResources"
+        },
+        "max_runtime_seconds": {
+          "type": "integer",
+          "format": "int64",
+          "description": "max_runtime_seconds bounds the reservation. An Agent Host quote covers\nthe next prepaid lease; renewal is separately admitted at the same rates."
+        },
+        "max_network_bytes": {
+          "type": "string",
+          "format": "uint64",
+          "description": "max_network_bytes bounds combined forwarded upload and download bytes.\nAWS omission defaults to 1 GiB; explicit zero disables outbound networking."
+        }
+      },
+      "description": "CreateComputeQuoteRequest prices normalized resource allocation in the\norganization's billing currency. It does not reserve funds or create work.\nAn omitted location always means eu-1; AWS never receives implicit overflow."
     },
     "ProvisioningServiceCreateGitRepositoryBody": {
       "type": "object",
@@ -2568,6 +2949,40 @@
         "spec": {
           "type": "object",
           "description": "spec carries non-secret extension fields. Typed fields take precedence."
+        },
+        "location": {
+          "type": "string",
+          "description": "location is a hard constraint. Omission selects eu-1. AWS requires explicit\nus-1 and accepted_quote_id; there is no automatic AWS fallback. The selected\nlocation is immutable and returned on the resource and run.",
+          "maxLength": 16,
+          "pattern": "^([a-z]{2}-[0-9]{1,3})?$"
+        },
+        "resources": {
+          "$ref": "#/definitions/v1JobResources",
+          "description": "resources has platform defaults when omitted; zero fields select defaults."
+        },
+        "retry_policy": {
+          "$ref": "#/definitions/v1JobRetryPolicy",
+          "description": "retry_policy defaults to one On-Demand attempt with no automatic retries."
+        },
+        "idempotency_key": {
+          "type": "string",
+          "description": "idempotency_key safely retries creation for 24 hours. Reusing a key with\nchanged content is rejected. A new key creates a new immutable revision\nonly after the previous run is terminal.",
+          "maxLength": 128
+        },
+        "queue_timeout_seconds": {
+          "type": "integer",
+          "format": "int64",
+          "description": "queue_timeout_seconds bounds capacity wait, independently of execution.\nZero selects 600 seconds; explicit values must be between 30 and 3600.",
+          "maximum": 3600
+        },
+        "accepted_quote_id": {
+          "type": "string",
+          "description": "Required for us-1; must match the request and be unexpired."
+        },
+        "max_network_bytes": {
+          "type": "string",
+          "format": "uint64",
+          "description": "Omission defaults to 1 GiB for AWS; zero disables networking."
         }
       },
       "description": "CreateJobRequest defines desired state for a finite-duration container job."
@@ -2779,9 +3194,22 @@
         },
         "location": {
           "type": "string",
-          "description": "Placement location such as \"eu-1\" or \"us-1\" (see ListLocations). Empty selects the default location.",
+          "description": "Placement location such as \"eu-1\" or \"us-1\". Explicit placement is fixed; omission selects eu-1.",
           "maxLength": 16,
           "pattern": "^([a-z]{2}-[0-9]{1,3})?$"
+        },
+        "accepted_quote_id": {
+          "type": "string",
+          "description": "Required for us-1; optional for legacy EU clients."
+        },
+        "resources": {
+          "$ref": "#/definitions/v1JobResources",
+          "description": "AWS allocation; EU sandboxes retain their fixed 1 vCPU / 1 GiB profile."
+        },
+        "max_network_bytes": {
+          "type": "string",
+          "format": "uint64",
+          "description": "AWS omission defaults to 1 GiB; zero disables outbound networking."
         }
       },
       "description": "CreateCodeSandboxRequest starts a sandbox from a ready template."
@@ -3331,7 +3759,7 @@
         "expires_at": {
           "type": "string",
           "format": "date-time",
-          "description": "expires_at is the enforced sandbox lifetime deadline."
+          "description": "expires_at is the enforced sandbox lifetime deadline. Queued admission\nleaves it unset until readiness; then it is ready_at + timeout_seconds."
         },
         "created_at": {
           "type": "string",
@@ -3352,6 +3780,11 @@
         "location": {
           "type": "string",
           "description": "location is where the sandbox runs, such as \"eu-1\" or \"us-1\"."
+        },
+        "queue_deadline": {
+          "type": "string",
+          "format": "date-time",
+          "description": "queue_deadline bounds the capacity/setup wait, default ten minutes.\nExpiry fails the request and releases its unused reservation."
         }
       },
       "description": "CodeSandbox is an isolated, time-bounded execution environment."
@@ -3367,10 +3800,87 @@
         "CODE_SANDBOX_STATUS_STOPPED",
         "CODE_SANDBOX_STATUS_FAILED",
         "CODE_SANDBOX_STATUS_EXPIRED",
-        "CODE_SANDBOX_STATUS_DELETED"
+        "CODE_SANDBOX_STATUS_DELETED",
+        "CODE_SANDBOX_STATUS_QUEUED"
       ],
       "default": "CODE_SANDBOX_STATUS_UNSPECIFIED",
-      "description": "CodeSandboxStatus is the lifecycle of an isolated sandbox instance."
+      "description": "CodeSandboxStatus is the lifecycle of an isolated sandbox instance.\n\n - CODE_SANDBOX_STATUS_QUEUED: Capacity has been reserved but the runtime is not ready. Queue/setup time\ndoes not consume the requested sandbox lifetime or incur compute usage."
+    },
+    "v1ComputeQuote": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "org_id": {
+          "type": "string"
+        },
+        "product": {
+          "type": "string"
+        },
+        "location": {
+          "type": "string"
+        },
+        "resources": {
+          "$ref": "#/definitions/v1JobResources"
+        },
+        "max_runtime_seconds": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "max_network_bytes": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "currency": {
+          "type": "string"
+        },
+        "hourly_microcents": {
+          "type": "string",
+          "format": "int64"
+        },
+        "minimum_runtime_seconds": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "minimum_charge_microcents": {
+          "type": "string",
+          "format": "int64"
+        },
+        "maximum_reservation_microcents": {
+          "type": "string",
+          "format": "int64"
+        },
+        "network_gib_microcents": {
+          "type": "string",
+          "format": "int64"
+        },
+        "pricing_version": {
+          "type": "string"
+        },
+        "fx_numerator": {
+          "type": "string",
+          "format": "int64"
+        },
+        "fx_denominator": {
+          "type": "string",
+          "format": "int64"
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "available": {
+          "type": "boolean",
+          "description": "available=false is an estimate only; it cannot authorize creation."
+        },
+        "allocated_memory_bytes": {
+          "type": "string",
+          "format": "uint64",
+          "description": "Exact Agent Host allocation; resources.memory_mib rounds up for display."
+        }
+      },
+      "description": "ComputeQuote is immutable and expires five minutes after issuance. Amounts\nuse the named currency's microcents (100,000,000 = one currency unit).\nAcceptance on creation binds org, product, location, resources and limits.\nA changed catalog, currency, expired quote or changed allocation needs a new\nquote. Legacy EU clients may omit acceptance; AWS callers must supply it."
     },
     "v1CreateApiKeyResponse": {
       "type": "object",
@@ -3666,6 +4176,170 @@
       },
       "description": "InferenceCapture describes customer-controlled S3 delivery, independent of\nResponses store:true and free Himalaya's Tarka-owned evaluation archive."
     },
+    "v1JobResources": {
+      "type": "object",
+      "properties": {
+        "cpu_millis": {
+          "type": "integer",
+          "format": "int64",
+          "description": "cpu_millis defaults to 1000; explicit values are 250..6000.",
+          "maximum": 6000
+        },
+        "memory_mib": {
+          "type": "integer",
+          "format": "int64",
+          "description": "memory_mib defaults to 1024; explicit values are 128..32768.",
+          "maximum": 32768
+        },
+        "ephemeral_storage_mib": {
+          "type": "integer",
+          "format": "int64",
+          "description": "ephemeral_storage_mib defaults to 1024; explicit values are 512..32768.",
+          "maximum": 32768
+        }
+      },
+      "description": "JobResources bounds a single execution attempt. Zero selects the documented\ndefault. The preview supports up to 6 vCPUs, 32 GiB RAM and 32 GiB scratch.\nMemory and scratch are independent; scratch is ephemeral and not a volume."
+    },
+    "v1JobRetryPolicy": {
+      "type": "object",
+      "properties": {
+        "retryable": {
+          "type": "boolean"
+        },
+        "max_attempts": {
+          "type": "integer",
+          "format": "int64",
+          "description": "max_attempts includes the first attempt. Zero selects one; 2..3 require\nretryable=true. Each attempt has its own execution timeout and usage.",
+          "maximum": 3
+        },
+        "allow_spot": {
+          "type": "boolean",
+          "description": "allow_spot requires retryable=true and max_attempts\u003e=2. Unqualified Spot\ncapacity is rejected; this flag never silently weakens isolation."
+        }
+      },
+      "description": "JobRetryPolicy is explicit consent to possible repeated external effects.\nOnly qualified infrastructure interruptions can retry, after confirmed\ntermination of the old attempt. Exit failures and timeouts are not retried.\nQueue redelivery and lease expiry alone never authorize another attempt."
+    },
+    "v1JobRun": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "job_id": {
+          "type": "string"
+        },
+        "org_id": {
+          "type": "string"
+        },
+        "revision": {
+          "type": "string",
+          "format": "int64"
+        },
+        "status": {
+          "$ref": "#/definitions/v1JobRunStatus"
+        },
+        "location": {
+          "type": "string"
+        },
+        "image_digest": {
+          "type": "string",
+          "description": "image_digest is the immutable image selected at admission."
+        },
+        "resources": {
+          "$ref": "#/definitions/v1JobResources"
+        },
+        "retry_policy": {
+          "$ref": "#/definitions/v1JobRetryPolicy"
+        },
+        "attempt": {
+          "type": "integer",
+          "format": "int32",
+          "description": "attempt is zero before the first claim and increases only after old work\nhas been confirmed stopped. At most one attempt may execute at a time."
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "queue_deadline": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "started_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "started_at is unset until execution actually starts; setup time is free."
+        },
+        "finished_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "failure_code": {
+          "type": "string",
+          "description": "failure_code is a stable bounded machine code, never customer logs."
+        },
+        "exit_code": {
+          "type": "integer",
+          "format": "int32",
+          "description": "exit_code is present only when the runtime observed an exit status."
+        }
+      },
+      "description": "JobRun is execution metadata, not a queue message or a credential container."
+    },
+    "v1JobRunResult": {
+      "type": "object",
+      "properties": {
+        "run_id": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/v1JobRunStatus"
+        },
+        "exit_code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "logs_url": {
+          "type": "string",
+          "description": "logs_url is an HTTPS download of bounded combined stdout/stderr. It is\nempty if logs are unavailable or have expired, and is valid for \u003c=5 minutes."
+        },
+        "download_expires_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "logs_expires_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "logs_truncated": {
+          "type": "boolean"
+        },
+        "logs_bytes": {
+          "type": "string",
+          "format": "int64"
+        }
+      },
+      "description": "JobRunResult retains terminal metadata after the logs' seven-day retention.\nSigned URLs are temporary bearer capabilities; clients must not publish them."
+    },
+    "v1JobRunStatus": {
+      "type": "string",
+      "enum": [
+        "JOB_RUN_STATUS_UNSPECIFIED",
+        "JOB_RUN_STATUS_QUEUED",
+        "JOB_RUN_STATUS_PROVISIONING",
+        "JOB_RUN_STATUS_RUNNING",
+        "JOB_RUN_STATUS_STOPPING",
+        "JOB_RUN_STATUS_SUCCEEDED",
+        "JOB_RUN_STATUS_FAILED",
+        "JOB_RUN_STATUS_CANCELLED",
+        "JOB_RUN_STATUS_EXPIRED"
+      ],
+      "default": "JOB_RUN_STATUS_UNSPECIFIED",
+      "description": "JobRunStatus describes a single immutable revision and its bounded attempts."
+    },
     "v1ListAgentHostTemplatesResponse": {
       "type": "object",
       "properties": {
@@ -3716,6 +4390,22 @@
         }
       },
       "description": "ListGitRepositoriesResponse contains hosted Git repository metadata."
+    },
+    "v1ListJobRunsResponse": {
+      "type": "object",
+      "properties": {
+        "runs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1JobRun"
+          }
+        },
+        "next_page_token": {
+          "type": "string"
+        }
+      },
+      "description": "ListJobRunsResponse contains a bounded page of execution history."
     },
     "v1ListLocationsResponse": {
       "type": "object",
@@ -3883,7 +4573,7 @@
           "items": {
             "type": "string"
           },
-          "description": "products lists what can be placed here: \"sandboxes\", \"agent_hosts\" and\n\"object_storage\"."
+          "description": "products lists enabled placement products: \"sandboxes\", \"agent_hosts\",\n\"jobs\" and \"object_storage\". A listed location does not by itself grant\nproduct access or promise immediately available capacity."
         },
         "status": {
           "type": "string",
@@ -4230,6 +4920,10 @@
         "location": {
           "type": "string",
           "description": "location is where the resource runs, such as \"eu-1\" or \"us-1\"."
+        },
+        "latest_run_id": {
+          "type": "string",
+          "description": "latest_run_id is populated for jobs; use GetJobRun for execution state."
         }
       },
       "description": "ProvisionedResource is the recorded desired and observed state for a managed\nresource."
@@ -4503,6 +5197,41 @@
       },
       "description": "StorageCredential is redacted metadata for a bucket-scoped S3 access key."
     },
+    "v1UsageAllowance": {
+      "type": "object",
+      "properties": {
+        "meter": {
+          "type": "string",
+          "description": "meter is retained_bytes, volume_bytes, build_seconds or download_bytes."
+        },
+        "free_units": {
+          "type": "string",
+          "format": "int64"
+        },
+        "used_units": {
+          "type": "string",
+          "format": "int64"
+        },
+        "remaining_units": {
+          "type": "string",
+          "format": "int64"
+        },
+        "rate_microcents": {
+          "type": "string",
+          "format": "int64"
+        },
+        "unit_quantity": {
+          "type": "string",
+          "format": "int64",
+          "description": "unit_quantity and period_seconds describe the rate denominator."
+        },
+        "period_seconds": {
+          "type": "string",
+          "format": "int64"
+        }
+      },
+      "description": "UsageAllowance combines retained data continuously; time/transfer allowances\nreset at the UTC month boundary with no rollover. Grants are account-level\nand assigned to one organization, never multiplied by additional owners."
+    },
     "v1UsageEvent": {
       "type": "object",
       "properties": {
@@ -4591,6 +5320,58 @@
         }
       },
       "description": "UsageEvent is one metered inference request."
+    },
+    "v1UsagePolicy": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "currency": {
+          "type": "string"
+        },
+        "estimate_id": {
+          "type": "string"
+        },
+        "estimate_expires_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "estimated_720_hour_microcents": {
+          "type": "string",
+          "format": "int64"
+        },
+        "allowances": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1UsageAllowance"
+          }
+        },
+        "accepted_version": {
+          "type": "string"
+        },
+        "accepted_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "inventory_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "mode": {
+          "type": "string",
+          "description": "mode is shadow, awaiting_acceptance, active, read_only or meter_stale."
+        },
+        "charging_ready": {
+          "type": "boolean",
+          "description": "charging_ready follows the completed shadow-meter gate; acceptance is\nrejected until all backend enforcement and meters are qualified."
+        }
+      },
+      "description": "UsagePolicy is a quote for explicit owner acceptance of storage, Git,\nbuild, volume and EU download usage charging. Existing data is never billed\nbefore acceptance; stale inventory cannot authorize new paid growth."
     },
     "v1UsageSummary": {
       "type": "object",

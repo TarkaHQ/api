@@ -1,0 +1,110 @@
+// Copyright 2026 Tarka
+// SPDX-License-Identifier: Apache-2.0
+
+syntax = "proto3";
+
+package tarka.provisioning.v1;
+
+import "google/protobuf/timestamp.proto";
+import "tarka/provisioning/v1/job.proto";
+
+option csharp_namespace = "Tarka.Provisioning.V1";
+option go_package = "github.com/TarkaHQ/api/gen/go/tarka/provisioning/v1;provisioningv1";
+option java_multiple_files = true;
+option java_outer_classname = "BillingQuoteProto";
+option java_package = "com.tarka.provisioning.v1";
+
+// CreateComputeQuoteRequest prices normalized resource allocation in the
+// organization's billing currency. It does not reserve funds or create work.
+// An omitted location always means eu-1; AWS never receives implicit overflow.
+message CreateComputeQuoteRequest {
+  string org_id = 1;
+  // product is agents, sandboxes or jobs. AWS Agent Hosts are unavailable.
+  string product = 2;
+  string location = 3;
+  JobResources resources = 4;
+  // max_runtime_seconds bounds the reservation. An Agent Host quote covers
+  // the next prepaid lease; renewal is separately admitted at the same rates.
+  uint32 max_runtime_seconds = 5;
+  // max_network_bytes bounds combined forwarded upload and download bytes.
+  // AWS omission defaults to 1 GiB; explicit zero disables outbound networking.
+  optional uint64 max_network_bytes = 6;
+}
+
+// ComputeQuote is immutable and expires five minutes after issuance. Amounts
+// use the named currency's microcents (100,000,000 = one currency unit).
+// Acceptance on creation binds org, product, location, resources and limits.
+// A changed catalog, currency, expired quote or changed allocation needs a new
+// quote. Legacy EU clients may omit acceptance; AWS callers must supply it.
+message ComputeQuote {
+  string id = 1;
+  string org_id = 2;
+  string product = 3;
+  string location = 4;
+  JobResources resources = 5;
+  uint32 max_runtime_seconds = 6;
+  uint64 max_network_bytes = 7;
+  string currency = 8;
+  int64 hourly_microcents = 9;
+  uint32 minimum_runtime_seconds = 10;
+  int64 minimum_charge_microcents = 11;
+  int64 maximum_reservation_microcents = 12;
+  int64 network_gib_microcents = 13;
+  string pricing_version = 14;
+  int64 fx_numerator = 15;
+  int64 fx_denominator = 16;
+  google.protobuf.Timestamp expires_at = 17;
+  // available=false is an estimate only; it cannot authorize creation.
+  bool available = 18;
+  // Exact Agent Host allocation; resources.memory_mib rounds up for display.
+  uint64 allocated_memory_bytes = 19;
+}
+
+message GetUsagePolicyRequest {
+  string org_id = 1;
+}
+
+// UsageAllowance combines retained data continuously; time/transfer allowances
+// reset at the UTC month boundary with no rollover. Grants are account-level
+// and assigned to one organization, never multiplied by additional owners.
+message UsageAllowance {
+  // meter is retained_bytes, volume_bytes, build_seconds or download_bytes.
+  string meter = 1;
+  int64 free_units = 2;
+  int64 used_units = 3;
+  int64 remaining_units = 4;
+  int64 rate_microcents = 5;
+  // unit_quantity and period_seconds describe the rate denominator.
+  int64 unit_quantity = 6;
+  int64 period_seconds = 7;
+}
+
+// UsagePolicy is a quote for explicit owner acceptance of storage, Git,
+// build, volume and EU download usage charging. Existing data is never billed
+// before acceptance; stale inventory cannot authorize new paid growth.
+message UsagePolicy {
+  string org_id = 1;
+  string version = 2;
+  string currency = 3;
+  string estimate_id = 4;
+  google.protobuf.Timestamp estimate_expires_at = 5;
+  int64 estimated_720_hour_microcents = 6;
+  repeated UsageAllowance allowances = 7;
+  string accepted_version = 8;
+  google.protobuf.Timestamp accepted_at = 9;
+  google.protobuf.Timestamp inventory_at = 10;
+  // mode is shadow, awaiting_acceptance, active, read_only or meter_stale.
+  string mode = 11;
+  // charging_ready follows the completed shadow-meter gate; acceptance is
+  // rejected until all backend enforcement and meters are qualified.
+  bool charging_ready = 12;
+}
+
+// AcceptUsagePolicyRequest requires the organization owner and the current
+// unexpired estimate. Acceptance records version, owner, time and estimate.
+// It never creates unpaid debt or authorizes automatic deletion of data.
+message AcceptUsagePolicyRequest {
+  string org_id = 1;
+  string version = 2;
+  string estimate_id = 3;
+}
