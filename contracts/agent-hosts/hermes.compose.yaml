@@ -15,7 +15,7 @@ x-tarka:
       required: true
   runtime_profile:
     managed_model: true
-    default_model_alias: deepseek-v4.1-flash
+    default_model_alias: deepseek-v4.1-flash-eu
     context_token_limit: 81920
     compaction_threshold_tokens: 65536
     utility_modalities: [stt, ocr, tts, embedding, rerank]
