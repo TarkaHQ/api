@@ -637,8 +637,8 @@ def main() -> None:
         runtime = section(metadata, "runtime_profile")
         if nested_scalar(runtime, "managed_model") != "true":
             raise ValueError(f"{path.name}: managed_model must be true")
-        if nested_scalar(runtime, "default_model_alias") != "qwen3.8-flash-next":
-            raise ValueError(f"{path.name}: default model must be qwen3.8-flash-next")
+        if nested_scalar(runtime, "default_model_alias") != "deepseek-v4.1-flash":
+            raise ValueError(f"{path.name}: default model must be deepseek-v4.1-flash")
         context_limit = int(nested_scalar(runtime, "context_token_limit"))
         compaction_limit = int(nested_scalar(runtime, "compaction_threshold_tokens"))
         if context_limit != 81920 or not 50000 <= compaction_limit < context_limit:

@@ -7,7 +7,7 @@
       "tier": "core",
       "service_count": 2,
       "file": "hermes.compose.yaml",
-      "sha256": "598a835a7ed7b71386dbfe4f46c310a4c94efa5aa4e74edb1643cba608141b1e"
+      "sha256": "b9909f93e251d35d4a7056180fc9ff36b6041a472e76525622dc81caa3bba24a"
     },
     {
       "id": "n8n",
@@ -15,7 +15,7 @@
       "tier": "core",
       "service_count": 1,
       "file": "n8n.compose.yaml",
-      "sha256": "5212c9b1f6805d86b9503d64f894d4311de70cf474b17cecdbd83750ee688517"
+      "sha256": "d85c9d246c15cb5a8e2686862605737e43ce4761762c74304ed6899ec913a7da"
     },
     {
       "id": "onyx",
@@ -23,7 +23,7 @@
       "tier": "pro",
       "service_count": 9,
       "file": "onyx.compose.yaml",
-      "sha256": "c396185e37a15cb9abb5578a1cf4e1ff51cc06381afc28f1d204a29bfe2773ec"
+      "sha256": "74474632a90276640cbc19e81f48e8c8054553a6c836cb5bb658589267667010"
     },
     {
       "id": "openclaw",
@@ -31,7 +31,7 @@
       "tier": "core",
       "service_count": 2,
       "file": "openclaw.compose.yaml",
-      "sha256": "7048142bb188074a464c2d2673efe3095eb9c2252c70f8024fe4391c6d2414b9"
+      "sha256": "98fdbbdb2a0cced96d8bff104279e3b56aa15aa569797115b122d042a0fc4107"
     }
   ]
 }
