@@ -3461,7 +3461,7 @@
       "properties": {
         "primary_model_alias": {
           "type": "string",
-          "description": "primary_model_alias is an active chat model selected from ListModels.\nWhen empty, a new host starts on its template's default model, or the\nplatform default for a stack without a template; an update keeps the\nmodel the host already runs."
+          "description": "primary_model_alias is an active chat model selected from ListModels.\nWhen empty, a new host starts on its template's default model, or the\nplatform default for a stack without a template. An update keeps the\nmodel saved in the host's latest revision, and fails if that model is no\nlonger available."
         },
         "gateways": {
           "type": "array",
