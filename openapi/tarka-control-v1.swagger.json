@@ -2787,6 +2787,11 @@
           "type": "string",
           "description": "Optional for legacy EU clients; binds the normalized allocation at creation."
         },
+        "max_network_bytes": {
+          "type": "string",
+          "format": "uint64",
+          "description": "AWS Agent Hosts: combined forwarded bytes per renewable five-minute\nallowance. Omitted uses 1 GiB for a new host and preserves an existing\nhost's allowance. Zero disables public ingress and outbound networking.\nEU hosts must omit this field; their existing network policy is unchanged."
+        },
         "location": {
           "type": "string",
           "description": "Placement location such as \"eu-1\" or \"us-1\" (see ListLocations). Empty selects the default location.",
@@ -2853,7 +2858,7 @@
       "properties": {
         "product": {
           "type": "string",
-          "description": "product is agents, sandboxes or jobs. AWS Agent Hosts are unavailable."
+          "description": "product is agents, sandboxes or jobs. Availability follows the live quote."
         },
         "location": {
           "type": "string"
@@ -2870,6 +2875,11 @@
           "type": "string",
           "format": "uint64",
           "description": "max_network_bytes bounds combined forwarded upload and download bytes.\nAWS omission defaults to 1 GiB; explicit zero disables outbound networking."
+        },
+        "persistent_storage_bytes": {
+          "type": "string",
+          "format": "uint64",
+          "description": "AWS Agent Host retained disk allocation. Compose dry-runs derive this from\nthe actual volumes. Other products and EU quotes leave this at zero."
         }
       },
       "description": "CreateComputeQuoteRequest prices normalized resource allocation in the\norganization's billing currency. It does not reserve funds or create work.\nAn omitted location always means eu-1; AWS never receives implicit overflow."
@@ -3878,6 +3888,29 @@
           "type": "string",
           "format": "uint64",
           "description": "Exact Agent Host allocation; resources.memory_mib rounds up for display."
+        },
+        "persistent_storage_bytes": {
+          "type": "string",
+          "format": "uint64",
+          "description": "AWS Agent Host disks remain allocated and metered while paused. Charges\nbegin after allocation, stop after deletion, and never authorize debt or\nautomatic deletion. Existing EU data usage policy remains separate."
+        },
+        "persistent_storage_gib_month_microcents": {
+          "type": "string",
+          "format": "int64"
+        },
+        "persistent_storage_period_seconds": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "startup_reservation_microcents": {
+          "type": "string",
+          "format": "int64",
+          "description": "Initial temporary hold while a node/image starts. Unexecuted runtime is\nnot billed. Once ready, maximum_reservation_microcents covers each lease."
+        },
+        "network_allowance_period_seconds": {
+          "type": "integer",
+          "format": "int64",
+          "description": "Agent Host max_network_bytes is a renewable five-minute allowance;\nforwarded upload and download bytes are billed at network_gib_microcents.\nExhausting it suspends networking until the next funded allowance."
         }
       },
       "description": "ComputeQuote is immutable and expires five minutes after issuance. Amounts\nuse the named currency's microcents (100,000,000 = one currency unit).\nAcceptance on creation binds org, product, location, resources and limits.\nA changed catalog, currency, expired quote or changed allocation needs a new\nquote. Legacy EU clients may omit acceptance; AWS callers must supply it."

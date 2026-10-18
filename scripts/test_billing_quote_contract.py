@@ -25,6 +25,14 @@ class BillingQuoteContractTests(unittest.TestCase):
             self.assertIn('accepted_quote_id', definition['properties'])
             self.assertNotIn('accepted_quote_id', definition.get('required', []))
 
+    def test_agent_disk_and_startup_consent_are_explicit(self):
+        quote = self.doc['definitions']['v1ComputeQuote']['properties']
+        for field in ['persistent_storage_bytes', 'persistent_storage_gib_month_microcents', 'persistent_storage_period_seconds', 'startup_reservation_microcents', 'network_allowance_period_seconds']:
+            self.assertIn(field, quote)
+        body = self.doc['definitions']['ProvisioningServiceCreateAgentHostBody']
+        self.assertIn('max_network_bytes', body['properties'])
+        self.assertNotIn('max_network_bytes', body.get('required', []))
+
     def test_omitted_location_has_no_implicit_cost_increase(self):
         for name in ['ProvisioningServiceCreateJobBody', 'SandboxServiceCreateSandboxBody']:
             location = self.doc['definitions'][name]['properties']['location']

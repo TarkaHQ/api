@@ -787,6 +787,11 @@ message CreateAgentHostRequest {
   bool dry_run = 17;
   // Optional for legacy EU clients; binds the normalized allocation at creation.
   string accepted_quote_id = 18;
+  // AWS Agent Hosts: combined forwarded bytes per renewable five-minute
+  // allowance. Omitted uses 1 GiB for a new host and preserves an existing
+  // host's allowance. Zero disables public ingress and outbound networking.
+  // EU hosts must omit this field; their existing network policy is unchanged.
+  optional uint64 max_network_bytes = 19;
   // location selects where the host runs, such as "eu-1" or "us-1" (see
   // ListLocations). Empty selects the default location for a new host and
   // keeps the current location for an existing one. A host cannot move:

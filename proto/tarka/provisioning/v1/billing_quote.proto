@@ -19,7 +19,7 @@ option java_package = "com.tarka.provisioning.v1";
 // An omitted location always means eu-1; AWS never receives implicit overflow.
 message CreateComputeQuoteRequest {
   string org_id = 1;
-  // product is agents, sandboxes or jobs. AWS Agent Hosts are unavailable.
+  // product is agents, sandboxes or jobs. Availability follows the live quote.
   string product = 2;
   string location = 3;
   JobResources resources = 4;
@@ -29,6 +29,9 @@ message CreateComputeQuoteRequest {
   // max_network_bytes bounds combined forwarded upload and download bytes.
   // AWS omission defaults to 1 GiB; explicit zero disables outbound networking.
   optional uint64 max_network_bytes = 6;
+  // AWS Agent Host retained disk allocation. Compose dry-runs derive this from
+  // the actual volumes. Other products and EU quotes leave this at zero.
+  uint64 persistent_storage_bytes = 7;
 }
 
 // ComputeQuote is immutable and expires five minutes after issuance. Amounts
@@ -58,6 +61,19 @@ message ComputeQuote {
   bool available = 18;
   // Exact Agent Host allocation; resources.memory_mib rounds up for display.
   uint64 allocated_memory_bytes = 19;
+  // AWS Agent Host disks remain allocated and metered while paused. Charges
+  // begin after allocation, stop after deletion, and never authorize debt or
+  // automatic deletion. Existing EU data usage policy remains separate.
+  uint64 persistent_storage_bytes = 20;
+  int64 persistent_storage_gib_month_microcents = 21;
+  uint32 persistent_storage_period_seconds = 22;
+  // Initial temporary hold while a node/image starts. Unexecuted runtime is
+  // not billed. Once ready, maximum_reservation_microcents covers each lease.
+  int64 startup_reservation_microcents = 23;
+  // Agent Host max_network_bytes is a renewable five-minute allowance;
+  // forwarded upload and download bytes are billed at network_gib_microcents.
+  // Exhausting it suspends networking until the next funded allowance.
+  uint32 network_allowance_period_seconds = 24;
 }
 
 message GetUsagePolicyRequest {
