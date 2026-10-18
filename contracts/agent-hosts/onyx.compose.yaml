@@ -2,7 +2,7 @@ x-tarka:
   id: onyx
   title: Onyx
   description: Full Onyx stack with web and API services, workers, Postgres, OpenSearch, Redis and MinIO.
-  version: "tarka.6"
+  version: "tarka.7"
   tier: pro
   routes:
     - service: web-server
@@ -59,6 +59,25 @@ services:
       - /bin/sh
       - -ec
       - |
+        python - <<'PYWAIT'
+        import json
+        import time
+        import urllib.error
+        import urllib.request
+        opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+        deadline = time.monotonic() + 600
+        while True:
+            try:
+                with opener.open("http://index:9200/_cluster/health?wait_for_status=yellow&timeout=5s", timeout=8) as response:
+                    health = json.load(response)
+                if health.get("status") in ("yellow", "green") and not health.get("timed_out"):
+                    break
+            except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError):
+                pass
+            if time.monotonic() >= deadline:
+                raise RuntimeError("Onyx search service did not become ready")
+            time.sleep(2)
+        PYWAIT
         alembic upgrade head
         uvicorn onyx.main:app --host 127.0.0.1 --port 8081 &
         bootstrap_pid=$$!

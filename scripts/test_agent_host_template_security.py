@@ -66,6 +66,8 @@ class AgentHostTemplateSecurityTests(unittest.TestCase):
         self.assertIn("opensearch-data:/usr/share/opensearch/data", document)
         self.assertIn('node.store.allow_mmap: "false"', document)
         self.assertNotIn("vespa-volume", document)
+        self.assertLess(document.index("/_cluster/health?wait_for_status=yellow"), document.index("alembic upgrade head"))
+        self.assertIn('not health.get("timed_out")', document)
         metadata = document.split("\nservices:", 1)[0]
         self.assertNotIn("service: index", metadata)
         VALIDATOR.validate_compose_security(document, metadata, Path("onyx.yaml"))
