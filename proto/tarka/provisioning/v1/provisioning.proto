@@ -839,6 +839,10 @@ message AgentHostVariable {
 // onto a Compose stack without exposing the host-bound platform credential.
 message AgentHostRuntimeConfiguration {
   // primary_model_alias is an active chat model selected from ListModels.
+  // When empty, a new host starts on its template's default model, or the
+  // platform default for a stack without a template. An update keeps the
+  // model saved in the host's latest revision, and fails if that model is no
+  // longer available.
   string primary_model_alias = 1;
   // gateways contains the messaging integrations enabled for this revision.
   repeated AgentHostGatewayConfiguration gateways = 2;

@@ -82,7 +82,7 @@ credential points at `http://tarka/v1`; its `tarka-local` key is a non-secret
 SDK compatibility marker, replaced by the private platform gateway. The
 reserved credential ID `tarkaInference` is refreshed on startup; create a
 separate credential for other providers. Use Chat Completions and a live Tarka
-model such as `qwen3.8-flash-next`. Support for the OpenAI Responses API,
+model such as `deepseek-v4.1-flash-eu`. Support for the OpenAI Responses API,
 Assistants, or other provider-specific APIs is not implied.
 
 SQLite, workflows, encrypted credentials, and n8n's generated encryption key

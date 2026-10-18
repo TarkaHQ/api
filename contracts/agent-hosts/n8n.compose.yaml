@@ -23,7 +23,7 @@ x-tarka:
       default: UTC
   runtime_profile:
     managed_model: true
-    default_model_alias: qwen3.8-flash-next
+    default_model_alias: deepseek-v4.1-flash-eu
     context_token_limit: 81920
     compaction_threshold_tokens: 65536
     utility_modalities: [stt, ocr, tts, embedding, rerank]
