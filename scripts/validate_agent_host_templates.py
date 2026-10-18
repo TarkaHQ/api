@@ -73,10 +73,10 @@ SENSITIVE_ENVIRONMENT_NAME = re.compile(
 INTERPOLATION_PATTERN = re.compile(r"\$\{([A-Z][A-Z0-9_]*)[^}]*}")
 NAMED_VOLUME_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
 EXPECTED_PUBLIC_ROUTES = {
-    "n8n": ("n8n", 5678, "/"),
-    "openclaw": ("openclaw", 8080, "/"),
-    "hermes": ("hermes-webui", 8787, "/"),
-    "onyx": ("web-server", 3000, "/"),
+    "n8n": (("n8n", 5678, "/"),),
+    "openclaw": (("openclaw", 8080, "/"),),
+    "hermes": (("hermes-webui", 8787, "/"),),
+    "onyx": (("api-server", 8080, "/api"), ("web-server", 3000, "/")),
 }
 BLOCK_MAPPING_KEY = re.compile(r"^([A-Za-z0-9][A-Za-z0-9_.-]*)[ \t]*:(.*)$")
 QUOTED_MAPPING_KEY = re.compile(
@@ -503,11 +503,9 @@ def validate_public_route(template_id: str, metadata: str, source: Path) -> None
         raise ValueError(
             f"{source.name}: template needs an explicitly reviewed public route"
         )
-    service, port, path = expected
-    expected_lines = (
-        f"- service: {service}",
-        f"port: {port}",
-        f"path: {path}",
+    expected_lines = tuple(
+        line for service, port, path in expected
+        for line in (f"- service: {service}", f"port: {port}", f"path: {path}")
     )
     actual_lines = tuple(
         line.strip()

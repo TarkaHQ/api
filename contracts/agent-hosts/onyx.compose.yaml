@@ -2,9 +2,12 @@ x-tarka:
   id: onyx
   title: Onyx
   description: Full Onyx stack with web and API services, workers, Postgres, OpenSearch, Redis and MinIO.
-  version: "tarka.7"
+  version: "tarka.8"
   tier: pro
   routes:
+    - service: api-server
+      port: 8080
+      path: /api
     - service: web-server
       port: 3000
       path: /

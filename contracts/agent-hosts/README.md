@@ -104,7 +104,7 @@ Custom stacks may opt selected services into the managed Tarka model environment
 without pretending the platform can configure an arbitrary application's own
 gateway or compaction implementation.
 
-Onyx `tarka.7` pairs the pinned modern backend with OpenSearch 3.6.0, matching
+Onyx `tarka.8` pairs the pinned modern backend with OpenSearch 3.6.0, matching
 its upstream Compose dependency. The search service is private to the host,
 with namespace isolation and no public route. It uses HTTP inside that boundary,
 without the bundled demo users/certificates; it must never be exposed publicly.

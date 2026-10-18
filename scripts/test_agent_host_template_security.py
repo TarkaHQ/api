@@ -70,6 +70,12 @@ class AgentHostTemplateSecurityTests(unittest.TestCase):
         self.assertIn('not health.get("timed_out")', document)
         metadata = document.split("\nservices:", 1)[0]
         self.assertNotIn("service: index", metadata)
+        self.assertIn("service: api-server\n      port: 8080\n      path: /api", metadata)
+        self.assertIn("API_PREFIX: /api", document)
+        VALIDATOR.validate_public_route("onyx", metadata, Path("onyx.yaml"))
+        for old, new in (("service: api-server", "service: index"), ("port: 8080", "port: 8081"), ("path: /api", "path: /")):
+            with self.subTest(route=old), self.assertRaises(ValueError):
+                VALIDATOR.validate_public_route("onyx", metadata.replace(old, new), Path("onyx.yaml"))
         VALIDATOR.validate_compose_security(document, metadata, Path("onyx.yaml"))
 
     def validate(self, document: str) -> None:
