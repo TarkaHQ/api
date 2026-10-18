@@ -2,7 +2,7 @@ x-tarka:
   id: onyx
   title: Onyx
   description: Full Onyx stack with web and API services, workers, Postgres, Vespa, Redis and MinIO.
-  version: "tarka.4"
+  version: "tarka.5"
   tier: pro
   routes:
     - service: web-server
@@ -229,8 +229,17 @@ services:
         limits: {cpus: "1", memory: 2G}
   relational-db:
     image: postgres@sha256:d9c304353c031b21e9a7e33dc4781e272a9fa802a2ab9703fe4199d72ba1422c
+    user: "70:70"
     shm_size: 1g
-    command: -c max_connections=250
+    entrypoint: [/bin/sh, -ec]
+    command:
+      - |
+        if [ -f /var/lib/postgresql/data/PG_VERSION ]; then
+          export PGDATA=/var/lib/postgresql/data
+        else
+          export PGDATA=/var/lib/postgresql/data/pgdata
+        fi
+        exec docker-entrypoint.sh postgres -c max_connections=250
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -264,6 +273,7 @@ services:
         limits: {cpus: "1", memory: 4G}
   cache:
     image: redis@sha256:ff02b58f971e7d7d156a1267e283fcbbeee91773b6aa36c49dac28ecfe28eadf
+    user: "999:1000"
     command: redis-server --save "" --appendonly no
     tmpfs: [/data]
     expose: ["6379"]
@@ -272,7 +282,7 @@ services:
         reservations: {cpus: "0.1", memory: 128M}
         limits: {cpus: "0.5", memory: 512M}
   minio:
-    image: minio/minio@sha256:7330be2e7320a7a699b36f72bd06a94d8a21ec9f6f397345d9c38fc6751141f5
+    image: ghcr.io/coollabsio/minio@sha256:69b55a1c1c5dc285ce04db96689f5b2102317fc77a50680a1874ca6efd1c87f9
     command: server /data --console-address :9001
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
@@ -280,7 +290,12 @@ services:
     volumes:
       - minio-data:/data
     healthcheck:
-      test: [CMD, curl, -f, http://localhost:9000/minio/health/live]
+      test:
+        - CMD-SHELL
+        - >-
+          umask 077;
+          mc --config-dir /tmp/minio-health alias set local http://localhost:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD" >/dev/null &&
+          mc --config-dir /tmp/minio-health ready local
       interval: 30s
       timeout: 20s
       retries: 3
