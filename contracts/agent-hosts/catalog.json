@@ -19,11 +19,11 @@
     },
     {
       "id": "onyx",
-      "version": "tarka.5",
+      "version": "tarka.6",
       "tier": "pro",
       "service_count": 9,
       "file": "onyx.compose.yaml",
-      "sha256": "81a5ddd44ff7bc2f6b426fdc48b487e17a63ef56e617e9be5e880f1986621d27"
+      "sha256": "fc48230dae8f696439046d92959ad7ab9950a5d1c999ccb947c96386d362abe9"
     },
     {
       "id": "openclaw",
