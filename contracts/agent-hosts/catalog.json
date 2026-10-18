@@ -11,11 +11,11 @@
     },
     {
       "id": "n8n",
-      "version": "2.41.3-tarka.1",
+      "version": "2.41.3-tarka.2",
       "tier": "core",
       "service_count": 1,
       "file": "n8n.compose.yaml",
-      "sha256": "7da97dbf9c0581eeefcecb56d24f4a60053e6c592f3b2cbb9e042686a95f97bb"
+      "sha256": "8366f93927c21dfe23a6a39fa7e7c33134f0ecccec75ada27ef27c9ff6352ab0"
     },
     {
       "id": "onyx",

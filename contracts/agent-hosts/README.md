@@ -85,6 +85,15 @@ separate credential for other providers. Use Chat Completions and a live Tarka
 model such as `deepseek-v4.1-flash-eu`. Support for the OpenAI Responses API,
 Assistants, or other provider-specific APIs is not implied.
 
+n8n's Assistant also starts on Tarka. On a new host's first boot, the template
+saves the Assistant's model the way n8n's own "Connect a model" dialog does: an
+OpenAI-compatible endpoint at `http://tarka/v1` with the `tarka-local` marker,
+and the host's primary model. It also turns the Assistant's web search off.
+Both remain ordinary n8n settings the owner can change. Before its first chat,
+n8n's Assistant also asks for a code sandbox (Daytona or n8n's sandbox
+service), which the template does not provide. Hosts created from
+`2.41.3-tarka.1` keep their Assistant settings.
+
 SQLite, workflows, encrypted credentials, and n8n's generated encryption key
 persist together on the 10 GiB `n8n-data` volume. The template runs one instance
 and prunes execution history after seven days. Back up the whole volume,
