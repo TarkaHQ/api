@@ -540,11 +540,9 @@ def validate_onyx_authentication_boundary(
         if not re.search(pattern, metadata, re.MULTILINE):
             raise ValueError(f"{source.name}: {secret} must be declared secret")
 
-    routes = section(metadata, "routes")
-    if "service: api-server" in routes or routes.count("service:") != 1:
-        raise ValueError(f"{source.name}: only the Onyx web proxy may be public")
-    if "service: web-server" not in routes:
-        raise ValueError(f"{source.name}: Onyx web route is missing")
+    # The production Next.js image deliberately does not proxy /api. Expose
+    # only the authenticated 8080 listener after private 8081 bootstrap.
+    validate_public_route("onyx", metadata, source)
 
     invariants = {
         "private bootstrap listener": (
