@@ -31,11 +31,12 @@ Every running Agent Host also receives a private platform gateway at
 identity is held only by that gateway and is rejected by Tarka's public API
 surfaces.
 
-The gateway serves Chat Completions and the other `/v1` inference endpoints,
-but not the Responses API: `/v1/responses` answers 404 with OpenAI's
-`unknown_url` error, so clients that try it first fall back to Chat
-Completions. A client that speaks only the Responses API must be switched to
-Chat Completions inside a host.
+The gateway passes the Responses API through, except for input items that point
+at earlier output by ID (`item_reference`). Tarka stores no Responses state
+unless asked, so the gateway answers those requests with a 404
+(`item_reference_unsupported`). Clients that try the Responses API first, such
+as the AI SDK, can then retry on Chat Completions with the full history; others
+should send earlier items in full or use Chat Completions.
 
 Schema version 2 templates declare a managed runtime profile and the messaging
 gateways supported by that exact runtime. The profile selects a live Tarka chat
@@ -95,8 +96,8 @@ n8n's Assistant also starts on Tarka. When the template creates the owner, and
 the Assistant has no model or search connection yet, it saves the Assistant's
 model the way n8n's own "Connect a model" dialog does: an OpenAI-compatible
 endpoint at `http://tarka/v1` with the `tarka-local` marker, and the host's
-primary model. The Assistant then uses Chat Completions. The template also
-turns the Assistant's web search off. Both remain ordinary n8n settings the
+primary model. From its second message, its calls go through Chat
+Completions. The template also turns the Assistant's web search off. Both remain ordinary n8n settings the
 owner can change. The host's key admits only the host's own models, so after
 changing the host's model, change the Assistant's model too. Before its first
 chat, n8n's Assistant also asks for a code sandbox (Daytona or n8n's sandbox
