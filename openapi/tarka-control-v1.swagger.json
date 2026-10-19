@@ -2790,7 +2790,7 @@
         "max_network_bytes": {
           "type": "string",
           "format": "uint64",
-          "description": "AWS Agent Hosts: combined forwarded bytes per renewable five-minute\nallowance. Omitted uses 1 GiB for a new host and preserves an existing\nhost's allowance. Zero disables public ingress and outbound networking.\nEU hosts must omit this field; their existing network policy is unchanged."
+          "description": "US East Agent Hosts: combined forwarded bytes per renewable five-minute\nallowance. Omitted uses 1 GiB for a new host and preserves an existing\nhost's allowance. Zero disables public ingress and outbound networking.\nEU hosts must omit this field; their existing network policy is unchanged."
         },
         "location": {
           "type": "string",
@@ -2874,15 +2874,15 @@
         "max_network_bytes": {
           "type": "string",
           "format": "uint64",
-          "description": "max_network_bytes bounds combined forwarded upload and download bytes.\nAWS omission defaults to 1 GiB; explicit zero disables outbound networking."
+          "description": "max_network_bytes bounds combined forwarded upload and download bytes.\nUS East omission defaults to 1 GiB; explicit zero disables outbound networking."
         },
         "persistent_storage_bytes": {
           "type": "string",
           "format": "uint64",
-          "description": "AWS Agent Host retained disk allocation. Compose dry-runs derive this from\nthe actual volumes. Other products and EU quotes leave this at zero."
+          "description": "US East Agent Host retained disk allocation. Compose dry-runs derive this from\nthe actual volumes. Other products and EU quotes leave this at zero."
         }
       },
-      "description": "CreateComputeQuoteRequest prices normalized resource allocation in the\norganization's billing currency. It does not reserve funds or create work.\nAn omitted location always means eu-1; AWS never receives implicit overflow."
+      "description": "CreateComputeQuoteRequest prices normalized resource allocation in the\norganization's billing currency. It does not reserve funds or create work.\nAn omitted location always means eu-1; US East never receives implicit overflow."
     },
     "ProvisioningServiceCreateGitRepositoryBody": {
       "type": "object",
@@ -2962,7 +2962,7 @@
         },
         "location": {
           "type": "string",
-          "description": "location is a hard constraint. Omission selects eu-1. AWS requires explicit\nus-1 and accepted_quote_id; there is no automatic AWS fallback. The selected\nlocation is immutable and returned on the resource and run.",
+          "description": "location is a hard constraint. Omission selects eu-1. US East requires explicit\nus-1 and accepted_quote_id; there is no automatic US East fallback. The selected\nlocation is immutable and returned on the resource and run.",
           "maxLength": 16,
           "pattern": "^([a-z]{2}-[0-9]{1,3})?$"
         },
@@ -2992,7 +2992,7 @@
         "max_network_bytes": {
           "type": "string",
           "format": "uint64",
-          "description": "Omission defaults to 1 GiB for AWS; zero disables networking."
+          "description": "Omission defaults to 1 GiB for US East; zero disables networking."
         }
       },
       "description": "CreateJobRequest defines desired state for a finite-duration container job."
@@ -3214,12 +3214,12 @@
         },
         "resources": {
           "$ref": "#/definitions/v1JobResources",
-          "description": "AWS allocation; EU sandboxes retain their fixed 1 vCPU / 1 GiB profile."
+          "description": "US East allocation; EU sandboxes retain their fixed 1 vCPU / 1 GiB profile."
         },
         "max_network_bytes": {
           "type": "string",
           "format": "uint64",
-          "description": "AWS omission defaults to 1 GiB; zero disables outbound networking."
+          "description": "US East omission defaults to 1 GiB; zero disables outbound networking."
         }
       },
       "description": "CreateCodeSandboxRequest starts a sandbox from a ready template."
@@ -3892,7 +3892,7 @@
         "persistent_storage_bytes": {
           "type": "string",
           "format": "uint64",
-          "description": "AWS Agent Host disks remain allocated and metered while paused. Charges\nbegin after allocation, stop after deletion, and never authorize debt or\nautomatic deletion. Existing EU data usage policy remains separate."
+          "description": "US East Agent Host disks remain allocated and metered while paused. Charges\nbegin after allocation, stop after deletion, and never authorize debt or\nautomatic deletion. Existing EU data usage policy remains separate."
         },
         "persistent_storage_gib_month_microcents": {
           "type": "string",
@@ -3913,7 +3913,7 @@
           "description": "Agent Host max_network_bytes is a renewable five-minute allowance;\nforwarded upload and download bytes are billed at network_gib_microcents.\nExhausting it suspends networking until the next funded allowance."
         }
       },
-      "description": "ComputeQuote is immutable and expires five minutes after issuance. Amounts\nuse the named currency's microcents (100,000,000 = one currency unit).\nAcceptance on creation binds org, product, location, resources and limits.\nA changed catalog, currency, expired quote or changed allocation needs a new\nquote. Legacy EU clients may omit acceptance; AWS callers must supply it."
+      "description": "ComputeQuote is immutable and expires five minutes after issuance. Amounts\nuse the named currency's microcents (100,000,000 = one currency unit).\nAcceptance on creation binds org, product, location, resources and limits.\nA changed catalog, currency, expired quote or changed allocation needs a new\nquote. Legacy EU clients may omit acceptance; US East callers must supply it."
     },
     "v1CreateApiKeyResponse": {
       "type": "object",

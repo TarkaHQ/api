@@ -204,19 +204,15 @@ uses an SSH key or a Forgejo personal access token, not a `tk_live_` key.
 
 ### Queued compute contract and availability
 
-Control contract 1.15 adds the job lifecycle and queued sandbox semantics for
-an upcoming compute preview. These definitions do **not** enable the runtime,
-AWS placement or public access. `CreateJob` currently fails with
-`FAILED_PRECONDITION: jobs_runtime_unavailable`; new lifecycle RPCs require the
-corresponding backend deployment. Product approval alone does not activate an
-undeployed runtime. Check organization-scoped product and location discovery
-before offering placement choices in a client.
+Jobs, sandboxes and Agent Hosts support explicit US East placement (`us-1`).
+Check organization-scoped product and location discovery and obtain an available
+compute quote before creation. Contract definitions alone do not enable a
+runtime; product approval, billing and shared capacity checks still apply.
 
-For admitted preview organizations, an omitted compute location prefers
-available EU capacity and can fall back to qualified US capacity. Explicit
-placement is a hard constraint. The chosen location is returned and cannot
-change during retries or a failed launch. Existing resources retain placement;
-non-preview organizations remain EU-only. A location list is not a reservation.
+Omitting a location selects `eu-1`; there is no automatic fallback to US East.
+Explicit placement is a hard constraint. The chosen location is returned and
+cannot change during retries or a failed launch. Existing resources retain
+placement. A location list is not a reservation.
 
 An accepted sandbox can be `QUEUED` while capacity starts. `queue_deadline`
 bounds waiting and setup, with a default of ten minutes. `expires_at` is unset
@@ -475,7 +471,7 @@ Apache License 2.0. See [`LICENSE`](LICENSE).
 `POST /control/v1/orgs/{org_id}/compute-quotes` returns a five-minute quote in
 billing currency, including normalized allocation, runtime/network caps,
 minimum charge, maximum reservation and immutable price/FX version. Creation
-uses `accepted_quote_id`; AWS requires explicit `us-1`. No implicit overflow
+uses `accepted_quote_id`; US East requires explicit `us-1`. No implicit overflow
 from EU is permitted. Availability follows the returned quote. EU legacy clients remain
 compatible; the console shows quotes before creation.
 
@@ -486,9 +482,9 @@ never billed retroactively. At exhausted funds data is read-only and retained;
 there is no automatic deletion or unpaid debt. Product availability remains a
 separate gate; these contracts do not announce customer launch.
 
-AWS Agent Host quotes additionally bind persistent disk bytes, the disk rate,
+US East Agent Host quotes additionally bind persistent disk bytes, the disk rate,
 and a renewable network allowance. Retained disks remain metered while the host
 is paused; runtime does not. A temporary startup credit hold is shown separately
 and unused funds are released. Exhausted credit suspends compute/networking and
 retains disks without automatic deletion or unpaid debt. These fields do not
-activate AWS Agent Hosts: live availability and qualification remain separate.
+activate US East Agent Hosts: live availability and qualification remain separate.

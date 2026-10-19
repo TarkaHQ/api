@@ -16,7 +16,7 @@ option java_package = "com.tarka.provisioning.v1";
 
 // CreateComputeQuoteRequest prices normalized resource allocation in the
 // organization's billing currency. It does not reserve funds or create work.
-// An omitted location always means eu-1; AWS never receives implicit overflow.
+// An omitted location always means eu-1; US East never receives implicit overflow.
 message CreateComputeQuoteRequest {
   string org_id = 1;
   // product is agents, sandboxes or jobs. Availability follows the live quote.
@@ -27,9 +27,9 @@ message CreateComputeQuoteRequest {
   // the next prepaid lease; renewal is separately admitted at the same rates.
   uint32 max_runtime_seconds = 5;
   // max_network_bytes bounds combined forwarded upload and download bytes.
-  // AWS omission defaults to 1 GiB; explicit zero disables outbound networking.
+  // US East omission defaults to 1 GiB; explicit zero disables outbound networking.
   optional uint64 max_network_bytes = 6;
-  // AWS Agent Host retained disk allocation. Compose dry-runs derive this from
+  // US East Agent Host retained disk allocation. Compose dry-runs derive this from
   // the actual volumes. Other products and EU quotes leave this at zero.
   uint64 persistent_storage_bytes = 7;
 }
@@ -38,7 +38,7 @@ message CreateComputeQuoteRequest {
 // use the named currency's microcents (100,000,000 = one currency unit).
 // Acceptance on creation binds org, product, location, resources and limits.
 // A changed catalog, currency, expired quote or changed allocation needs a new
-// quote. Legacy EU clients may omit acceptance; AWS callers must supply it.
+// quote. Legacy EU clients may omit acceptance; US East callers must supply it.
 message ComputeQuote {
   string id = 1;
   string org_id = 2;
@@ -61,7 +61,7 @@ message ComputeQuote {
   bool available = 18;
   // Exact Agent Host allocation; resources.memory_mib rounds up for display.
   uint64 allocated_memory_bytes = 19;
-  // AWS Agent Host disks remain allocated and metered while paused. Charges
+  // US East Agent Host disks remain allocated and metered while paused. Charges
   // begin after allocation, stop after deletion, and never authorize debt or
   // automatic deletion. Existing EU data usage policy remains separate.
   uint64 persistent_storage_bytes = 20;
