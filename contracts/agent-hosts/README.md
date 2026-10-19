@@ -31,6 +31,12 @@ Every running Agent Host also receives a private platform gateway at
 identity is held only by that gateway and is rejected by Tarka's public API
 surfaces.
 
+The gateway serves Chat Completions and the other `/v1` inference endpoints,
+but not the Responses API: `/v1/responses` answers 404 with OpenAI's
+`unknown_url` error, so clients that try it first fall back to Chat
+Completions. A client that speaks only the Responses API must be switched to
+Chat Completions inside a host.
+
 Schema version 2 templates declare a managed runtime profile and the messaging
 gateways supported by that exact runtime. The profile selects a live Tarka chat
 model, caps active context at roughly 80K tokens, enables automatic compaction,
@@ -85,12 +91,15 @@ separate credential for other providers. Use Chat Completions and a live Tarka
 model such as `deepseek-v4.1-flash-eu`. Support for the OpenAI Responses API,
 Assistants, or other provider-specific APIs is not implied.
 
-n8n's Assistant also starts on Tarka. On a new host's first boot, the template
-saves the Assistant's model the way n8n's own "Connect a model" dialog does: an
-OpenAI-compatible endpoint at `http://tarka/v1` with the `tarka-local` marker,
-and the host's primary model. It also turns the Assistant's web search off.
-Both remain ordinary n8n settings the owner can change. Before its first chat,
-n8n's Assistant also asks for a code sandbox (Daytona or n8n's sandbox
+n8n's Assistant also starts on Tarka. When the template creates the owner, and
+the Assistant has no model or search connection yet, it saves the Assistant's
+model the way n8n's own "Connect a model" dialog does: an OpenAI-compatible
+endpoint at `http://tarka/v1` with the `tarka-local` marker, and the host's
+primary model. The Assistant then uses Chat Completions. The template also
+turns the Assistant's web search off. Both remain ordinary n8n settings the
+owner can change. The host's key admits only the host's own models, so after
+changing the host's model, change the Assistant's model too. Before its first
+chat, n8n's Assistant also asks for a code sandbox (Daytona or n8n's sandbox
 service), which the template does not provide. Hosts created from
 `2.41.3-tarka.1` keep their Assistant settings.
 
