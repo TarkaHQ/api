@@ -787,6 +787,11 @@ message CreateAgentHostRequest {
   bool dry_run = 17;
   // Optional for legacy EU clients; binds the normalized allocation at creation.
   string accepted_quote_id = 18;
+  // US East Agent Hosts: combined forwarded bytes per renewable five-minute
+  // allowance. Omitted uses 1 GiB for a new host and preserves an existing
+  // host's allowance. Zero disables public ingress and outbound networking.
+  // EU hosts must omit this field; their existing network policy is unchanged.
+  optional uint64 max_network_bytes = 19;
   // location selects where the host runs, such as "eu-1" or "us-1" (see
   // ListLocations). Empty selects the default location for a new host and
   // keeps the current location for an existing one. A host cannot move:
@@ -979,8 +984,8 @@ message CreateJobRequest {
   int32 timeout_seconds = 5;
   // spec carries non-secret extension fields. Typed fields take precedence.
   google.protobuf.Struct spec = 6;
-  // location is a hard constraint. Omission selects eu-1. AWS requires explicit
-  // us-1 and accepted_quote_id; there is no automatic AWS fallback. The selected
+  // location is a hard constraint. Omission selects eu-1. US East requires explicit
+  // us-1 and accepted_quote_id; there is no automatic US East fallback. The selected
   // location is immutable and returned on the resource and run.
   string location = 7 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
     max_length: 16
@@ -999,7 +1004,7 @@ message CreateJobRequest {
   uint32 queue_timeout_seconds = 11 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {maximum: 3600}];
   // Required for us-1; must match the request and be unexpired.
   string accepted_quote_id = 12;
-  // Omission defaults to 1 GiB for AWS; zero disables networking.
+  // Omission defaults to 1 GiB for US East; zero disables networking.
   optional uint64 max_network_bytes = 13;
 }
 

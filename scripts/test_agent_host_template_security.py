@@ -58,6 +58,26 @@ class AgentHostTemplateSecurityTests(unittest.TestCase):
             with self.subTest(before=before), self.assertRaises(ValueError):
                 VALIDATOR.validate_n8n_authentication_boundary(document.replace(before, after), metadata, source)
 
+    def test_onyx_search_service_matches_current_backend(self) -> None:
+        document = (VALIDATOR.CONTRACTS / "onyx.compose.yaml").read_text()
+        self.assertEqual(document.count("OPENSEARCH_HOST: index"), 2)
+        self.assertEqual(document.count('OPENSEARCH_USE_SSL: "false"'), 2)
+        self.assertIn("image: opensearchproject/opensearch:3.6.0@sha256:", document)
+        self.assertIn("opensearch-data:/usr/share/opensearch/data", document)
+        self.assertIn('node.store.allow_mmap: "false"', document)
+        self.assertNotIn("vespa-volume", document)
+        self.assertLess(document.index("/_cluster/health?wait_for_status=yellow"), document.index("alembic upgrade head"))
+        self.assertIn('not health.get("timed_out")', document)
+        metadata = document.split("\nservices:", 1)[0]
+        self.assertNotIn("service: index", metadata)
+        self.assertIn("service: api-server\n      port: 8080\n      path: /api", metadata)
+        self.assertIn("API_PREFIX: /api", document)
+        VALIDATOR.validate_public_route("onyx", metadata, Path("onyx.yaml"))
+        for old, new in (("service: api-server", "service: index"), ("port: 8080", "port: 8081"), ("path: /api", "path: /")):
+            with self.subTest(route=old), self.assertRaises(ValueError):
+                VALIDATOR.validate_public_route("onyx", metadata.replace(old, new), Path("onyx.yaml"))
+        VALIDATOR.validate_compose_security(document, metadata, Path("onyx.yaml"))
+
     def validate(self, document: str) -> None:
         VALIDATOR.validate_compose_security(document, METADATA, Path("test.yaml"))
 

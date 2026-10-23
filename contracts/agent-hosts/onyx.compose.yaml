@@ -1,10 +1,13 @@
 x-tarka:
   id: onyx
   title: Onyx
-  description: Full Onyx stack with web and API services, workers, Postgres, Vespa, Redis and MinIO.
-  version: "tarka.4"
+  description: Full Onyx stack with web and API services, workers, Postgres, OpenSearch, Redis and MinIO.
+  version: "tarka.8"
   tier: pro
   routes:
+    - service: api-server
+      port: 8080
+      path: /api
     - service: web-server
       port: 3000
       path: /
@@ -45,7 +48,7 @@ x-tarka:
     platform_services: [api-server, background]
   volume_sizes:
     db-volume: 20Gi
-    vespa-volume: 40Gi
+    opensearch-data: 40Gi
     minio-data: 20Gi
     model-cache: 30Gi
     indexing-model-cache: 30Gi
@@ -59,6 +62,25 @@ services:
       - /bin/sh
       - -ec
       - |
+        python - <<'PYWAIT'
+        import json
+        import time
+        import urllib.error
+        import urllib.request
+        opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+        deadline = time.monotonic() + 600
+        while True:
+            try:
+                with opener.open("http://index:9200/_cluster/health?wait_for_status=yellow&timeout=5s", timeout=8) as response:
+                    health = json.load(response)
+                if health.get("status") in ("yellow", "green") and not health.get("timed_out"):
+                    break
+            except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError):
+                pass
+            if time.monotonic() >= deadline:
+                raise RuntimeError("Onyx search service did not become ready")
+            time.sleep(2)
+        PYWAIT
         alembic upgrade head
         uvicorn onyx.main:app --host 127.0.0.1 --port 8081 &
         bootstrap_pid=$$!
@@ -145,7 +167,9 @@ services:
       POSTGRES_HOST: relational-db
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      VESPA_HOST: index
+      OPENSEARCH_HOST: index
+      OPENSEARCH_USE_SSL: "false"
+      OPENSEARCH_INDEX_NUM_REPLICAS: "0"
       REDIS_HOST: cache
       MODEL_SERVER_HOST: inference-model-server
       S3_ENDPOINT_URL: http://minio:9000
@@ -181,7 +205,9 @@ services:
       POSTGRES_HOST: relational-db
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      VESPA_HOST: index
+      OPENSEARCH_HOST: index
+      OPENSEARCH_USE_SSL: "false"
+      OPENSEARCH_INDEX_NUM_REPLICAS: "0"
       REDIS_HOST: cache
       MODEL_SERVER_HOST: inference-model-server
       INDEXING_MODEL_SERVER_HOST: indexing-model-server
@@ -229,8 +255,17 @@ services:
         limits: {cpus: "1", memory: 2G}
   relational-db:
     image: postgres@sha256:d9c304353c031b21e9a7e33dc4781e272a9fa802a2ab9703fe4199d72ba1422c
+    user: "70:70"
     shm_size: 1g
-    command: -c max_connections=250
+    entrypoint: [/bin/sh, -ec]
+    command:
+      - |
+        if [ -f /var/lib/postgresql/data/PG_VERSION ]; then
+          export PGDATA=/var/lib/postgresql/data
+        else
+          export PGDATA=/var/lib/postgresql/data/pgdata
+        fi
+        exec docker-entrypoint.sh postgres -c max_connections=250
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -247,23 +282,30 @@ services:
         reservations: {cpus: "0.25", memory: 512M}
         limits: {cpus: "1", memory: 2G}
   index:
-    image: vespaengine/vespa@sha256:734d02c6af037b618434a299553f90dc989c02a950377be500f24f4e2f2d0a7b
-    environment: {VESPA_SKIP_UPGRADE_CHECK: "true"}
+    image: opensearchproject/opensearch:3.6.0@sha256:b5dd1512af2a99748c942cfbbd7f32162623336b210667d0fc6333c6321f171d
+    user: "1000:1000"
+    environment:
+      discovery.type: single-node
+      node.store.allow_mmap: "false"
+      DISABLE_INSTALL_DEMO_CONFIG: "true"
+      DISABLE_SECURITY_PLUGIN: "true"
+      OPENSEARCH_JAVA_OPTS: -Xms1g -Xmx1g
     volumes:
-      - vespa-volume:/opt/vespa/var
+      - opensearch-data:/usr/share/opensearch/data
     healthcheck:
-      test: [CMD-SHELL, curl -f http://localhost:19071/state/v1/health || exit 1]
+      test: [CMD-SHELL, 'curl -fsS "http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=5s" || exit 1']
       interval: 30s
       timeout: 10s
       retries: 10
       start_period: 180s
-    expose: ["8080", "19071"]
+    expose: ["9200"]
     deploy:
       resources:
         reservations: {cpus: "0.5", memory: 2G}
         limits: {cpus: "1", memory: 4G}
   cache:
     image: redis@sha256:ff02b58f971e7d7d156a1267e283fcbbeee91773b6aa36c49dac28ecfe28eadf
+    user: "999:1000"
     command: redis-server --save "" --appendonly no
     tmpfs: [/data]
     expose: ["6379"]
@@ -272,7 +314,7 @@ services:
         reservations: {cpus: "0.1", memory: 128M}
         limits: {cpus: "0.5", memory: 512M}
   minio:
-    image: minio/minio@sha256:7330be2e7320a7a699b36f72bd06a94d8a21ec9f6f397345d9c38fc6751141f5
+    image: ghcr.io/coollabsio/minio@sha256:69b55a1c1c5dc285ce04db96689f5b2102317fc77a50680a1874ca6efd1c87f9
     command: server /data --console-address :9001
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
@@ -280,7 +322,12 @@ services:
     volumes:
       - minio-data:/data
     healthcheck:
-      test: [CMD, curl, -f, http://localhost:9000/minio/health/live]
+      test:
+        - CMD-SHELL
+        - >-
+          umask 077;
+          mc --config-dir /tmp/minio-health alias set local http://localhost:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD" >/dev/null &&
+          mc --config-dir /tmp/minio-health ready local
       interval: 30s
       timeout: 20s
       retries: 3
@@ -292,7 +339,7 @@ services:
 
 volumes:
   db-volume:
-  vespa-volume:
+  opensearch-data:
   minio-data:
   model-cache:
   indexing-model-cache:

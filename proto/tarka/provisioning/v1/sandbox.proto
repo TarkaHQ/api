@@ -243,7 +243,7 @@ message CreateCodeSandboxRequest {
   // cannot be reused with different request content.
   string idempotency_key = 4;
   // location selects where the sandbox runs, such as "eu-1" or "us-1" (see
-  // ProvisioningService.ListLocations). Omission selects eu-1. AWS requires
+  // ProvisioningService.ListLocations). Omission selects eu-1. US East requires
   // explicit us-1 placement and an accepted quote; no automatic fallback.
   // Explicit location is a hard constraint. Once selected it never changes,
   // including after a failed launch. Location is part of the fingerprint.
@@ -254,9 +254,9 @@ message CreateCodeSandboxRequest {
   }];
   // Required for us-1; optional for legacy EU clients.
   string accepted_quote_id = 6;
-  // AWS allocation; EU sandboxes retain their fixed 1 vCPU / 1 GiB profile.
+  // US East allocation; EU sandboxes retain their fixed 1 vCPU / 1 GiB profile.
   JobResources resources = 7;
-  // AWS omission defaults to 1 GiB; zero disables outbound networking.
+  // US East omission defaults to 1 GiB; zero disables outbound networking.
   optional uint64 max_network_bytes = 8;
 }
 
