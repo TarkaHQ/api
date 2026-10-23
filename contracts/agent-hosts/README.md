@@ -31,6 +31,14 @@ Every running Agent Host also receives a private platform gateway at
 identity is held only by that gateway and is rejected by Tarka's public API
 surfaces.
 
+The router does not accept some Responses input items, such as `item_reference`
+(an earlier reply referred to by ID), and refuses the request with 400
+`unsupported_input_item_type`. Inside a host, the gateway turns that refusal
+into a 404 with the same code, so clients that fall back from the Responses API
+on a 404, such as n8n's Assistant, retry on Chat Completions with the full
+history. Other clients should send earlier items in full or use Chat
+Completions.
+
 Schema version 2 templates declare a managed runtime profile and the messaging
 gateways supported by that exact runtime. The profile selects a live Tarka chat
 model, caps active context at roughly 80K tokens, enables automatic compaction,
@@ -84,6 +92,18 @@ reserved credential ID `tarkaInference` is refreshed on startup; create a
 separate credential for other providers. Use Chat Completions and a live Tarka
 model such as `deepseek-v4.1-flash-eu`. Support for the OpenAI Responses API,
 Assistants, or other provider-specific APIs is not implied.
+
+n8n's Assistant also starts on Tarka. When the template creates the owner, and
+the Assistant has no model or search connection yet, it saves the Assistant's
+model the way n8n's own "Connect a model" dialog does: an OpenAI-compatible
+endpoint at `http://tarka/v1` with the `tarka-local` marker, and the host's
+primary model. Its requests that refer back to an earlier reply are retried on
+Chat Completions. The template also turns the Assistant's web search off. Both
+remain ordinary n8n settings the owner can change. The host's key admits only
+the host's own models, so after changing the host's model, change the
+Assistant's model too. Before its first chat, n8n's Assistant also asks for a
+code sandbox (Daytona or n8n's sandbox service), which the template does not
+provide. Hosts created from `2.41.3-tarka.1` keep their Assistant settings.
 
 SQLite, workflows, encrypted credentials, and n8n's generated encryption key
 persist together on the 10 GiB `n8n-data` volume. The template runs one instance
