@@ -16,7 +16,8 @@ option java_package = "com.tarka.provisioning.v1";
 
 // CreateComputeQuoteRequest prices normalized resource allocation in the
 // organization's billing currency. It does not reserve funds or create work.
-// An omitted location always means eu-1; US East never receives implicit overflow.
+// An omitted location uses the product default from ListLocations. Existing
+// resources retain their location; accepting a quote never moves them.
 message CreateComputeQuoteRequest {
   string org_id = 1;
   // product is agents, sandboxes or jobs. Availability follows the live quote.
@@ -74,6 +75,17 @@ message ComputeQuote {
   // forwarded upload and download bytes are billed at network_gib_microcents.
   // Exhausting it suspends networking until the next funded allowance.
   uint32 network_allowance_period_seconds = 24;
+  // Advisory admission snapshot; creation rechecks capacity atomically.
+  AdmissionAssessment admission = 25;
+}
+
+// AdmissionAssessment distinguishes valid input from available deployment
+// capacity. It reserves no capacity or funds and is not a deployment guarantee.
+message AdmissionAssessment {
+  bool available = 1;
+  string reason = 2;
+  google.protobuf.Timestamp checked_at = 3;
+  bool capacity_reserved = 4;
 }
 
 message GetUsagePolicyRequest {
