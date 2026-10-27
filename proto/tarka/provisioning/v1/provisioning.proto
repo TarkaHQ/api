@@ -9,6 +9,7 @@ import "google/api/annotations.proto";
 import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
+import "tarka/provisioning/v1/agent_secrets.proto";
 import "tarka/provisioning/v1/billing_quote.proto";
 import "tarka/provisioning/v1/job.proto";
 
@@ -241,6 +242,28 @@ service ProvisioningService {
   rpc SetAgentHostRunning(SetAgentHostRunningRequest) returns (ProvisionedResource) {
     option (google.api.http) = {
       post: "/control/v1/orgs/{org_id}/agent-hosts/{agent_host_id}:running"
+      body: "*"
+    };
+  }
+
+  // PrepareAgentHostSecrets returns a console handoff without any secret values.
+  rpc PrepareAgentHostSecrets(PrepareAgentHostSecretsRequest) returns (AgentHostSecretBundle) {
+    option (google.api.http) = {
+      post: "/control/v1/orgs/{org_id}/agent-host-secret-bundles"
+      body: "*"
+    };
+  }
+
+  // GetAgentHostSecrets returns only the handoff status and key names.
+  rpc GetAgentHostSecrets(GetAgentHostSecretsRequest) returns (AgentHostSecretBundle) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/agent-host-secret-bundles/{bundle_id}"};
+  }
+
+  // UploadAgentHostSecrets accepts direct authenticated file/console uploads.
+  // This write-only method is not offered through MCP.
+  rpc UploadAgentHostSecrets(UploadAgentHostSecretsRequest) returns (AgentHostSecretBundle) {
+    option (google.api.http) = {
+      put: "/control/v1/orgs/{org_id}/agent-host-secret-bundles/{bundle_id}"
       body: "*"
     };
   }
@@ -792,6 +815,9 @@ message CreateAgentHostRequest {
   // host's allowance. Zero disables public ingress and outbound networking.
   // EU hosts must omit this field; their existing network policy is unchanged.
   optional uint64 max_network_bytes = 19;
+  // An uploaded, unexpired bundle bound to this organization, name and revision.
+  // Consumed atomically on apply; dry runs may reuse it without consuming it.
+  string secrets_bundle_id = 20;
   // location selects where the host runs, such as "eu-1" or "us-1" (see
   // ListLocations). Empty selects the default location for a new host and
   // keeps the current location for an existing one. A host cannot move:
