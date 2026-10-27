@@ -29,10 +29,11 @@ ALLOWED_DIRECTORY_SUFFIXES = {
     "proto": {".proto"},
     "scripts": {".py"},
 }
-# The copyable client example is deliberately limited to these two files.
+# Copyable HTTP client examples are explicitly enumerated; no service code.
 ALLOWED_EXAMPLE_FILES = {
     "examples/tarka-control-api/SKILL.md",
     "examples/tarka-control-api/scripts/request.py",
+    "examples/tarka-control-api/scripts/secrets.py",
 }
 SAFE_PATH_COMPONENT = re.compile(r"^[A-Za-z0-9._-]+$")
 REQUIRED_PINNED_IMAGES = {"BUF_IMAGE", "OPENAPI_VALIDATOR_IMAGE"}
