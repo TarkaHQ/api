@@ -3,7 +3,7 @@
   "info": {
     "title": "Tarka Control API",
     "description": "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management.",
-    "version": "1.15.0"
+    "version": "1.16.0"
   },
   "tags": [
     {
@@ -397,6 +397,125 @@
             "required": true,
             "schema": {
               "$ref": "#/definitions/ProvisioningServiceUpdateOrgBody"
+            }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/agent-host-secret-bundles": {
+      "post": {
+        "summary": "PrepareAgentHostSecrets returns a console handoff without any secret values.",
+        "operationId": "ProvisioningService_PrepareAgentHostSecrets",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1AgentHostSecretBundle"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProvisioningServicePrepareAgentHostSecretsBody"
+            }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/agent-host-secret-bundles/{bundle_id}": {
+      "get": {
+        "summary": "GetAgentHostSecrets returns only the handoff status and key names.",
+        "operationId": "ProvisioningService_GetAgentHostSecrets",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1AgentHostSecretBundle"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "bundle_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      },
+      "put": {
+        "summary": "UploadAgentHostSecrets accepts direct authenticated file/console uploads.\nThis write-only method is not offered through MCP.",
+        "operationId": "ProvisioningService_UploadAgentHostSecrets",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1AgentHostSecretBundle"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "bundle_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProvisioningServiceUploadAgentHostSecretsBody"
             }
           }
         ],
@@ -2792,6 +2911,10 @@
           "format": "uint64",
           "description": "US East Agent Hosts: combined forwarded bytes per renewable five-minute\nallowance. Omitted uses 1 GiB for a new host and preserves an existing\nhost's allowance. Zero disables public ingress and outbound networking.\nEU hosts must omit this field; their existing network policy is unchanged."
         },
+        "secrets_bundle_id": {
+          "type": "string",
+          "description": "An uploaded, unexpired bundle bound to this organization, name and revision.\nConsumed atomically on apply; dry runs may reuse it without consuming it."
+        },
         "location": {
           "type": "string",
           "description": "Placement location such as \"eu-1\" or \"us-1\" (see ListLocations). Empty selects the default location.",
@@ -2882,7 +3005,7 @@
           "description": "US East Agent Host retained disk allocation. Compose dry-runs derive this from\nthe actual volumes. Other products and EU quotes leave this at zero."
         }
       },
-      "description": "CreateComputeQuoteRequest prices normalized resource allocation in the\norganization's billing currency. It does not reserve funds or create work.\nAn omitted location always means eu-1; US East never receives implicit overflow."
+      "description": "CreateComputeQuoteRequest prices normalized resource allocation in the\norganization's billing currency. It does not reserve funds or create work.\nAn omitted location uses the product default from ListLocations. Existing\nresources retain their location; accepting a quote never moves them."
     },
     "ProvisioningServiceCreateGitRepositoryBody": {
       "type": "object",
@@ -3035,6 +3158,15 @@
       },
       "description": "CreateStorageCredentialRequest creates one access key scoped to a bucket."
     },
+    "ProvisioningServicePrepareAgentHostSecretsBody": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        }
+      },
+      "description": "PrepareAgentHostSecretsRequest starts an authenticated human/file handoff.\nNo secret value passes through an MCP tool. The current host revision is\ncaptured to prevent a later application from overwriting concurrent changes."
+    },
     "ProvisioningServiceRequestProductAccessBody": {
       "type": "object",
       "properties": {
@@ -3163,6 +3295,18 @@
         }
       },
       "description": "UpdateSpendLimitsRequest replaces every spend limit of an organization.\nAmounts are microcents of currency: one unit is 0.00000001 of it. A limit\nmay be zero, which stops all priced usage it applies to, and at most\n1,000,000,000,000,000 (10 million in the currency)."
+    },
+    "ProvisioningServiceUploadAgentHostSecretsBody": {
+      "type": "object",
+      "properties": {
+        "values": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "UploadAgentHostSecretsRequest is available over HTTPS/gRPC, never MCP.\nUpload from the authenticated console or the local file helper. Values are\nencrypted at rest, never returned, and cannot be replaced after upload."
     },
     "ProvisioningServiceWriteAgentHostTerminalBody": {
       "type": "object",
@@ -3320,6 +3464,25 @@
           "type": "string"
         }
       }
+    },
+    "v1AdmissionAssessment": {
+      "type": "object",
+      "properties": {
+        "available": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "checked_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "capacity_reserved": {
+          "type": "boolean"
+        }
+      },
+      "description": "AdmissionAssessment distinguishes valid input from available deployment\ncapacity. It reserves no capacity or funds and is not a deployment guarantee."
     },
     "v1AgentHostConfiguration": {
       "type": "object",
@@ -3522,6 +3685,42 @@
         }
       },
       "description": "AgentHostRuntimeProfile advertises immutable managed defaults for a template.\ncontext and compaction values are enforced by the runtime adapter rather than\naccepted from untrusted Compose or browser input."
+    },
+    "v1AgentHostSecretBundle": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "org_id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "expected_revision": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "keys": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "status": {
+          "type": "string",
+          "description": "status is awaiting_upload, ready, consumed or expired."
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "console_url": {
+          "type": "string"
+        }
+      },
+      "description": "AgentHostSecretBundle contains metadata only. The link does not authorize\naccess: the person opening it must authenticate and have organization access."
     },
     "v1AgentHostTemplate": {
       "type": "object",
@@ -3911,6 +4110,10 @@
           "type": "integer",
           "format": "int64",
           "description": "Agent Host max_network_bytes is a renewable five-minute allowance;\nforwarded upload and download bytes are billed at network_gib_microcents.\nExhausting it suspends networking until the next funded allowance."
+        },
+        "admission": {
+          "$ref": "#/definitions/v1AdmissionAssessment",
+          "description": "Advisory admission snapshot; creation rechecks capacity atomically."
         }
       },
       "description": "ComputeQuote is immutable and expires five minutes after issuance. Amounts\nuse the named currency's microcents (100,000,000 = one currency unit).\nAcceptance on creation binds org, product, location, resources and limits.\nA changed catalog, currency, expired quote or changed allocation needs a new\nquote. Legacy EU clients may omit acceptance; US East callers must supply it."
@@ -4611,9 +4814,42 @@
         "status": {
           "type": "string",
           "description": "status is \"available\", or \"preview\" when only admitted organizations may\nplace resources here."
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1LocationProduct"
+          },
+          "description": "Product-specific placement policy. Legacy resources may remain operable\neven when accepting_new_resources is false. No field grants entitlement."
+        },
+        "country_verified": {
+          "type": "boolean",
+          "description": "False means the country has not yet been verified against provider inventory."
         }
       },
       "description": "Location is a place where Tarka runs customer workloads and stores data.\nIdentifiers are stable and provider-neutral: a location keeps its id if the\nhardware or provider behind it changes."
+    },
+    "v1LocationProduct": {
+      "type": "object",
+      "properties": {
+        "product": {
+          "type": "string"
+        },
+        "is_default": {
+          "type": "boolean"
+        },
+        "accepting_new_resources": {
+          "type": "boolean"
+        },
+        "existing_resources_supported": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "string",
+          "description": "Stable, non-secret explanation when new placement is unavailable."
+        }
+      }
     },
     "v1Model": {
       "type": "object",
@@ -4957,6 +5193,10 @@
         "latest_run_id": {
           "type": "string",
           "description": "latest_run_id is populated for jobs; use GetJobRun for execution state."
+        },
+        "admission": {
+          "$ref": "#/definitions/v1AdmissionAssessment",
+          "description": "Present on validation previews; this is not a capacity reservation."
         }
       },
       "description": "ProvisionedResource is the recorded desired and observed state for a managed\nresource."

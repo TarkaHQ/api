@@ -116,13 +116,18 @@ runtime environment.
 ## Custom stacks
 
 Customers may also submit their own Compose file through the Agent Host API.
-The runtime supports multi-service stacks, public Git builds, named persistent
+The runtime supports multi-service stacks using prebuilt images, named persistent
 volumes, service dependencies, health checks, internal networking, and one or
 more HTTP routes. Host mounts, privileged containers, host namespaces, devices,
 external networks, and Docker socket access are intentionally rejected.
 Custom stacks may opt selected services into the managed Tarka model environment
 without pretending the platform can configure an arbitrary application's own
 gateway or compaction implementation.
+
+Dockerfile and Git builds are currently disabled, including public Git URLs
+(`agent_host_remote_builds_disabled`). A published build field is not runtime
+availability. Customer builds must remain off until an isolated per-build
+runtime and a separately scoped publisher have been qualified.
 
 Onyx `tarka.8` pairs the pinned modern backend with OpenSearch 3.6.0, matching
 its upstream Compose dependency. The search service is private to the host,

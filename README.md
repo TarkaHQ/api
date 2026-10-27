@@ -209,8 +209,11 @@ Check organization-scoped product and location discovery and obtain an available
 compute quote before creation. Contract definitions alone do not enable a
 runtime; product approval, billing and shared capacity checks still apply.
 
-Omitting a location selects `eu-1`; there is no automatic fallback to US East.
-Explicit placement is a hard constraint. The chosen location is returned and
+Omitting a location selects the current per-product default reported by
+`ListLocations`. Its `capabilities` distinguish the default, availability for
+new resources, and support for existing resources. Explicit placement is a hard
+constraint; a closed location fails instead of silently selecting another pool.
+The chosen location is returned in the quote and
 cannot change during retries or a failed launch. Existing resources retain
 placement. A location list is not a reservation.
 
@@ -225,7 +228,8 @@ fields select 1000 millicores, 1024 MiB RAM and 1024 MiB scratch; explicit value
 must meet the bounds documented in the protobuf. Images are resolved to a
 permitted immutable digest before execution; embedded registry credentials,
 privileged/host access and arbitrary extension-field runtime overrides are
-not accepted. This preview supports public registries and Tarka's registry.
+not accepted. Jobs currently accept the configured public-registry allowlist;
+org-private Tarka registry support will be documented after its runtime rollout.
 
 A job's idempotency key retries the same mutation for 24 hours; changed content
 with the same key is rejected. Creating a new revision of an active job is a
@@ -471,9 +475,11 @@ Apache License 2.0. See [`LICENSE`](LICENSE).
 `POST /control/v1/orgs/{org_id}/compute-quotes` returns a five-minute quote in
 billing currency, including normalized allocation, runtime/network caps,
 minimum charge, maximum reservation and immutable price/FX version. Creation
-uses `accepted_quote_id`; US East requires explicit `us-1`. No implicit overflow
-from EU is permitted. Availability follows the returned quote. EU legacy clients remain
-compatible; the console shows quotes before creation.
+uses `accepted_quote_id` and the returned location; US East requires price
+consent even when it is the default. Existing EU resources retain placement and
+billing. Agent Host previews include `admission` with a timestamp, availability
+and reason; they reserve no capacity. Availability can change before atomic
+creation. The console shows quotes before creation.
 
 `GET /control/v1/orgs/{org_id}/usage-policy` reports allowances, inventory and
 an estimate. Only an owner can accept the current estimate using `/accept`, and
@@ -488,3 +494,16 @@ is paused; runtime does not. A temporary startup credit hold is shown separately
 and unused funds are released. Exhausted credit suspends compute/networking and
 retains disks without automatic deletion or unpaid debt. These fields do not
 activate US East Agent Hosts: live availability and qualification remain separate.
+
+### Host secret handoff
+
+`PrepareAgentHostSecrets` creates an organization/name/revision-bound handoff
+and returns an authenticated console URL. A person uploads a `.env` or JSON
+string-map file through the console or the bundled
+[`secrets.py` helper](examples/tarka-control-api/scripts/secrets.py). Only direct
+HTTP exposes `UploadAgentHostSecrets`; MCP exposes preparation and metadata
+reads, never secret values. Once `GetAgentHostSecrets` reports `ready`, pass
+`secrets_bundle_id` to `CreateAgentHost`. The one-hour bundle is consumed in the
+same transaction as successful admission. Rejected admission does not consume
+it. A revision change requires a new bundle. Values are never returned by the
+metadata endpoints; ordinary direct-HTTP inline clients remain compatible.

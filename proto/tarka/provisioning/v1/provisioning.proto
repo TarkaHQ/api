@@ -9,6 +9,7 @@ import "google/api/annotations.proto";
 import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
+import "tarka/provisioning/v1/agent_secrets.proto";
 import "tarka/provisioning/v1/billing_quote.proto";
 import "tarka/provisioning/v1/job.proto";
 
@@ -21,7 +22,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Tarka Control API"
     description: "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management."
-    version: "1.15.0"
+    version: "1.16.0"
   }
   host: "tarka.rest"
   schemes: HTTPS
@@ -241,6 +242,28 @@ service ProvisioningService {
   rpc SetAgentHostRunning(SetAgentHostRunningRequest) returns (ProvisionedResource) {
     option (google.api.http) = {
       post: "/control/v1/orgs/{org_id}/agent-hosts/{agent_host_id}:running"
+      body: "*"
+    };
+  }
+
+  // PrepareAgentHostSecrets returns a console handoff without any secret values.
+  rpc PrepareAgentHostSecrets(PrepareAgentHostSecretsRequest) returns (AgentHostSecretBundle) {
+    option (google.api.http) = {
+      post: "/control/v1/orgs/{org_id}/agent-host-secret-bundles"
+      body: "*"
+    };
+  }
+
+  // GetAgentHostSecrets returns only the handoff status and key names.
+  rpc GetAgentHostSecrets(GetAgentHostSecretsRequest) returns (AgentHostSecretBundle) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/agent-host-secret-bundles/{bundle_id}"};
+  }
+
+  // UploadAgentHostSecrets accepts direct authenticated file/console uploads.
+  // This write-only method is not offered through MCP.
+  rpc UploadAgentHostSecrets(UploadAgentHostSecretsRequest) returns (AgentHostSecretBundle) {
+    option (google.api.http) = {
+      put: "/control/v1/orgs/{org_id}/agent-host-secret-bundles/{bundle_id}"
       body: "*"
     };
   }
@@ -792,6 +815,9 @@ message CreateAgentHostRequest {
   // host's allowance. Zero disables public ingress and outbound networking.
   // EU hosts must omit this field; their existing network policy is unchanged.
   optional uint64 max_network_bytes = 19;
+  // An uploaded, unexpired bundle bound to this organization, name and revision.
+  // Consumed atomically on apply; dry runs may reuse it without consuming it.
+  string secrets_bundle_id = 20;
   // location selects where the host runs, such as "eu-1" or "us-1" (see
   // ListLocations). Empty selects the default location for a new host and
   // keeps the current location for an existing one. A host cannot move:
@@ -1033,6 +1059,8 @@ message ProvisionedResource {
   string location = 12;
   // latest_run_id is populated for jobs; use GetJobRun for execution state.
   string latest_run_id = 13;
+  // Present on validation previews; this is not a capacity reservation.
+  AdmissionAssessment admission = 14;
 }
 
 // CreateApiKeyRequest creates an organization-scoped customer credential.
@@ -1362,6 +1390,20 @@ message Location {
   // status is "available", or "preview" when only admitted organizations may
   // place resources here.
   string status = 6;
+  // Product-specific placement policy. Legacy resources may remain operable
+  // even when accepting_new_resources is false. No field grants entitlement.
+  repeated LocationProduct capabilities = 7;
+  // False means the country has not yet been verified against provider inventory.
+  bool country_verified = 8;
+}
+
+message LocationProduct {
+  string product = 1;
+  bool is_default = 2;
+  bool accepting_new_resources = 3;
+  bool existing_resources_supported = 4;
+  // Stable, non-secret explanation when new placement is unavailable.
+  string reason = 5;
 }
 
 // CreateStorageBucketRequest defines a private S3-compatible bucket.

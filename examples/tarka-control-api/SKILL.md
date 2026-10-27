@@ -68,6 +68,27 @@ artifacts; follow the documented behavior, not just the HTTP verb.
 
 ## Follow through
 
+- Discover placement with `GET /locations?org_id=...`. Each product has an
+  `is_default` and `accepting_new_resources` capability. Omit location for a new
+  resource to use that default, review the returned quote, and bind creation to
+  its location and `accepted_quote_id`. An explicit unavailable location fails;
+  existing resources retain placement. A successful dry run is not a capacity
+  reservation: inspect `admission.available` and `admission.reason` as well.
+- Agent Host Dockerfile/Git builds are currently disabled, including public
+  Git URLs. Use an already-built container image. Never promise a build merely
+  because the contract accepts a build field.
+- For host secrets, call `PrepareAgentHostSecrets` (POST
+  `/orgs/{org_id}/agent-host-secret-bundles` with the host `name`) and give its
+  `console_url` to the person. Alternatively, the person runs
+  `python3 "$TARKA_SKILL_DIR/scripts/secrets.py" --org "$ORG_ID" --bundle
+  "$BUNDLE_ID" --file /path/to/private.env` in their own terminal with their
+  `TARKA_ACCESS_TOKEN` already set. Do not read the file or ask for values in chat.
+  Poll `GetAgentHostSecrets` for metadata only, then pass `secrets_bundle_id` to
+  creation. The bundle expires in one hour, is single-use, and is bound to the
+  organization, host name and current revision. Concurrent host changes require
+  a new handoff. MCP has no secret-value upload tool; direct HTTP remains
+  available to human-operated clients. Never put registry PATs into MCP.
+
 - Creating an inference service, Agent Host, or job applies desired state.
   Reusing its organization, type and name updates the same resource. Inspect an
   existing resource before updating it. A successful response does not mean the
