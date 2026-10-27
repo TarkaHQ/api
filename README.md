@@ -228,7 +228,8 @@ fields select 1000 millicores, 1024 MiB RAM and 1024 MiB scratch; explicit value
 must meet the bounds documented in the protobuf. Images are resolved to a
 permitted immutable digest before execution; embedded registry credentials,
 privileged/host access and arbitrary extension-field runtime overrides are
-not accepted. This preview supports public registries and Tarka's registry.
+not accepted. Jobs currently accept the configured public-registry allowlist;
+org-private Tarka registry support will be documented after its runtime rollout.
 
 A job's idempotency key retries the same mutation for 24 hours; changed content
 with the same key is rejected. Creating a new revision of an active job is a
