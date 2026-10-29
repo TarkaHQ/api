@@ -12,6 +12,7 @@ import "protoc-gen-openapiv2/options/annotations.proto";
 import "tarka/provisioning/v1/agent_secrets.proto";
 import "tarka/provisioning/v1/billing_quote.proto";
 import "tarka/provisioning/v1/job.proto";
+import "tarka/provisioning/v1/registry_credentials.proto";
 
 option csharp_namespace = "Tarka.Provisioning.V1";
 option go_package = "github.com/TarkaHQ/api/gen/go/tarka/provisioning/v1;provisioningv1";
@@ -22,7 +23,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Tarka Control API"
     description: "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management."
-    version: "1.16.0"
+    version: "1.17.0"
   }
   host: "tarka.rest"
   schemes: HTTPS
@@ -180,6 +181,23 @@ service ProvisioningService {
   // secret references that may be carried into a later revision.
   rpc GetAgentHostConfiguration(GetAgentHostConfigurationRequest) returns (AgentHostConfiguration) {
     option (google.api.http) = {get: "/control/v1/orgs/{org_id}/agent-hosts/{agent_host_id}/configuration"};
+  }
+
+  // StartAgentHostRegistryTest validates a complete credential assignment in a
+  // disposable worker. It does not allocate a host or change saved credentials.
+  rpc StartAgentHostRegistryTest(StartAgentHostRegistryTestRequest) returns (AgentHostRegistryTest) {
+    option (google.api.http) = {
+      post: "/control/v1/orgs/{org_id}/agent-host-registry-tests"
+      body: "*"
+    };
+  }
+
+  rpc GetAgentHostRegistryTest(GetAgentHostRegistryTestRequest) returns (AgentHostRegistryTest) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/agent-host-registry-tests/{test_id}"};
+  }
+
+  rpc CancelAgentHostRegistryTest(CancelAgentHostRegistryTestRequest) returns (AgentHostRegistryTest) {
+    option (google.api.http) = {delete: "/control/v1/orgs/{org_id}/agent-host-registry-tests/{test_id}"};
   }
 
   // GetAgentHostGatewayPairing returns a short-lived pairing artifact for a
@@ -818,6 +836,11 @@ message CreateAgentHostRequest {
   // An uploaded, unexpired bundle bound to this organization, name and revision.
   // Consumed atomically on apply; dry runs may reuse it without consuming it.
   string secrets_bundle_id = 20;
+  // Applies a successful, unexpired pull test's complete named-credential set.
+  // Bound to organization, host name, current credential versions and images.
+  // Mutually exclusive with github_registry_credentials. Omission preserves
+  // named credentials. Dry runs do not consume the test; apply consumes it once.
+  string registry_test_id = 21;
   // location selects where the host runs, such as "eu-1" or "us-1" (see
   // ListLocations). Empty selects the default location for a new host and
   // keeps the current location for an existing one. A host cannot move:
@@ -973,6 +996,7 @@ message AgentHostConfiguration {
   AgentHostRuntimeConfiguration runtime = 11;
   // github_registry_access never contains the saved token.
   AgentHostGitHubRegistryAccess github_registry_access = 12;
+  repeated AgentHostRegistryCredential registry_credentials = 13;
 }
 
 // GetAgentHostGatewayPairingRequest selects a configured post-deploy gateway.

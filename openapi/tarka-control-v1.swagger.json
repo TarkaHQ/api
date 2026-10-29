@@ -3,7 +3,7 @@
   "info": {
     "title": "Tarka Control API",
     "description": "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management.",
-    "version": "1.16.0"
+    "version": "1.17.0"
   },
   "tags": [
     {
@@ -398,6 +398,115 @@
             "schema": {
               "$ref": "#/definitions/ProvisioningServiceUpdateOrgBody"
             }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/agent-host-registry-tests": {
+      "post": {
+        "summary": "StartAgentHostRegistryTest validates a complete credential assignment in a\ndisposable worker. It does not allocate a host or change saved credentials.",
+        "operationId": "ProvisioningService_StartAgentHostRegistryTest",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1AgentHostRegistryTest"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProvisioningServiceStartAgentHostRegistryTestBody"
+            }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/agent-host-registry-tests/{test_id}": {
+      "get": {
+        "operationId": "ProvisioningService_GetAgentHostRegistryTest",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1AgentHostRegistryTest"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "test_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      },
+      "delete": {
+        "operationId": "ProvisioningService_CancelAgentHostRegistryTest",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1AgentHostRegistryTest"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "test_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
           }
         ],
         "tags": [
@@ -2915,6 +3024,10 @@
           "type": "string",
           "description": "An uploaded, unexpired bundle bound to this organization, name and revision.\nConsumed atomically on apply; dry runs may reuse it without consuming it."
         },
+        "registry_test_id": {
+          "type": "string",
+          "description": "Applies a successful, unexpired pull test's complete named-credential set.\nBound to organization, host name, current credential versions and images.\nMutually exclusive with github_registry_credentials. Omission preserves\nnamed credentials. Dry runs do not consume the test; apply consumes it once."
+        },
         "location": {
           "type": "string",
           "description": "Placement location such as \"eu-1\" or \"us-1\" (see ListLocations). Empty selects the default location.",
@@ -3211,6 +3324,31 @@
           "type": "boolean"
         }
       }
+    },
+    "ProvisioningServiceStartAgentHostRegistryTestBody": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "credentials": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1AgentHostRegistryCredentialInput"
+          },
+          "maxItems": 16
+        },
+        "images": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1AgentHostRegistryTestImage"
+          },
+          "maxItems": 32
+        }
+      },
+      "description": "StartAgentHostRegistryTestRequest also supports a new host by name, before\nruntime allocation or billing. Omitted credentials mean anonymous pulls."
     },
     "ProvisioningServiceUpdateInferenceCaptureBody": {
       "type": "object",
@@ -3529,6 +3667,13 @@
         "github_registry_access": {
           "$ref": "#/definitions/v1AgentHostGitHubRegistryAccess",
           "description": "github_registry_access never contains the saved token."
+        },
+        "registry_credentials": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1AgentHostRegistryCredential"
+          }
         }
       },
       "description": "AgentHostConfiguration is a redacted editable snapshot of the active\nrevision. Secret variables have empty values and preserve_existing=true."
@@ -3628,6 +3773,118 @@
         }
       },
       "description": "AgentHostGitHubRegistryCredentials changes this host's ghcr.io credentials.\nA classic GitHub PAT needs read:packages and access to every referenced image."
+    },
+    "v1AgentHostRegistryCredential": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "username": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "services": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "AgentHostRegistryCredential is metadata only. A saved PAT is never returned."
+    },
+    "v1AgentHostRegistryCredentialInput": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "username": {
+          "type": "string",
+          "maxLength": 39
+        },
+        "token": {
+          "type": "string",
+          "format": "password",
+          "maxLength": 4096
+        },
+        "version": {
+          "type": "string"
+        },
+        "services": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Each Compose service may be assigned to at most one credential.",
+          "maxItems": 32
+        }
+      },
+      "description": "AgentHostRegistryCredentialInput is a complete desired credential assignment.\nAn existing id/version with an omitted token preserves that saved PAT.\nNew/replacement PATs are accepted only through a human-controlled secret input."
+    },
+    "v1AgentHostRegistryTest": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "description": "queued, running, succeeded, failed, cancelled, consumed, or expired."
+        },
+        "error_code": {
+          "type": "string",
+          "description": "Bounded, non-secret failure code; never an upstream response body."
+        },
+        "credentials": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1AgentHostRegistryCredential"
+          }
+        },
+        "images": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1AgentHostRegistryTestImage"
+          },
+          "description": "Successful checks return immutable image references per Compose service."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1AgentHostRegistryTestImage": {
+      "type": "object",
+      "properties": {
+        "service": {
+          "type": "string"
+        },
+        "image": {
+          "type": "string",
+          "description": "Only canonical ghcr.io references are accepted. Images are downloaded,\nverified and discarded; their entrypoints are never executed.",
+          "maxLength": 1024
+        }
+      }
     },
     "v1AgentHostRuntimeConfiguration": {
       "type": "object",
