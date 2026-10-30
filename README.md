@@ -507,3 +507,28 @@ reads, never secret values. Once `GetAgentHostSecrets` reports `ready`, pass
 same transaction as successful admission. Rejected admission does not consume
 it. A revision change requires a new bundle. Values are never returned by the
 metadata endpoints; ordinary direct-HTTP inline clients remain compatible.
+
+### Source connections and isolated builds (contract preview)
+
+The organization-scoped `/control/v1/orgs/{org_id}/source/*` contract adds
+GitHub App authorization, Hosted Git connections, source targets and build
+history/logs. These capabilities remain unavailable until the isolated runtime
+and registry rollout is qualified; publishing this contract does not enable
+customer Dockerfiles.
+
+An organization administrator authorizes GitHub in their browser and chooses
+repositories visible to both their GitHub identity and the App. Credentials
+remain server-side. Installation IDs alone never grant access. Repository
+removal or installation revocation cancels queued work and stops active work.
+
+Targets bind a repository, exact branch and local Dockerfile/context per service.
+Builds initially produce linux/amd64 images. They accept no forwarded secret,
+SSH key, private external dependency credential or privileged build entitlement.
+Queue requests are idempotent. Included allowance is five starts per organization
+per rolling 24 hours; platform failures do not consume it. Runtime is capped at
+15 minutes and two builds globally. Monetary build charging is inactive.
+
+A successful build returns immutable images for normal host creation/apply.
+Building does not itself create a host or authorize its price. Compose services
+must all finish before a revision is applied; failed builds preserve the running
+host. Build logs are untrusted plain text and must be escaped by clients.
