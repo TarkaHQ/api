@@ -13,6 +13,7 @@ import "tarka/provisioning/v1/agent_secrets.proto";
 import "tarka/provisioning/v1/billing_quote.proto";
 import "tarka/provisioning/v1/job.proto";
 import "tarka/provisioning/v1/registry_credentials.proto";
+import "tarka/provisioning/v1/source_builds.proto";
 
 option csharp_namespace = "Tarka.Provisioning.V1";
 option go_package = "github.com/TarkaHQ/api/gen/go/tarka/provisioning/v1;provisioningv1";
@@ -23,7 +24,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Tarka Control API"
     description: "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management."
-    version: "1.17.0"
+    version: "1.18.0"
   }
   host: "tarka.rest"
   schemes: HTTPS
@@ -198,6 +199,79 @@ service ProvisioningService {
 
   rpc CancelAgentHostRegistryTest(CancelAgentHostRegistryTestRequest) returns (AgentHostRegistryTest) {
     option (google.api.http) = {delete: "/control/v1/orgs/{org_id}/agent-host-registry-tests/{test_id}"};
+  }
+
+  // Source integration and isolated builds are capability-gated. Contract
+  // publication alone does not enable them or alter existing image-only hosts.
+  rpc StartGitHubSourceAuthorization(StartGitHubSourceAuthorizationRequest) returns (GitHubSourceAuthorization) {
+    option (google.api.http) = {
+      post: "/control/v1/orgs/{org_id}/source/github/authorizations"
+      body: "*"
+    };
+  }
+
+  rpc ListGitHubSourceInstallations(ListGitHubSourceInstallationsRequest) returns (ListGitHubSourceInstallationsResponse) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/source/github/authorizations/{authorization_id}/installations"};
+  }
+
+  rpc ListGitHubSourceRepositories(ListGitHubSourceRepositoriesRequest) returns (ListGitHubSourceRepositoriesResponse) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/source/github/authorizations/{authorization_id}/installations/{installation_id}/repositories"};
+  }
+
+  rpc ConnectGitHubSource(ConnectGitHubSourceRequest) returns (SourceConnection) {
+    option (google.api.http) = {
+      post: "/control/v1/orgs/{org_id}/source/github/connections"
+      body: "*"
+    };
+  }
+
+  rpc ConnectHostedGitSource(ConnectHostedGitSourceRequest) returns (SourceConnection) {
+    option (google.api.http) = {
+      post: "/control/v1/orgs/{org_id}/source/hosted-git/connections"
+      body: "*"
+    };
+  }
+
+  rpc ListSourceConnections(ListSourceConnectionsRequest) returns (ListSourceConnectionsResponse) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/source/connections"};
+  }
+
+  rpc DisconnectSourceConnection(DisconnectSourceConnectionRequest) returns (SourceConnection) {
+    option (google.api.http) = {delete: "/control/v1/orgs/{org_id}/source/connections/{connection_id}"};
+  }
+
+  rpc PutSourceTarget(PutSourceTargetRequest) returns (SourceTarget) {
+    option (google.api.http) = {
+      put: "/control/v1/orgs/{org_id}/source/targets/{name}"
+      body: "*"
+    };
+  }
+
+  rpc ListSourceTargets(ListSourceTargetsRequest) returns (ListSourceTargetsResponse) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/source/targets"};
+  }
+
+  rpc StartSourceBuild(StartSourceBuildRequest) returns (SourceBuild) {
+    option (google.api.http) = {
+      post: "/control/v1/orgs/{org_id}/source/builds"
+      body: "*"
+    };
+  }
+
+  rpc ListSourceBuilds(ListSourceBuildsRequest) returns (ListSourceBuildsResponse) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/source/builds"};
+  }
+
+  rpc GetSourceBuild(GetSourceBuildRequest) returns (SourceBuild) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/source/builds/{build_id}"};
+  }
+
+  rpc CancelSourceBuild(CancelSourceBuildRequest) returns (SourceBuild) {
+    option (google.api.http) = {delete: "/control/v1/orgs/{org_id}/source/builds/{build_id}"};
+  }
+
+  rpc GetSourceBuildLogs(GetSourceBuildLogsRequest) returns (GetSourceBuildLogsResponse) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/source/builds/{build_id}/logs"};
   }
 
   // GetAgentHostGatewayPairing returns a short-lived pairing artifact for a

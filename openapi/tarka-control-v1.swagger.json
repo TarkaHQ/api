@@ -3,7 +3,7 @@
   "info": {
     "title": "Tarka Control API",
     "description": "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management.",
-    "version": "1.17.0"
+    "version": "1.18.0"
   },
   "tags": [
     {
@@ -2456,6 +2456,526 @@
         ]
       }
     },
+    "/control/v1/orgs/{org_id}/source/builds": {
+      "get": {
+        "operationId": "ProvisioningService_ListSourceBuilds",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListSourceBuildsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "target_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      },
+      "post": {
+        "operationId": "ProvisioningService_StartSourceBuild",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1SourceBuild"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProvisioningServiceStartSourceBuildBody"
+            }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/source/builds/{build_id}": {
+      "get": {
+        "operationId": "ProvisioningService_GetSourceBuild",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1SourceBuild"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "build_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      },
+      "delete": {
+        "operationId": "ProvisioningService_CancelSourceBuild",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1SourceBuild"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "build_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/source/builds/{build_id}/logs": {
+      "get": {
+        "operationId": "ProvisioningService_GetSourceBuildLogs",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetSourceBuildLogsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "build_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "from_sequence",
+            "description": "Zero for the first page, otherwise the next_sequence returned previously.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/source/connections": {
+      "get": {
+        "operationId": "ProvisioningService_ListSourceConnections",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListSourceConnectionsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/source/connections/{connection_id}": {
+      "delete": {
+        "operationId": "ProvisioningService_DisconnectSourceConnection",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1SourceConnection"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "connection_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/source/github/authorizations": {
+      "post": {
+        "summary": "Source integration and isolated builds are capability-gated. Contract\npublication alone does not enable them or alter existing image-only hosts.",
+        "operationId": "ProvisioningService_StartGitHubSourceAuthorization",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GitHubSourceAuthorization"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProvisioningServiceStartGitHubSourceAuthorizationBody"
+            }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/source/github/authorizations/{authorization_id}/installations": {
+      "get": {
+        "operationId": "ProvisioningService_ListGitHubSourceInstallations",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListGitHubSourceInstallationsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "authorization_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/source/github/authorizations/{authorization_id}/installations/{installation_id}/repositories": {
+      "get": {
+        "operationId": "ProvisioningService_ListGitHubSourceRepositories",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListGitHubSourceRepositoriesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "authorization_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "installation_id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/source/github/connections": {
+      "post": {
+        "operationId": "ProvisioningService_ConnectGitHubSource",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1SourceConnection"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProvisioningServiceConnectGitHubSourceBody"
+            }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/source/hosted-git/connections": {
+      "post": {
+        "operationId": "ProvisioningService_ConnectHostedGitSource",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1SourceConnection"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProvisioningServiceConnectHostedGitSourceBody"
+            }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/source/targets": {
+      "get": {
+        "operationId": "ProvisioningService_ListSourceTargets",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListSourceTargetsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/source/targets/{name}": {
+      "put": {
+        "operationId": "ProvisioningService_PutSourceTarget",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1SourceTarget"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProvisioningServicePutSourceTargetBody"
+            }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
     "/control/v1/orgs/{org_id}/spend-limits": {
       "get": {
         "summary": "GetSpendLimits returns an organization's monthly spend limits and what it\nhas been charged against each in the current UTC calendar month.",
@@ -2941,6 +3461,35 @@
       "type": "object",
       "description": "CancelJobRunRequest requires an organization owner, admin or operator."
     },
+    "ProvisioningServiceConnectGitHubSourceBody": {
+      "type": "object",
+      "properties": {
+        "authorization_id": {
+          "type": "string"
+        },
+        "installation_id": {
+          "type": "string",
+          "format": "int64"
+        },
+        "repository_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "int64"
+          },
+          "maxItems": 100
+        }
+      }
+    },
+    "ProvisioningServiceConnectHostedGitSourceBody": {
+      "type": "object",
+      "properties": {
+        "repository_id": {
+          "type": "string"
+        }
+      },
+      "description": "Connect an already owned Hosted Git resource. No clone credential is supplied."
+    },
     "ProvisioningServiceCreateAgentHostBody": {
       "type": "object",
       "properties": {
@@ -3280,6 +3829,28 @@
       },
       "description": "PrepareAgentHostSecretsRequest starts an authenticated human/file handoff.\nNo secret value passes through an MCP tool. The current host revision is\ncaptured to prevent a later application from overwriting concurrent changes."
     },
+    "ProvisioningServicePutSourceTargetBody": {
+      "type": "object",
+      "properties": {
+        "repository_id": {
+          "type": "string"
+        },
+        "branch": {
+          "type": "string"
+        },
+        "config": {
+          "$ref": "#/definitions/v1SourceBuildConfig"
+        },
+        "auto_build": {
+          "type": "boolean"
+        },
+        "expected_version": {
+          "type": "string",
+          "description": "Required for an existing target; prevents stale configuration replacement."
+        }
+      },
+      "description": "Creating a target does not create a host or grant price/deployment consent.\nSet auto_build explicitly to build future pushes to this exact branch."
+    },
     "ProvisioningServiceRequestProductAccessBody": {
       "type": "object",
       "properties": {
@@ -3349,6 +3920,25 @@
         }
       },
       "description": "StartAgentHostRegistryTestRequest also supports a new host by name, before\nruntime allocation or billing. Omitted credentials mean anonymous pulls."
+    },
+    "ProvisioningServiceStartGitHubSourceAuthorizationBody": {
+      "type": "object",
+      "description": "GitHub authorization is human-only, organization-admin scoped and one-use.\nThe returned URL uses PKCE. No GitHub credential is returned by any RPC."
+    },
+    "ProvisioningServiceStartSourceBuildBody": {
+      "type": "object",
+      "properties": {
+        "target_id": {
+          "type": "string"
+        },
+        "commit_sha": {
+          "type": "string"
+        },
+        "idempotency_key": {
+          "type": "string"
+        }
+      },
+      "description": "An immutable commit must belong to the configured repository. The backend\nverifies source access again when fetching. Idempotency keys are org scoped."
     },
     "ProvisioningServiceUpdateInferenceCaptureBody": {
       "type": "object",
@@ -4569,6 +5159,72 @@
       "default": "EXECUTION_STATUS_UNSPECIFIED",
       "description": "ExecutionStatus is the terminal or in-progress state of one execution."
     },
+    "v1GetSourceBuildLogsResponse": {
+      "type": "object",
+      "properties": {
+        "chunks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1SourceBuildLogChunk"
+          }
+        },
+        "next_sequence": {
+          "type": "string",
+          "format": "int64"
+        },
+        "truncated": {
+          "type": "boolean"
+        }
+      },
+      "description": "Logs are customer-controlled text: render as escaped plain text, never HTML.\nAt most 256 KiB per response, 10 MiB per build and seven days retention."
+    },
+    "v1GitHubSourceAuthorization": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "authorization_url": {
+          "type": "string"
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1GitHubSourceInstallation": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "int64"
+        },
+        "account": {
+          "type": "string"
+        }
+      }
+    },
+    "v1GitHubSourceRepository": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "int64"
+        },
+        "full_name": {
+          "type": "string"
+        },
+        "default_branch": {
+          "type": "string"
+        },
+        "private": {
+          "type": "boolean"
+        }
+      },
+      "description": "Metadata is the intersection of the authorizing user's and App's access."
+    },
     "v1GitRepository": {
       "type": "object",
       "properties": {
@@ -4871,6 +5527,33 @@
       },
       "description": "ListApiKeysResponse contains redacted credential metadata."
     },
+    "v1ListGitHubSourceInstallationsResponse": {
+      "type": "object",
+      "properties": {
+        "installations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1GitHubSourceInstallation"
+          }
+        },
+        "installation_url": {
+          "type": "string"
+        }
+      }
+    },
+    "v1ListGitHubSourceRepositoriesResponse": {
+      "type": "object",
+      "properties": {
+        "repositories": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1GitHubSourceRepository"
+          }
+        }
+      }
+    },
     "v1ListGitRepositoriesResponse": {
       "type": "object",
       "properties": {
@@ -5002,6 +5685,42 @@
         }
       },
       "description": "ListSandboxesResponse contains non-deleted sandboxes in newest-first order."
+    },
+    "v1ListSourceBuildsResponse": {
+      "type": "object",
+      "properties": {
+        "builds": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1SourceBuild"
+          }
+        }
+      }
+    },
+    "v1ListSourceConnectionsResponse": {
+      "type": "object",
+      "properties": {
+        "connections": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1SourceConnection"
+          }
+        }
+      }
+    },
+    "v1ListSourceTargetsResponse": {
+      "type": "object",
+      "properties": {
+        "targets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1SourceTarget"
+          }
+        }
+      }
     },
     "v1ListStorageBucketsResponse": {
       "type": "object",
@@ -5589,6 +6308,160 @@
       ],
       "default": "SANDBOX_TEMPLATE_STATUS_UNSPECIFIED",
       "description": "SandboxTemplateStatus is the lifecycle of a reusable sandbox template."
+    },
+    "v1SourceBuild": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "target_id": {
+          "type": "string"
+        },
+        "commit_sha": {
+          "type": "string"
+        },
+        "branch": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "description": "queued, fetching, building, publishing, scanning, succeeded, failed, cancelled."
+        },
+        "cancel_requested": {
+          "type": "boolean"
+        },
+        "error_code": {
+          "type": "string"
+        },
+        "images": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Complete immutable per-service image references, usable by ordinary host apply."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "started_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "finished_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "allowance_consumed": {
+          "type": "boolean",
+          "description": "Included allowance only; monetary cost is zero while this policy is active."
+        }
+      }
+    },
+    "v1SourceBuildConfig": {
+      "type": "object",
+      "properties": {
+        "services": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1SourceBuildService"
+          },
+          "maxItems": 8
+        }
+      }
+    },
+    "v1SourceBuildLogChunk": {
+      "type": "object",
+      "properties": {
+        "sequence": {
+          "type": "string",
+          "format": "int64"
+        },
+        "text": {
+          "type": "string"
+        }
+      }
+    },
+    "v1SourceBuildService": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "context": {
+          "type": "string"
+        },
+        "dockerfile": {
+          "type": "string"
+        }
+      },
+      "description": "Paths are local to the source archive. Builds are linux/amd64; no remote\ncontexts, forwarded secrets, SSH, privileged entitlements or shared caches."
+    },
+    "v1SourceConnection": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "provider": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "repositories": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1SourceRepository"
+          }
+        }
+      }
+    },
+    "v1SourceRepository": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "full_name": {
+          "type": "string"
+        },
+        "default_branch": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        }
+      }
+    },
+    "v1SourceTarget": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "repository_id": {
+          "type": "string"
+        },
+        "branch": {
+          "type": "string"
+        },
+        "config": {
+          "$ref": "#/definitions/v1SourceBuildConfig"
+        },
+        "auto_build": {
+          "type": "boolean"
+        },
+        "version": {
+          "type": "string"
+        }
+      }
     },
     "v1SpendLimits": {
       "type": "object",

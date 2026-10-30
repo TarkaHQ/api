@@ -1,0 +1,184 @@
+// Copyright 2026 Tarka
+// SPDX-License-Identifier: Apache-2.0
+syntax = "proto3";
+package tarka.provisioning.v1;
+
+import "google/protobuf/timestamp.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option csharp_namespace = "Tarka.Provisioning.V1";
+option go_package = "github.com/TarkaHQ/api/gen/go/tarka/provisioning/v1;provisioningv1";
+option java_multiple_files = true;
+option java_outer_classname = "SourceBuildsProto";
+option java_package = "com.tarka.provisioning.v1";
+
+// GitHub authorization is human-only, organization-admin scoped and one-use.
+// The returned URL uses PKCE. No GitHub credential is returned by any RPC.
+message StartGitHubSourceAuthorizationRequest {
+  string org_id = 1;
+}
+message GitHubSourceAuthorization {
+  string id = 1;
+  string authorization_url = 2;
+  google.protobuf.Timestamp expires_at = 3;
+}
+message ListGitHubSourceInstallationsRequest {
+  string org_id = 1;
+  string authorization_id = 2;
+}
+message GitHubSourceInstallation {
+  int64 id = 1;
+  string account = 2;
+}
+message ListGitHubSourceInstallationsResponse {
+  repeated GitHubSourceInstallation installations = 1;
+  string installation_url = 2;
+}
+message ListGitHubSourceRepositoriesRequest {
+  string org_id = 1;
+  string authorization_id = 2;
+  int64 installation_id = 3;
+}
+
+// Metadata is the intersection of the authorizing user's and App's access.
+message GitHubSourceRepository {
+  int64 id = 1;
+  string full_name = 2;
+  string default_branch = 3;
+  bool private = 4;
+}
+message ListGitHubSourceRepositoriesResponse {
+  repeated GitHubSourceRepository repositories = 1;
+}
+message ConnectGitHubSourceRequest {
+  string org_id = 1;
+  string authorization_id = 2;
+  int64 installation_id = 3;
+  repeated int64 repository_ids = 4 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {max_items: 100}];
+}
+message SourceRepository {
+  string id = 1;
+  string full_name = 2;
+  string default_branch = 3;
+  string status = 4;
+}
+message SourceConnection {
+  string id = 1;
+  string provider = 2;
+  string status = 3;
+  repeated SourceRepository repositories = 4;
+}
+message ListSourceConnectionsRequest {
+  string org_id = 1;
+}
+message ListSourceConnectionsResponse {
+  repeated SourceConnection connections = 1;
+}
+message DisconnectSourceConnectionRequest {
+  string org_id = 1;
+  string connection_id = 2;
+}
+
+// Connect an already owned Hosted Git resource. No clone credential is supplied.
+message ConnectHostedGitSourceRequest {
+  string org_id = 1;
+  string repository_id = 2;
+}
+
+// Paths are local to the source archive. Builds are linux/amd64; no remote
+// contexts, forwarded secrets, SSH, privileged entitlements or shared caches.
+message SourceBuildService {
+  string name = 1;
+  string context = 2;
+  string dockerfile = 3;
+}
+message SourceBuildConfig {
+  repeated SourceBuildService services = 1 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {max_items: 8}];
+}
+
+// Creating a target does not create a host or grant price/deployment consent.
+// Set auto_build explicitly to build future pushes to this exact branch.
+message PutSourceTargetRequest {
+  string org_id = 1;
+  string name = 2;
+  string repository_id = 3;
+  string branch = 4;
+  SourceBuildConfig config = 5;
+  bool auto_build = 6;
+  // Required for an existing target; prevents stale configuration replacement.
+  string expected_version = 7;
+}
+message SourceTarget {
+  string id = 1;
+  string name = 2;
+  string repository_id = 3;
+  string branch = 4;
+  SourceBuildConfig config = 5;
+  bool auto_build = 6;
+  string version = 7;
+}
+message ListSourceTargetsRequest {
+  string org_id = 1;
+}
+message ListSourceTargetsResponse {
+  repeated SourceTarget targets = 1;
+}
+
+// An immutable commit must belong to the configured repository. The backend
+// verifies source access again when fetching. Idempotency keys are org scoped.
+message StartSourceBuildRequest {
+  string org_id = 1;
+  string target_id = 2;
+  string commit_sha = 3;
+  string idempotency_key = 4;
+}
+message GetSourceBuildRequest {
+  string org_id = 1;
+  string build_id = 2;
+}
+message CancelSourceBuildRequest {
+  string org_id = 1;
+  string build_id = 2;
+}
+message ListSourceBuildsRequest {
+  string org_id = 1;
+  string target_id = 2;
+}
+message ListSourceBuildsResponse {
+  repeated SourceBuild builds = 1;
+}
+message SourceBuild {
+  string id = 1;
+  string target_id = 2;
+  string commit_sha = 3;
+  string branch = 4;
+  // queued, fetching, building, publishing, scanning, succeeded, failed, cancelled.
+  string status = 5;
+  bool cancel_requested = 6;
+  string error_code = 7;
+  // Complete immutable per-service image references, usable by ordinary host apply.
+  map<string, string> images = 8;
+  google.protobuf.Timestamp created_at = 9;
+  google.protobuf.Timestamp started_at = 10;
+  google.protobuf.Timestamp finished_at = 11;
+  // Included allowance only; monetary cost is zero while this policy is active.
+  bool allowance_consumed = 12;
+}
+message GetSourceBuildLogsRequest {
+  string org_id = 1;
+  string build_id = 2;
+  // Zero for the first page, otherwise the next_sequence returned previously.
+  int64 from_sequence = 3;
+}
+message SourceBuildLogChunk {
+  int64 sequence = 1;
+  string text = 2;
+}
+
+// Logs are customer-controlled text: render as escaped plain text, never HTML.
+// At most 256 KiB per response, 10 MiB per build and seven days retention.
+message GetSourceBuildLogsResponse {
+  repeated SourceBuildLogChunk chunks = 1;
+  int64 next_sequence = 2;
+  bool truncated = 3;
+}
