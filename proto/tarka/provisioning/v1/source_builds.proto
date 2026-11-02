@@ -94,6 +94,47 @@ message SourceBuildService {
 }
 message SourceBuildConfig {
   repeated SourceBuildService services = 1 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {max_items: 8}];
+  // Repository-relative Compose file. Empty for legacy manually configured builds.
+  string compose_path = 2;
+}
+
+message GetSourceCapabilitiesRequest {
+  string org_id = 1;
+}
+message GetSourceCapabilitiesResponse {
+  bool github_connections = 1;
+  bool hosted_git_connections = 2;
+  bool builds = 3;
+}
+
+// Resolve a branch once and inspect its Compose file without executing source.
+// Empty compose_path discovers compose.yaml, compose.yml, docker-compose.yaml,
+// then docker-compose.yml. A preview neither starts a build nor creates a host.
+message PreviewSourceRequest {
+  string org_id = 1;
+  string repository_id = 2;
+  string branch = 3;
+  string compose_path = 4;
+}
+message PreviewSourceResponse {
+  string repository_id = 1;
+  string branch = 2;
+  string commit_sha = 3;
+  string compose_path = 4;
+  string compose_yaml = 5;
+  SourceBuildConfig config = 6;
+}
+
+// Produce a complete Compose revision using only the successful build's
+// immutable images. The ordinary host quote/apply flow still grants consent.
+message PrepareSourceDeploymentRequest {
+  string org_id = 1;
+  string build_id = 2;
+}
+message PrepareSourceDeploymentResponse {
+  string compose_yaml = 1;
+  string commit_sha = 2;
+  map<string, string> images = 3;
 }
 
 // Creating a target does not create a host or grant price/deployment consent.
