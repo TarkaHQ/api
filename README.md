@@ -516,6 +516,18 @@ history/logs. These capabilities remain unavailable until the isolated runtime
 and registry rollout is qualified; publishing this contract does not enable
 customer Dockerfiles.
 
+`GetSourceCapabilities` reports current connection/build availability. Use
+`PreviewSource` to resolve a selected branch to one immutable commit, discover a
+Compose file and review its build services. It executes no source and creates
+no host. The returned configuration records the repository-relative Compose
+path so builds and later deployment use the same source snapshot.
+
+After a build succeeds, `PrepareSourceDeployment` returns a complete Compose
+revision with every build service replaced by its organization-owned immutable
+image. Existing image-only services and runtime settings are preserved. Pass
+that revision through the ordinary host quote and apply flow; this endpoint
+does not grant deployment or price consent.
+
 An organization administrator authorizes GitHub in their browser and chooses
 repositories visible to both their GitHub identity and the App. Credentials
 remain server-side. Installation IDs alone never grant access. Repository

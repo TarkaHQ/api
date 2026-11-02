@@ -3,7 +3,7 @@
   "info": {
     "title": "Tarka Control API",
     "description": "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management.",
-    "version": "1.18.0"
+    "version": "1.19.0"
   },
   "tags": [
     {
@@ -2598,6 +2598,50 @@
         ]
       }
     },
+    "/control/v1/orgs/{org_id}/source/builds/{build_id}/deployment": {
+      "post": {
+        "operationId": "ProvisioningService_PrepareSourceDeployment",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1PrepareSourceDeploymentResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "build_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProvisioningServicePrepareSourceDeploymentBody"
+            }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
     "/control/v1/orgs/{org_id}/source/builds/{build_id}/logs": {
       "get": {
         "operationId": "ProvisioningService_GetSourceBuildLogs",
@@ -2635,6 +2679,37 @@
             "required": false,
             "type": "string",
             "format": "int64"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/source/capabilities": {
+      "get": {
+        "summary": "Source integration and isolated builds are capability-gated. Contract\npublication alone does not enable them or alter existing image-only hosts.",
+        "operationId": "ProvisioningService_GetSourceCapabilities",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetSourceCapabilitiesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
           }
         ],
         "tags": [
@@ -2710,7 +2785,6 @@
     },
     "/control/v1/orgs/{org_id}/source/github/authorizations": {
       "post": {
-        "summary": "Source integration and isolated builds are capability-gated. Contract\npublication alone does not enable them or alter existing image-only hosts.",
         "operationId": "ProvisioningService_StartGitHubSourceAuthorization",
         "responses": {
           "200": {
@@ -2894,6 +2968,44 @@
             "required": true,
             "schema": {
               "$ref": "#/definitions/ProvisioningServiceConnectHostedGitSourceBody"
+            }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/source/preview": {
+      "post": {
+        "operationId": "ProvisioningService_PreviewSource",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1PreviewSourceResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProvisioningServicePreviewSourceBody"
             }
           }
         ],
@@ -3828,6 +3940,25 @@
         }
       },
       "description": "PrepareAgentHostSecretsRequest starts an authenticated human/file handoff.\nNo secret value passes through an MCP tool. The current host revision is\ncaptured to prevent a later application from overwriting concurrent changes."
+    },
+    "ProvisioningServicePrepareSourceDeploymentBody": {
+      "type": "object",
+      "description": "Produce a complete Compose revision using only the successful build's\nimmutable images. The ordinary host quote/apply flow still grants consent."
+    },
+    "ProvisioningServicePreviewSourceBody": {
+      "type": "object",
+      "properties": {
+        "repository_id": {
+          "type": "string"
+        },
+        "branch": {
+          "type": "string"
+        },
+        "compose_path": {
+          "type": "string"
+        }
+      },
+      "description": "Resolve a branch once and inspect its Compose file without executing source.\nEmpty compose_path discovers compose.yaml, compose.yml, docker-compose.yaml,\nthen docker-compose.yml. A preview neither starts a build nor creates a host."
     },
     "ProvisioningServicePutSourceTargetBody": {
       "type": "object",
@@ -5179,6 +5310,20 @@
       },
       "description": "Logs are customer-controlled text: render as escaped plain text, never HTML.\nAt most 256 KiB per response, 10 MiB per build and seven days retention."
     },
+    "v1GetSourceCapabilitiesResponse": {
+      "type": "object",
+      "properties": {
+        "github_connections": {
+          "type": "boolean"
+        },
+        "hosted_git_connections": {
+          "type": "boolean"
+        },
+        "builds": {
+          "type": "boolean"
+        }
+      }
+    },
     "v1GitHubSourceAuthorization": {
       "type": "object",
       "properties": {
@@ -5988,11 +6133,51 @@
       },
       "description": "OrgMember describes one identity's access to an organization. Email is\nincluded so organization members can identify collaborators in the console."
     },
+    "v1PrepareSourceDeploymentResponse": {
+      "type": "object",
+      "properties": {
+        "compose_yaml": {
+          "type": "string"
+        },
+        "commit_sha": {
+          "type": "string"
+        },
+        "images": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "v1PreviewOrgInvitationRequest": {
       "type": "object",
       "properties": {
         "token": {
           "type": "string"
+        }
+      }
+    },
+    "v1PreviewSourceResponse": {
+      "type": "object",
+      "properties": {
+        "repository_id": {
+          "type": "string"
+        },
+        "branch": {
+          "type": "string"
+        },
+        "commit_sha": {
+          "type": "string"
+        },
+        "compose_path": {
+          "type": "string"
+        },
+        "compose_yaml": {
+          "type": "string"
+        },
+        "config": {
+          "$ref": "#/definitions/v1SourceBuildConfig"
         }
       }
     },
@@ -6369,6 +6554,10 @@
             "$ref": "#/definitions/v1SourceBuildService"
           },
           "maxItems": 8
+        },
+        "compose_path": {
+          "type": "string",
+          "description": "Repository-relative Compose file. Empty for legacy manually configured builds."
         }
       }
     },

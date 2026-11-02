@@ -24,7 +24,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Tarka Control API"
     description: "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management."
-    version: "1.18.0"
+    version: "1.19.0"
   }
   host: "tarka.rest"
   schemes: HTTPS
@@ -203,6 +203,24 @@ service ProvisioningService {
 
   // Source integration and isolated builds are capability-gated. Contract
   // publication alone does not enable them or alter existing image-only hosts.
+  rpc GetSourceCapabilities(GetSourceCapabilitiesRequest) returns (GetSourceCapabilitiesResponse) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/source/capabilities"};
+  }
+
+  rpc PreviewSource(PreviewSourceRequest) returns (PreviewSourceResponse) {
+    option (google.api.http) = {
+      post: "/control/v1/orgs/{org_id}/source/preview"
+      body: "*"
+    };
+  }
+
+  rpc PrepareSourceDeployment(PrepareSourceDeploymentRequest) returns (PrepareSourceDeploymentResponse) {
+    option (google.api.http) = {
+      post: "/control/v1/orgs/{org_id}/source/builds/{build_id}/deployment"
+      body: "*"
+    };
+  }
+
   rpc StartGitHubSourceAuthorization(StartGitHubSourceAuthorizationRequest) returns (GitHubSourceAuthorization) {
     option (google.api.http) = {
       post: "/control/v1/orgs/{org_id}/source/github/authorizations"

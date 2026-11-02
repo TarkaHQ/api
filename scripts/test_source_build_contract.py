@@ -18,4 +18,13 @@ class SourceBuildContract(unittest.TestCase):
         self.assertIn('allowance_consumed', definitions['v1SourceBuild']['properties'])
         self.assertNotIn('cost_microcents', definitions['v1SourceBuild']['properties'])
         self.assertIn('next_sequence', definitions['v1GetSourceBuildLogsResponse']['properties'])
+    def test_source_preview_and_publication_are_explicit(self):
+        contract = load_json_object(ROOT / 'openapi/tarka-control-v1.swagger.json')
+        paths = contract['paths']
+        self.assertIn('get', paths['/control/v1/orgs/{org_id}/source/capabilities'])
+        self.assertIn('post', paths['/control/v1/orgs/{org_id}/source/preview'])
+        self.assertIn('post', paths['/control/v1/orgs/{org_id}/source/builds/{build_id}/deployment'])
+        definitions = contract['definitions']
+        self.assertIn('compose_path', definitions['v1SourceBuildConfig']['properties'])
+        self.assertEqual(set(definitions['v1PrepareSourceDeploymentResponse']['properties']), {'compose_yaml', 'commit_sha', 'images'})
 if __name__ == '__main__': unittest.main()
