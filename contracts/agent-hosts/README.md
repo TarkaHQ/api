@@ -35,9 +35,11 @@ surfaces.
 
 A host can run its chat model on an OpenAI-compatible endpoint the customer
 brings, such as OpenRouter, OpenAI, Vercel AI Gateway, Together, Groq,
-Fireworks, DeepSeek or a self-hosted server on a public HTTPS name, with the
-customer's own key. Set it in `runtime.model_endpoint` (`base_url`, `model`,
-`api_key`) instead of `runtime.primary_model_alias`.
+Fireworks, DeepSeek or a self-hosted server, with the customer's own key. Set
+it in `runtime.model_endpoint` (`base_url`, `model`, `api_key`) instead of
+`runtime.primary_model_alias`. `base_url` must be HTTPS on port 443 and a
+public DNS name, not an IP address. `model` must not be one of the host's
+Tarka utility models, since the gateway routes by model ID.
 
 Nothing in the stack changes. Workloads still call `http://tarka/v1`, and the
 managed runtimes are configured with the endpoint's model ID. The platform
@@ -50,10 +52,13 @@ Tarka with the host's own identity.
 The key is encrypted with the host's other secrets, mounted only into the
 platform gateway, and never returned or placed in the stack's own containers.
 A configuration read returns `base_url` and `model` with
-`preserve_existing_api_key` set; send that flag back to keep the key. A secret
-bundle can supply the key under the name `TARKA_MODEL_API_KEY`. An update that
-names neither a Tarka model nor an endpoint keeps the host's current choice;
-naming a Tarka model moves the host off its endpoint and discards the key.
+`preserve_existing_api_key` set; send that flag back to keep the key while the
+host name stays the same. A stored key is never sent to another host, so a
+move to another provider needs a new key. A secret bundle can supply the key
+under the name `TARKA_MODEL_API_KEY`, which is reserved: no stack variable may
+use it and no Compose file may mention it. An update that names neither a
+Tarka model nor an endpoint keeps the host's current choice; naming a Tarka
+model moves the host off its endpoint and discards the key.
 
 The provider bills the model's usage under the customer's agreement with it.
 Tarka bills the host's compute, storage and network as usual, and records no

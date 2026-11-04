@@ -1003,7 +1003,9 @@ message AgentHostRuntimeConfiguration {
   // (speech, OCR, embeddings, rerank) stay on Tarka. The provider bills the
   // model's usage; Tarka bills the host. Mutually exclusive with
   // primary_model_alias. When both are omitted, an update keeps the host's
-  // current choice, including its stored key.
+  // current choice, including its stored key; an empty model_endpoint message
+  // counts as omitted. The variable name TARKA_MODEL_API_KEY is reserved for
+  // the key: no stack variable may use it and no Compose file may mention it.
   AgentHostModelEndpoint model_endpoint = 4;
 }
 
@@ -1016,26 +1018,33 @@ message AgentHostModelEndpoint {
   // base_url is the provider's OpenAI-compatible API base, such as
   // https://openrouter.ai/api/v1. The gateway appends the part of the request
   // path after /v1, so /v1/chat/completions is sent to
-  // https://openrouter.ai/api/v1/chat/completions. It must use HTTPS on a
-  // public host name and carry no credentials, query or fragment.
+  // https://openrouter.ai/api/v1/chat/completions. It must use HTTPS on port
+  // 443 and a public DNS name, not an IP address, and carry no credentials,
+  // query or fragment. It is stored normalized: lower-case host, no default
+  // port and no trailing slash.
   string base_url = 1 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {max_length: 512}];
   // model is the provider's model ID, sent unchanged, such as
   // "anthropic/claude-sonnet-5.5" on OpenRouter. Workloads in the host select
   // it by this ID; the host's managed runtimes are configured with it.
+  // Surrounding whitespace is removed. It must not equal one of the host's
+  // Tarka utility model aliases, since the gateway routes by model ID.
   string model = 2 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
     max_length: 256
     pattern: "^[!-~]{1,256}$"
   }];
-  // api_key is the provider key, sent as a Bearer token. Write-only. A secret
-  // bundle (secrets_bundle_id) may supply it instead, under the name
-  // TARKA_MODEL_API_KEY, when this field is empty.
+  // api_key is the provider key, sent as a Bearer token. Write-only.
+  // Surrounding whitespace is removed. A secret bundle (secrets_bundle_id) may
+  // supply it instead, under the name TARKA_MODEL_API_KEY, when this field is
+  // empty and preserve_existing_api_key is false; the request must then name
+  // base_url and model.
   string api_key = 3 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
     format: "password"
     max_length: 4096
   }];
   // preserve_existing_api_key keeps the key stored on the host's latest
-  // revision. It is valid only on an update of a host that has one, and is
-  // mutually exclusive with api_key.
+  // revision. It is valid only on an update of a host that has one, and only
+  // while base_url keeps the host name the key was given for: a stored key is
+  // never sent to another host. It is mutually exclusive with api_key.
   bool preserve_existing_api_key = 4;
 }
 

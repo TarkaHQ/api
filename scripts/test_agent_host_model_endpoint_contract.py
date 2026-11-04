@@ -26,6 +26,14 @@ class AgentHostModelEndpointContract(unittest.TestCase):
         self.assertEqual(endpoint["api_key"]["maxLength"], 4096)
         self.assertEqual(endpoint["preserve_existing_api_key"]["type"], "boolean")
 
+    def test_endpoint_rules_are_documented(self):
+        endpoint = self.definitions()["v1AgentHostModelEndpoint"]["properties"]
+        self.assertIn("port\n443", endpoint["base_url"]["description"])
+        self.assertIn("never sent to another host", endpoint["preserve_existing_api_key"]["description"])
+        self.assertIn("utility model", endpoint["model"]["description"])
+        runtime = self.definitions()["v1AgentHostRuntimeConfiguration"]["properties"]
+        self.assertIn("TARKA_MODEL_API_KEY is reserved", runtime["model_endpoint"]["description"])
+
     def test_configuration_reads_return_the_same_runtime_shape(self):
         definitions = self.definitions()
         configuration = definitions["v1AgentHostConfiguration"]["properties"]
