@@ -5,7 +5,7 @@ import unittest
 from validate_openapi import (
     INFERENCE_PATH,
     INFERENCE_V2_OPENAPI_PATH,
-    INFERENCE_V2_PATH,
+    INFERENCE_GRPC_PATH,
     load,
 )
 
@@ -22,8 +22,8 @@ class AudioTemperatureLimitTests(unittest.TestCase):
                         self.assertEqual(temperature["maximum"], 1)
 
     def test_generated_grpc_gateway_contract_publishes_temperature_range(self) -> None:
-        definitions = load(INFERENCE_V2_PATH)["definitions"]
-        for request_name in ("v2AudioTranscriptionRequest", "v2AudioTranslationRequest"):
+        definitions = load(INFERENCE_GRPC_PATH)["definitions"]
+        for request_name in ("v1AudioTranscriptionRequest", "v1AudioTranslationRequest"):
             with self.subTest(request=request_name):
                 temperature = definitions[request_name]["properties"]["temperature"]
                 self.assertEqual(temperature["maximum"], 1)

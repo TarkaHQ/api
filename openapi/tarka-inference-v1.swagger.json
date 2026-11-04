@@ -2,12 +2,12 @@
   "swagger": "2.0",
   "info": {
     "title": "Tarka Inference API",
-    "version": "2.0"
+    "version": "1.0"
   },
   "tags": [
     {
       "name": "InferenceService",
-      "description": "InferenceService exposes OpenAI-compatible inference and Tarka utility RPCs.\nREST /v1 is the canonical compatibility surface. REST /v2 bindings remain as\ndeprecated migration aliases; the native gRPC package stays versioned as v2."
+      "description": "InferenceService exposes OpenAI-compatible inference and Tarka utility RPCs.\nREST /v1 is the canonical compatibility surface. REST /v2 bindings remain as\ndeprecated migration aliases; the native gRPC package is versioned as v1."
     }
   ],
   "host": "tarka.rest",
@@ -31,13 +31,13 @@
               "type": "object",
               "properties": {
                 "result": {
-                  "$ref": "#/definitions/v2AudioChunk"
+                  "$ref": "#/definitions/v1AudioChunk"
                 },
                 "error": {
                   "$ref": "#/definitions/rpcStatus"
                 }
               },
-              "title": "Stream result of v2AudioChunk"
+              "title": "Stream result of v1AudioChunk"
             }
           },
           "default": {
@@ -53,7 +53,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/v2SpeechRequest"
+              "$ref": "#/definitions/v1SpeechRequest"
             }
           }
         ],
@@ -69,7 +69,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v2AudioTextResponse"
+              "$ref": "#/definitions/v1AudioTextResponse"
             }
           },
           "default": {
@@ -85,7 +85,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/v2AudioTranscriptionRequest"
+              "$ref": "#/definitions/v1AudioTranscriptionRequest"
             }
           }
         ],
@@ -101,7 +101,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v2AudioTextResponse"
+              "$ref": "#/definitions/v1AudioTextResponse"
             }
           },
           "default": {
@@ -117,7 +117,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/v2AudioTranslationRequest"
+              "$ref": "#/definitions/v1AudioTranslationRequest"
             }
           }
         ],
@@ -133,7 +133,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v2VoiceClone"
+              "$ref": "#/definitions/v1VoiceClone"
             }
           },
           "default": {
@@ -149,7 +149,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/v2VoiceCloneRequest"
+              "$ref": "#/definitions/v1VoiceCloneRequest"
             }
           }
         ],
@@ -165,7 +165,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v2VoiceClone"
+              "$ref": "#/definitions/v1VoiceClone"
             }
           },
           "default": {
@@ -228,7 +228,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v2ChatCompletion"
+              "$ref": "#/definitions/v1ChatCompletion"
             }
           },
           "default": {
@@ -244,7 +244,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/v2ChatCompletionRequest"
+              "$ref": "#/definitions/v1ChatCompletionRequest"
             }
           }
         ],
@@ -260,7 +260,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v2DocumentLayoutResponse"
+              "$ref": "#/definitions/v1DocumentLayoutResponse"
             }
           },
           "default": {
@@ -276,7 +276,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/v2DocumentLayoutRequest"
+              "$ref": "#/definitions/v1DocumentLayoutRequest"
             }
           }
         ],
@@ -292,7 +292,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v2ListModelsResponse"
+              "$ref": "#/definitions/v1ListModelsResponse"
             }
           },
           "default": {
@@ -314,7 +314,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v2Model"
+              "$ref": "#/definitions/v1Model"
             }
           },
           "default": {
@@ -346,7 +346,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v2OCRResponse"
+              "$ref": "#/definitions/v1OCRResponse"
             }
           },
           "default": {
@@ -363,7 +363,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/v2OCRRequest"
+              "$ref": "#/definitions/v1OCRRequest"
             }
           }
         ],
@@ -379,7 +379,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v2OpenAIResponse"
+              "$ref": "#/definitions/v1OpenAIResponse"
             }
           },
           "default": {
@@ -396,7 +396,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/v2OpenAIRequest"
+              "$ref": "#/definitions/v1OpenAIRequest"
             }
           }
         ],
@@ -412,7 +412,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v2OpenAIResponse"
+              "$ref": "#/definitions/v1OpenAIResponse"
             }
           },
           "default": {
@@ -442,7 +442,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v2OpenAIResponse"
+              "$ref": "#/definitions/v1OpenAIResponse"
             }
           },
           "default": {
@@ -474,7 +474,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v2OpenAIResponse"
+              "$ref": "#/definitions/v1OpenAIResponse"
             }
           },
           "default": {
@@ -517,13 +517,13 @@
               "type": "object",
               "properties": {
                 "result": {
-                  "$ref": "#/definitions/v2AudioChunk"
+                  "$ref": "#/definitions/v1AudioChunk"
                 },
                 "error": {
                   "$ref": "#/definitions/rpcStatus"
                 }
               },
-              "title": "Stream result of v2AudioChunk"
+              "title": "Stream result of v1AudioChunk"
             }
           },
           "default": {
@@ -539,7 +539,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/v2SpeechRequest"
+              "$ref": "#/definitions/v1SpeechRequest"
             }
           }
         ],
@@ -555,7 +555,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v2AudioTextResponse"
+              "$ref": "#/definitions/v1AudioTextResponse"
             }
           },
           "default": {
@@ -571,7 +571,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/v2AudioTranscriptionRequest"
+              "$ref": "#/definitions/v1AudioTranscriptionRequest"
             }
           }
         ],
@@ -587,7 +587,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v2AudioTextResponse"
+              "$ref": "#/definitions/v1AudioTextResponse"
             }
           },
           "default": {
@@ -603,7 +603,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/v2AudioTranslationRequest"
+              "$ref": "#/definitions/v1AudioTranslationRequest"
             }
           }
         ],
@@ -619,7 +619,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v2VoiceClone"
+              "$ref": "#/definitions/v1VoiceClone"
             }
           },
           "default": {
@@ -635,7 +635,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/v2VoiceCloneRequest"
+              "$ref": "#/definitions/v1VoiceCloneRequest"
             }
           }
         ],
@@ -651,7 +651,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v2VoiceClone"
+              "$ref": "#/definitions/v1VoiceClone"
             }
           },
           "default": {
@@ -714,7 +714,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v2ChatCompletion"
+              "$ref": "#/definitions/v1ChatCompletion"
             }
           },
           "default": {
@@ -730,7 +730,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/v2ChatCompletionRequest"
+              "$ref": "#/definitions/v1ChatCompletionRequest"
             }
           }
         ],
@@ -746,7 +746,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v2DocumentLayoutResponse"
+              "$ref": "#/definitions/v1DocumentLayoutResponse"
             }
           },
           "default": {
@@ -762,7 +762,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/v2DocumentLayoutRequest"
+              "$ref": "#/definitions/v1DocumentLayoutRequest"
             }
           }
         ],
@@ -778,7 +778,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v2ListModelsResponse"
+              "$ref": "#/definitions/v1ListModelsResponse"
             }
           },
           "default": {
@@ -800,7 +800,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v2Model"
+              "$ref": "#/definitions/v1Model"
             }
           },
           "default": {
@@ -832,7 +832,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v2OCRResponse"
+              "$ref": "#/definitions/v1OCRResponse"
             }
           },
           "default": {
@@ -849,7 +849,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/v2OCRRequest"
+              "$ref": "#/definitions/v1OCRRequest"
             }
           }
         ],
@@ -865,7 +865,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v2OpenAIResponse"
+              "$ref": "#/definitions/v1OpenAIResponse"
             }
           },
           "default": {
@@ -882,7 +882,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/v2OpenAIRequest"
+              "$ref": "#/definitions/v1OpenAIRequest"
             }
           }
         ],
@@ -898,7 +898,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v2OpenAIResponse"
+              "$ref": "#/definitions/v1OpenAIResponse"
             }
           },
           "default": {
@@ -928,7 +928,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v2OpenAIResponse"
+              "$ref": "#/definitions/v1OpenAIResponse"
             }
           },
           "default": {
@@ -960,7 +960,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v2OpenAIResponse"
+              "$ref": "#/definitions/v1OpenAIResponse"
             }
           },
           "default": {
@@ -1034,7 +1034,7 @@
         }
       }
     },
-    "v2AudioChunk": {
+    "v1AudioChunk": {
       "type": "object",
       "properties": {
         "data": {
@@ -1046,7 +1046,7 @@
         }
       }
     },
-    "v2AudioTextResponse": {
+    "v1AudioTextResponse": {
       "type": "object",
       "properties": {
         "text": {
@@ -1082,7 +1082,7 @@
         }
       }
     },
-    "v2AudioTranscriptionRequest": {
+    "v1AudioTranscriptionRequest": {
       "type": "object",
       "properties": {
         "file": {
@@ -1128,7 +1128,7 @@
         }
       }
     },
-    "v2AudioTranslationRequest": {
+    "v1AudioTranslationRequest": {
       "type": "object",
       "properties": {
         "file": {
@@ -1171,7 +1171,7 @@
         }
       }
     },
-    "v2BoundingBox": {
+    "v1BoundingBox": {
       "type": "object",
       "properties": {
         "x_min": {
@@ -1192,7 +1192,7 @@
         }
       }
     },
-    "v2ChatChoice": {
+    "v1ChatChoice": {
       "type": "object",
       "properties": {
         "index": {
@@ -1200,7 +1200,7 @@
           "format": "int32"
         },
         "message": {
-          "$ref": "#/definitions/v2ChatMessage"
+          "$ref": "#/definitions/v1ChatMessage"
         },
         "finish_reason": {
           "type": "string"
@@ -1210,7 +1210,7 @@
         }
       }
     },
-    "v2ChatCompletion": {
+    "v1ChatCompletion": {
       "type": "object",
       "properties": {
         "id": {
@@ -1230,11 +1230,11 @@
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/v2ChatChoice"
+            "$ref": "#/definitions/v1ChatChoice"
           }
         },
         "usage": {
-          "$ref": "#/definitions/v2Usage"
+          "$ref": "#/definitions/v1Usage"
         },
         "system_fingerprint": {
           "type": "string"
@@ -1247,7 +1247,7 @@
         }
       }
     },
-    "v2ChatCompletionRequest": {
+    "v1ChatCompletionRequest": {
       "type": "object",
       "properties": {
         "model": {
@@ -1261,7 +1261,7 @@
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/v2ChatMessage"
+            "$ref": "#/definitions/v1ChatMessage"
           }
         },
         "stream": {
@@ -1309,7 +1309,7 @@
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/v2Tool"
+            "$ref": "#/definitions/v1Tool"
           }
         },
         "tool_choice": {},
@@ -1317,7 +1317,7 @@
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/v2FunctionDefinition"
+            "$ref": "#/definitions/v1FunctionDefinition"
           }
         },
         "function_call": {},
@@ -1354,7 +1354,7 @@
           "type": "boolean"
         },
         "stream_options": {
-          "$ref": "#/definitions/v2StreamOptions"
+          "$ref": "#/definitions/v1StreamOptions"
         },
         "modalities": {
           "type": "array",
@@ -1385,7 +1385,7 @@
         }
       }
     },
-    "v2ChatMessage": {
+    "v1ChatMessage": {
       "type": "object",
       "properties": {
         "role": {
@@ -1399,7 +1399,7 @@
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/v2ToolCall"
+            "$ref": "#/definitions/v1ToolCall"
           }
         },
         "tool_call_id": {
@@ -1416,7 +1416,7 @@
         }
       }
     },
-    "v2DocumentBlock": {
+    "v1DocumentBlock": {
       "type": "object",
       "properties": {
         "id": {
@@ -1430,13 +1430,13 @@
           "format": "int32"
         },
         "bbox": {
-          "$ref": "#/definitions/v2BoundingBox"
+          "$ref": "#/definitions/v1BoundingBox"
         },
         "polygon": {
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/v2Point"
+            "$ref": "#/definitions/v1Point"
           }
         },
         "confidence": {
@@ -1448,7 +1448,7 @@
         }
       }
     },
-    "v2DocumentLayoutRequest": {
+    "v1DocumentLayoutRequest": {
       "type": "object",
       "properties": {
         "model": {
@@ -1489,7 +1489,7 @@
         }
       }
     },
-    "v2DocumentLayoutResponse": {
+    "v1DocumentLayoutResponse": {
       "type": "object",
       "properties": {
         "id": {
@@ -1517,18 +1517,18 @@
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/v2DocumentRegion"
+            "$ref": "#/definitions/v1DocumentRegion"
           }
         },
         "usage": {
-          "$ref": "#/definitions/v2Usage"
+          "$ref": "#/definitions/v1Usage"
         },
         "extensions": {
           "type": "object"
         }
       }
     },
-    "v2DocumentPage": {
+    "v1DocumentPage": {
       "type": "object",
       "properties": {
         "index": {
@@ -1553,13 +1553,13 @@
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/v2DocumentBlock"
+            "$ref": "#/definitions/v1DocumentBlock"
           }
         }
       },
       "description": "DocumentPage is the Tarka structured-document extension to the OCR surface.\ntext remains the portable representation; markdown and blocks are additive."
     },
-    "v2DocumentRegion": {
+    "v1DocumentRegion": {
       "type": "object",
       "properties": {
         "id": {
@@ -1577,13 +1577,13 @@
           "format": "double"
         },
         "bbox": {
-          "$ref": "#/definitions/v2BoundingBox"
+          "$ref": "#/definitions/v1BoundingBox"
         },
         "polygon": {
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/v2Point"
+            "$ref": "#/definitions/v1Point"
           }
         },
         "reading_order": {
@@ -1592,7 +1592,7 @@
         }
       }
     },
-    "v2FunctionCall": {
+    "v1FunctionCall": {
       "type": "object",
       "properties": {
         "name": {
@@ -1603,7 +1603,7 @@
         }
       }
     },
-    "v2FunctionDefinition": {
+    "v1FunctionDefinition": {
       "type": "object",
       "properties": {
         "name": {
@@ -1620,7 +1620,7 @@
         }
       }
     },
-    "v2ListModelsResponse": {
+    "v1ListModelsResponse": {
       "type": "object",
       "properties": {
         "object": {
@@ -1630,12 +1630,12 @@
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/v2Model"
+            "$ref": "#/definitions/v1Model"
           }
         }
       }
     },
-    "v2Model": {
+    "v1Model": {
       "type": "object",
       "properties": {
         "id": {
@@ -1656,7 +1656,7 @@
         }
       }
     },
-    "v2OCRRequest": {
+    "v1OCRRequest": {
       "type": "object",
       "properties": {
         "model": {
@@ -1719,7 +1719,7 @@
       },
       "description": "OCR request with either one image or an images array. Public REST JSON request bodies are limited to 8 MiB in total. Each image may contain at most 32 MiB after base64 decoding on transports that permit a larger envelope."
     },
-    "v2OCRResponse": {
+    "v1OCRResponse": {
       "type": "object",
       "properties": {
         "id": {
@@ -1739,7 +1739,7 @@
           "type": "string"
         },
         "usage": {
-          "$ref": "#/definitions/v2Usage"
+          "$ref": "#/definitions/v1Usage"
         },
         "extensions": {
           "type": "object"
@@ -1748,12 +1748,12 @@
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/v2DocumentPage"
+            "$ref": "#/definitions/v1DocumentPage"
           }
         }
       }
     },
-    "v2OpenAIRequest": {
+    "v1OpenAIRequest": {
       "type": "object",
       "properties": {
         "body": {
@@ -1762,7 +1762,7 @@
       },
       "description": "OpenAIRequest and OpenAIResponse intentionally carry opaque JSON objects.\nThis keeps the compatibility boundary forward-compatible as OpenAI adds\nrequest and response union variants without weakening the typed Tarka RPCs."
     },
-    "v2OpenAIResponse": {
+    "v1OpenAIResponse": {
       "type": "object",
       "properties": {
         "body": {
@@ -1770,7 +1770,7 @@
         }
       }
     },
-    "v2Point": {
+    "v1Point": {
       "type": "object",
       "properties": {
         "x": {
@@ -1783,7 +1783,7 @@
         }
       }
     },
-    "v2SpeechRequest": {
+    "v1SpeechRequest": {
       "type": "object",
       "properties": {
         "model": {
@@ -1822,7 +1822,7 @@
         }
       }
     },
-    "v2StreamOptions": {
+    "v1StreamOptions": {
       "type": "object",
       "properties": {
         "include_usage": {
@@ -1833,21 +1833,21 @@
         }
       }
     },
-    "v2Tool": {
+    "v1Tool": {
       "type": "object",
       "properties": {
         "type": {
           "type": "string"
         },
         "function": {
-          "$ref": "#/definitions/v2FunctionDefinition"
+          "$ref": "#/definitions/v1FunctionDefinition"
         },
         "custom": {
           "type": "object"
         }
       }
     },
-    "v2ToolCall": {
+    "v1ToolCall": {
       "type": "object",
       "properties": {
         "id": {
@@ -1857,7 +1857,7 @@
           "type": "string"
         },
         "function": {
-          "$ref": "#/definitions/v2FunctionCall"
+          "$ref": "#/definitions/v1FunctionCall"
         },
         "custom": {
           "type": "object"
@@ -1868,7 +1868,7 @@
         }
       }
     },
-    "v2Usage": {
+    "v1Usage": {
       "type": "object",
       "properties": {
         "prompt_tokens": {
@@ -1895,7 +1895,7 @@
         }
       }
     },
-    "v2VoiceClone": {
+    "v1VoiceClone": {
       "type": "object",
       "properties": {
         "id": {
@@ -1922,7 +1922,7 @@
         }
       }
     },
-    "v2VoiceCloneRequest": {
+    "v1VoiceCloneRequest": {
       "type": "object",
       "properties": {
         "model": {

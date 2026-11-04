@@ -5,7 +5,7 @@ import unittest
 from validate_openapi import (
     INFERENCE_PATH,
     INFERENCE_V2_OPENAPI_PATH,
-    INFERENCE_V2_PATH,
+    INFERENCE_GRPC_PATH,
     load,
 )
 
@@ -45,7 +45,7 @@ class OCRLimitTests(unittest.TestCase):
                 )
 
     def test_generated_grpc_gateway_contract_publishes_resource_limits(self) -> None:
-        request = load(INFERENCE_V2_PATH)["definitions"]["v2OCRRequest"]
+        request = load(INFERENCE_GRPC_PATH)["definitions"]["v1OCRRequest"]
         properties = request["properties"]
         self.assertIn("8 MiB", request["description"])
         self.assertEqual(properties["image"]["minLength"], 1)

@@ -10,7 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 GENERATED_CONTRACTS = (
     "openapi/tarka-control-v1.swagger.json",
-    "openapi/tarka-inference-v2.swagger.json",
+    "openapi/tarka-inference-v1.swagger.json",
 )
 
 
