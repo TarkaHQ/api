@@ -3,7 +3,7 @@
   "info": {
     "title": "Tarka Control API",
     "description": "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management.",
-    "version": "1.19.0"
+    "version": "1.20.0"
   },
   "tags": [
     {
@@ -4495,6 +4495,33 @@
       },
       "description": "AgentHostGitHubRegistryCredentials changes this host's ghcr.io credentials.\nA classic GitHub PAT needs read:packages and access to every referenced image."
     },
+    "v1AgentHostModelEndpoint": {
+      "type": "object",
+      "properties": {
+        "base_url": {
+          "type": "string",
+          "description": "base_url is the provider's OpenAI-compatible API base, such as\nhttps://openrouter.ai/api/v1. The gateway appends the part of the request\npath after /v1, so /v1/chat/completions is sent to\nhttps://openrouter.ai/api/v1/chat/completions. It must use HTTPS on a\npublic host name and carry no credentials, query or fragment.",
+          "maxLength": 512
+        },
+        "model": {
+          "type": "string",
+          "description": "model is the provider's model ID, sent unchanged, such as\n\"anthropic/claude-sonnet-5.5\" on OpenRouter. Workloads in the host select\nit by this ID; the host's managed runtimes are configured with it.",
+          "maxLength": 256,
+          "pattern": "^[!-~]{1,256}$"
+        },
+        "api_key": {
+          "type": "string",
+          "format": "password",
+          "description": "api_key is the provider key, sent as a Bearer token. Write-only. A secret\nbundle (secrets_bundle_id) may supply it instead, under the name\nTARKA_MODEL_API_KEY, when this field is empty.",
+          "maxLength": 4096
+        },
+        "preserve_existing_api_key": {
+          "type": "boolean",
+          "description": "preserve_existing_api_key keeps the key stored on the host's latest\nrevision. It is valid only on an update of a host that has one, and is\nmutually exclusive with api_key."
+        }
+      },
+      "description": "AgentHostModelEndpoint is a customer-supplied, OpenAI-compatible chat model\nendpoint. The key is write-only: it is encrypted at rest, mounted only into\nthe host's platform gateway (never into the stack's own containers), and\nnever returned. GetAgentHostConfiguration returns base_url and model with\napi_key empty and preserve_existing_api_key true while a key is stored."
+    },
     "v1AgentHostRegistryCredential": {
       "type": "object",
       "properties": {
@@ -4612,7 +4639,7 @@
       "properties": {
         "primary_model_alias": {
           "type": "string",
-          "description": "primary_model_alias is an active chat model selected from ListModels.\nWhen empty, a new host starts on its template's default model, or the\nplatform default for a stack without a template. An update keeps the\nmodel saved in the host's latest revision, and fails if that model is no\nlonger available."
+          "description": "primary_model_alias is an active chat model selected from ListModels.\nWhen empty, a new host starts on its template's default model, or the\nplatform default for a stack without a template. An update keeps the\nmodel saved in the host's latest revision, and fails if that model is no\nlonger available. It is mutually exclusive with model_endpoint: naming a\nTarka model moves a host off its own endpoint and discards the stored key."
         },
         "gateways": {
           "type": "array",
@@ -4628,6 +4655,10 @@
             "type": "string"
           },
           "description": "platform_services names Compose services that receive managed runtime\nconfiguration and non-secret TARKA_* discovery environment variables."
+        },
+        "model_endpoint": {
+          "$ref": "#/definitions/v1AgentHostModelEndpoint",
+          "description": "model_endpoint runs the host's chat model on an OpenAI-compatible\nendpoint with a key the customer brings, instead of a Tarka model. The\nhost's platform gateway at http://tarka/v1 forwards requests for\nmodel_endpoint.model to that endpoint with that key; utility models\n(speech, OCR, embeddings, rerank) stay on Tarka. The provider bills the\nmodel's usage; Tarka bills the host. Mutually exclusive with\nprimary_model_alias. When both are omitted, an update keeps the host's\ncurrent choice, including its stored key."
         }
       },
       "description": "AgentHostRuntimeConfiguration describes Tarka-managed configuration layered\nonto a Compose stack without exposing the host-bound platform credential."

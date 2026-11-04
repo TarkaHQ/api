@@ -81,7 +81,10 @@ RPCs.
 Inside a Tarka Agent Host, the same canonical REST API is available at
 `http://tarka/v1` without a caller-supplied Authorization header. A host-bound
 service identity is injected only by the namespace-local platform gateway and
-is rejected by Tarka's public API surfaces.
+is rejected by Tarka's public API surfaces. A host may instead run its chat
+model on an OpenAI-compatible endpoint and key the customer brings
+(`runtime.model_endpoint`); the same gateway forwards that model's requests
+there and keeps every other model on Tarka.
 
 The control REST gateway is rooted at `https://tarka.rest/control/v1`. It
 accepts `Authorization: Bearer <Tarka account access token>` and uses protobuf
