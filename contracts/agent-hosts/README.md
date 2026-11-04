@@ -31,6 +31,39 @@ Every running Agent Host also receives a private platform gateway at
 identity is held only by that gateway and is rejected by Tarka's public API
 surfaces.
 
+## Your own model endpoint
+
+A host can run its chat model on an OpenAI-compatible endpoint the customer
+brings, such as OpenRouter, OpenAI, Vercel AI Gateway, Together, Groq,
+Fireworks, DeepSeek or a self-hosted server, with the customer's own key. Set
+it in `runtime.model_endpoint` (`base_url`, `model`, `api_key`) instead of
+`runtime.primary_model_alias`. `base_url` must be HTTPS on port 443 and a
+public DNS name, not an IP address. `model` must not be one of the host's
+Tarka utility models, since the gateway routes by model ID.
+
+Nothing in the stack changes. Workloads still call `http://tarka/v1`, and the
+managed runtimes are configured with the endpoint's model ID. The platform
+gateway sends requests for that model (`/chat/completions`, `/completions`
+and `/responses`) to `base_url` with the key as a Bearer token, and lists the
+model in `GET /v1/models`. Requests for every other model, including the
+host's utility models for speech, OCR, embeddings and rerank, still go to
+Tarka with the host's own identity.
+
+The key is encrypted with the host's other secrets, mounted only into the
+platform gateway, and never returned or placed in the stack's own containers.
+A configuration read returns `base_url` and `model` with
+`preserve_existing_api_key` set; send that flag back to keep the key while the
+host name stays the same. A stored key is never sent to another host, so a
+move to another provider needs a new key. A secret bundle can supply the key
+under the name `TARKA_MODEL_API_KEY`, which is reserved: no stack variable may
+use it and no Compose file may mention it. An update that names neither a
+Tarka model nor an endpoint keeps the host's current choice; naming a Tarka
+model moves the host off its endpoint and discards the key.
+
+The provider bills the model's usage under the customer's agreement with it.
+Tarka bills the host's compute, storage and network as usual, and records no
+token usage or content for these requests.
+
 The router does not accept some Responses input items, such as `item_reference`
 (an earlier reply referred to by ID), and refuses the request with 400
 `unsupported_input_item_type`. Inside a host, the gateway turns that refusal
@@ -90,8 +123,10 @@ credential points at `http://tarka/v1`; its `tarka-local` key is a non-secret
 SDK compatibility marker, replaced by the private platform gateway. The
 reserved credential ID `tarkaInference` is refreshed on startup; create a
 separate credential for other providers. Use Chat Completions and a live Tarka
-model such as `deepseek-v4.1-flash-eu`. Support for the OpenAI Responses API,
-Assistants, or other provider-specific APIs is not implied.
+model such as `deepseek-v4.1-flash-eu`, or, on a host with its own model
+endpoint, that endpoint's model, which the credential's model list includes.
+Support for the OpenAI Responses API, Assistants, or other provider-specific
+APIs is not implied.
 
 n8n's Assistant also starts on Tarka. When the template creates the owner, and
 the Assistant has no model or search connection yet, it saves the Assistant's
