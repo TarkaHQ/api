@@ -13,7 +13,7 @@ class GeneratedContractTests(unittest.TestCase):
             GENERATED_CONTRACTS,
             (
                 "openapi/tarka-control-v1.swagger.json",
-                "openapi/tarka-inference-v2.swagger.json",
+                "openapi/tarka-inference-v1.swagger.json",
             ),
         )
 

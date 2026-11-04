@@ -5,7 +5,7 @@ import unittest
 from validate_openapi import (
     INFERENCE_PATH,
     INFERENCE_V2_OPENAPI_PATH,
-    INFERENCE_V2_PATH,
+    INFERENCE_GRPC_PATH,
     load,
 )
 
@@ -37,7 +37,7 @@ class DocumentLayoutLimitTests(unittest.TestCase):
                 )
 
     def test_generated_grpc_gateway_contract_publishes_field_limits(self) -> None:
-        request = load(INFERENCE_V2_PATH)["definitions"]["v2DocumentLayoutRequest"]
+        request = load(INFERENCE_GRPC_PATH)["definitions"]["v1DocumentLayoutRequest"]
         properties = request["properties"]
         self.assertEqual(properties["image"]["minLength"], 1)
         self.assertEqual(properties["image"]["maxLength"], MAX_ENCODED_IMAGE_BYTES)

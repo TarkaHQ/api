@@ -12,7 +12,7 @@ AUTHORED_CONTRACTS = (
     (ROOT / "openapi" / "tarka-inference-v1.openapi.json", "v1"),
     (ROOT / "openapi" / "tarka-inference-v2.openapi.json", "v2"),
 )
-GENERATED_CONTRACT = ROOT / "openapi" / "tarka-inference-v2.swagger.json"
+GENERATED_CONTRACT = ROOT / "openapi" / "tarka-inference-v1.swagger.json"
 
 AUTHORED_MODEL_REQUEST_SCHEMAS = (
     "ChatCompletionRequest",
@@ -25,13 +25,13 @@ AUTHORED_MODEL_REQUEST_SCHEMAS = (
     "VoiceCloneRequest",
 )
 GENERATED_MODEL_REQUEST_SCHEMAS = (
-    "v2ChatCompletionRequest",
-    "v2OCRRequest",
-    "v2DocumentLayoutRequest",
-    "v2AudioTranscriptionRequest",
-    "v2AudioTranslationRequest",
-    "v2SpeechRequest",
-    "v2VoiceCloneRequest",
+    "v1ChatCompletionRequest",
+    "v1OCRRequest",
+    "v1DocumentLayoutRequest",
+    "v1AudioTranscriptionRequest",
+    "v1AudioTranslationRequest",
+    "v1SpeechRequest",
+    "v1VoiceCloneRequest",
 )
 
 IDENTIFIERS = {

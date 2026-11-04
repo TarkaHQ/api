@@ -12,7 +12,7 @@ AUTHORED_CONTRACTS = (
     ROOT / "openapi" / "tarka-inference-v1.openapi.json",
     ROOT / "openapi" / "tarka-inference-v2.openapi.json",
 )
-GENERATED_CONTRACT = ROOT / "openapi" / "tarka-inference-v2.swagger.json"
+GENERATED_CONTRACT = ROOT / "openapi" / "tarka-inference-v1.swagger.json"
 
 TYPED_FIELD_LIMITS = {
     "ChatCompletionRequest": {
@@ -45,7 +45,7 @@ UTF8_BYTE_LIMITS = {
 }
 
 GENERATED_ONLY_LIMITS = {
-    "v2VoiceCloneRequest": {
+    "v1VoiceCloneRequest": {
         "filename": {"maxLength": 255},
         "content_type": {"maxLength": 255},
     }
@@ -60,7 +60,7 @@ def assert_limits(
     generated: bool,
 ) -> None:
     for schema_name, fields in limits.items():
-        resolved_name = f"v2{schema_name}" if generated else schema_name
+        resolved_name = f"v1{schema_name}" if generated else schema_name
         properties = schemas[resolved_name]["properties"]
         for field_name, expected in fields.items():
             with testcase.subTest(schema=resolved_name, field=field_name):
