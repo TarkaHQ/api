@@ -202,7 +202,7 @@ class PublicBoundarySecretTests(unittest.TestCase):
                     history_secret_findings(repository)
 
     def test_allows_only_public_contract_file_types(self) -> None:
-        self.assertTrue(contract_path_allowed("proto/tarka/inference/v2/api.proto"))
+        self.assertTrue(contract_path_allowed("proto/tarka/inference/v1/api.proto"))
         self.assertTrue(contract_path_allowed("contracts/agent-hosts/catalog.json"))
         self.assertTrue(contract_path_allowed("scripts/validate_openapi.py"))
         self.assertFalse(contract_path_allowed("runtime/server.mjs"))

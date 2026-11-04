@@ -3,22 +3,22 @@
 
 syntax = "proto3";
 
-package tarka.inference.v2;
+package tarka.inference.v1;
 
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/struct.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
 
-option csharp_namespace = "Tarka.Inference.V2";
-option go_package = "github.com/TarkaHQ/api/gen/go/tarka/inference/v2;inferencev2";
+option csharp_namespace = "Tarka.Inference.V1";
+option go_package = "github.com/TarkaHQ/api/gen/go/tarka/inference/v1;inferencev1";
 option java_multiple_files = true;
 option java_outer_classname = "InferenceProto";
-option java_package = "com.tarka.inference.v2";
+option java_package = "com.tarka.inference.v1";
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Tarka Inference API"
-    version: "2.0"
+    version: "1.0"
   }
   host: "tarka.rest"
   schemes: HTTPS
@@ -45,7 +45,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
 
 // InferenceService exposes OpenAI-compatible inference and Tarka utility RPCs.
 // REST /v1 is the canonical compatibility surface. REST /v2 bindings remain as
-// deprecated migration aliases; the native gRPC package stays versioned as v2.
+// deprecated migration aliases; the native gRPC package is versioned as v1.
 service InferenceService {
   rpc ListModels(ListModelsRequest) returns (ListModelsResponse) {
     option (google.api.http) = {

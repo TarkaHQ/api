@@ -26,11 +26,11 @@ deployment manifests, and repository dependencies.
 | Path | Purpose |
 | --- | --- |
 | `proto/tarka/provisioning/v1` | Authoritative control-plane protobuf and gRPC definitions |
-| `proto/tarka/inference/v2` | Authoritative inference protobuf and gRPC definitions |
+| `proto/tarka/inference/v1` | Authoritative inference protobuf and gRPC definitions |
 | `openapi/tarka-control-v1.swagger.json` | Generated OpenAPI v2 description of the control API's REST transcoding surface |
 | `openapi/tarka-inference-v1.openapi.json` | Authored OpenAPI 3.1 contract for the supported OpenAI-compatible inference surface |
 | `openapi/tarka-inference-v2.openapi.json` | Authored OpenAPI 3.1 contract for the deprecated `/v2` REST alias |
-| `openapi/tarka-inference-v2.swagger.json` | Generated OpenAPI v2 description of protobuf-bound inference methods |
+| `openapi/tarka-inference-v1.swagger.json` | Generated OpenAPI v2 description of protobuf-bound inference methods |
 | `contracts/agent-hosts` | Versioned OpenClaw, Hermes, and Onyx Compose contracts plus their machine-readable release catalog |
 | `examples/tarka-control-api` | Copyable Claude Code / Codex skill with a dependency-free Control API helper |
 | `buf.yaml` | Buf module, lint, dependency, and compatibility policy |
@@ -64,10 +64,10 @@ cannot describe precisely.
 - `/v2` is a deprecated compatibility alias for `/v1`. It is not a newer API
   generation and advertises its deprecation in HTTP response headers.
 
-The protobuf package remains `tarka.inference.v2` to preserve the already
-published gRPC wire contract. Its package number is independent of the
-canonical REST version. Native clients should use
-`tarka.inference.v2.InferenceService` when gRPC is available.
+Native clients use `tarka.inference.v1.InferenceService`, matching the canonical
+REST version. Regenerate clients from this contract before switching to the v1
+gRPC service; the package rename changes fully qualified RPC and message names.
+See [`VERSIONING.md`](VERSIONING.md) for the coordinated migration.
 
 ## Connect to the APIs
 
@@ -438,7 +438,7 @@ types are supplied by the Protocol Buffers toolchain.
 
 You can also use `protoc` directly. Add `proto/` and the Google API common
 protos to its include paths, then compile the files under
-`proto/tarka/provisioning/v1` and `proto/tarka/inference/v2` with your
+`proto/tarka/provisioning/v1` and `proto/tarka/inference/v1` with your
 language's gRPC plugin.
 
 ## Local development
