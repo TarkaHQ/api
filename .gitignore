@@ -1,2 +1,5 @@
 .DS_Store
 *.binpb
+
+__pycache__/
+*.pyc
