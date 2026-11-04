@@ -3,7 +3,7 @@
   "info": {
     "title": "Tarka OpenAI-compatible Inference API — deprecated v2 REST alias",
     "version": "2.0.0",
-    "description": "Deprecated REST aliases for the stable /v1 OpenAI-compatible inference API. New REST clients must use /v1. Native gRPC remains versioned as tarka.inference.v2. Support for optional request features depends on the selected model.",
+    "description": "Deprecated REST aliases for the stable /v1 OpenAI-compatible inference API. New REST clients must use /v1. Native gRPC remains versioned as tarka.inference.v1. Support for optional request features depends on the selected model.",
     "license": {
       "name": "Apache 2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"

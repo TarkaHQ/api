@@ -35,7 +35,7 @@ jobs:
           buf lint
       - name: Check backward compatibility
         if: github.event_name == 'pull_request'
-        run: buf breaking --against "${{ github.server_url }}/${{ github.repository }}.git#branch=main"
+        run: python3 scripts/check_breaking.py --against "${{ github.server_url }}/${{ github.repository }}.git#branch=main"
       - name: Regenerate control OpenAPI
         run: buf generate
       - name: Check generated control OpenAPI is committed

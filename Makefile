@@ -12,7 +12,7 @@ lint:
 	buf lint
 
 breaking:
-	buf breaking --against '.git#branch=main'
+	python3 scripts/check_breaking.py
 
 generate:
 	buf generate

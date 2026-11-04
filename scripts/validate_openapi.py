@@ -11,7 +11,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 CONTROL_PATH = ROOT / "openapi" / "tarka-control-v1.swagger.json"
 INFERENCE_PATH = ROOT / "openapi" / "tarka-inference-v1.openapi.json"
-INFERENCE_V2_PATH = ROOT / "openapi" / "tarka-inference-v2.swagger.json"
+INFERENCE_GRPC_PATH = ROOT / "openapi" / "tarka-inference-v1.swagger.json"
 INFERENCE_V2_OPENAPI_PATH = ROOT / "openapi" / "tarka-inference-v2.openapi.json"
 
 
@@ -137,9 +137,9 @@ def validate_inference(document: dict[str, Any]) -> None:
         raise ValueError(f"{INFERENCE_PATH}: speech response must be binary")
 
 
-def validate_inference_v2(document: dict[str, Any]) -> None:
+def validate_inference_grpc(document: dict[str, Any]) -> None:
     if document.get("swagger") != "2.0":
-        raise ValueError(f"{INFERENCE_V2_PATH}: expected Swagger 2.0")
+        raise ValueError(f"{INFERENCE_GRPC_PATH}: expected Swagger 2.0")
     expected_v1 = {
         "/v1/models": {"get"},
         "/v1/models/{model}": {"get"},
@@ -171,7 +171,7 @@ def validate_inference_v2(document: dict[str, Any]) -> None:
     expected = expected_v1 | expected_v2
     routes = document.get("paths")
     if not isinstance(routes, dict):
-        raise ValueError(f"{INFERENCE_V2_PATH}: paths must be an object")
+        raise ValueError(f"{INFERENCE_GRPC_PATH}: paths must be an object")
     actual = {
         route: {
             method.lower()
@@ -183,26 +183,26 @@ def validate_inference_v2(document: dict[str, Any]) -> None:
     }
     if actual != expected:
         raise ValueError(
-            f"{INFERENCE_V2_PATH}: endpoint set changed; expected {expected}, got {actual}"
+            f"{INFERENCE_GRPC_PATH}: endpoint set changed; expected {expected}, got {actual}"
         )
     schemes = document.get("securityDefinitions", {})
     bearer = schemes.get("bearerAuth", {})
     if bearer.get("name") != "Authorization" or bearer.get("in") != "header":
-        raise ValueError(f"{INFERENCE_V2_PATH}: bearerAuth security definition is required")
+        raise ValueError(f"{INFERENCE_GRPC_PATH}: bearerAuth security definition is required")
     definitions = document.get("definitions", {})
     required = {
-        "v2ChatCompletionRequest",
-        "v2OpenAIRequest",
-        "v2OpenAIResponse",
-        "v2OCRRequest",
-        "v2AudioTranscriptionRequest",
-        "v2AudioTranslationRequest",
-        "v2SpeechRequest",
-        "v2VoiceCloneRequest",
+        "v1ChatCompletionRequest",
+        "v1OpenAIRequest",
+        "v1OpenAIResponse",
+        "v1OCRRequest",
+        "v1AudioTranscriptionRequest",
+        "v1AudioTranslationRequest",
+        "v1SpeechRequest",
+        "v1VoiceCloneRequest",
     }
     missing = sorted(required - definitions.keys())
     if missing:
-        raise ValueError(f"{INFERENCE_V2_PATH}: missing request definitions: {missing}")
+        raise ValueError(f"{INFERENCE_GRPC_PATH}: missing request definitions: {missing}")
 
 
 def validate_inference_v2_openapi(document: dict[str, Any]) -> None:
@@ -248,16 +248,16 @@ def validate_inference_v2_openapi(document: dict[str, Any]) -> None:
 def main() -> None:
     control = load(CONTROL_PATH)
     inference = load(INFERENCE_PATH)
-    inference_v2 = load(INFERENCE_V2_PATH)
+    inference_grpc = load(INFERENCE_GRPC_PATH)
     inference_v2_openapi = load(INFERENCE_V2_OPENAPI_PATH)
     validate_control(control)
     validate_inference(inference)
-    validate_inference_v2(inference_v2)
+    validate_inference_grpc(inference_grpc)
     validate_inference_v2_openapi(inference_v2_openapi)
     for source, document in (
         (CONTROL_PATH, control),
         (INFERENCE_PATH, inference),
-        (INFERENCE_V2_PATH, inference_v2),
+        (INFERENCE_GRPC_PATH, inference_grpc),
         (INFERENCE_V2_OPENAPI_PATH, inference_v2_openapi),
     ):
         operation_ids(document, source)

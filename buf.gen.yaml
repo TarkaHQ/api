@@ -13,8 +13,8 @@ plugins:
   - remote: buf.build/grpc-ecosystem/openapiv2:v2.30.0
     out: openapi
     types:
-      - tarka.inference.v2.InferenceService
+      - tarka.inference.v1.InferenceService
     opt:
       - allow_merge=true
-      - merge_file_name=tarka-inference-v2
+      - merge_file_name=tarka-inference-v1
       - json_names_for_fields=false
