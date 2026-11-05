@@ -72,6 +72,9 @@ message Realm {
   google.protobuf.Struct authentication = 14;
   // Output only: realm-specific authorization issuer.
   string issuer = 15;
+  // Output only: current provisioning stage and a safe dependency error code.
+  string provisioning_phase = 16;
+  string provisioning_error = 17;
 }
 message CreateRealmRequest {
   string org_id = 1;
@@ -367,7 +370,87 @@ message CheckPermissionResponse {
   int64 policy_revision = 3;
 }
 
+// A client belongs to one realm. Credentials are never returned by Get/List.
+message OAuthClient {
+  string id = 1;
+  string org_id = 2;
+  string realm_id = 3;
+  string client_id = 4;
+  string status = 5;
+  int64 version = 6;
+  string name = 7;
+  // public, confidential, or autonomous. Autonomous clients require an agent.
+  string kind = 8;
+  string agent_id = 9;
+  repeated string redirect_uris = 10;
+  // Exact gateway or realm runtime resource URIs, never URL prefixes.
+  repeated string allowed_audiences = 11;
+  repeated string scopes = 12;
+  google.protobuf.Timestamp created_at = 13;
+  google.protobuf.Timestamp updated_at = 14;
+  // Output only: registered, cimd, or dcr.
+  string registration_method = 15;
+}
+message CreateOAuthClientRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  OAuthClient oauth_client = 3;
+}
+message OAuthClientRegistration {
+  OAuthClient oauth_client = 1;
+  // Returned once on creation/rotation for confidential/autonomous clients.
+  string client_secret = 2;
+}
+message GetOAuthClientRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+}
+message ListOAuthClientsRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  int32 page_size = 3;
+  string page_token = 4;
+}
+message ListOAuthClientsResponse {
+  repeated OAuthClient items = 1;
+  string next_page_token = 2;
+}
+message DeleteOAuthClientRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+  int64 expected_version = 4;
+}
+message RotateOAuthClientSecretRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+  int64 expected_version = 4;
+}
+
 service IAMService {
+  rpc CreateOAuthClient(CreateOAuthClientRequest) returns (OAuthClientRegistration) {
+    option (google.api.http) = {
+      post: "/control/v1/iam/oauth-clients"
+      body: "*"
+    };
+  }
+  rpc GetOAuthClient(GetOAuthClientRequest) returns (OAuthClient) {
+    option (google.api.http) = {get: "/control/v1/iam/oauth-clients/{id}"};
+  }
+  rpc ListOAuthClients(ListOAuthClientsRequest) returns (ListOAuthClientsResponse) {
+    option (google.api.http) = {get: "/control/v1/iam/oauth-clients"};
+  }
+  rpc DeleteOAuthClient(DeleteOAuthClientRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/control/v1/iam/oauth-clients/{id}"};
+  }
+  rpc RotateOAuthClientSecret(RotateOAuthClientSecretRequest) returns (OAuthClientRegistration) {
+    option (google.api.http) = {
+      post: "/control/v1/iam/oauth-clients/{id}:rotate-secret"
+      body: "*"
+    };
+  }
   rpc CreateProject(CreateProjectRequest) returns (Project) {
     option (google.api.http) = {
       post: "/control/v1/iam/projects"

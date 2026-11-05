@@ -2176,6 +2176,213 @@
         ]
       }
     },
+    "/control/v1/iam/oauth-clients": {
+      "get": {
+        "operationId": "IAMService_ListOAuthClients",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListOAuthClientsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "page_token",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      },
+      "post": {
+        "operationId": "IAMService_CreateOAuthClient",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1OAuthClientRegistration"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateOAuthClientRequest"
+            }
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      }
+    },
+    "/control/v1/iam/oauth-clients/{id}": {
+      "get": {
+        "operationId": "IAMService_GetOAuthClient",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1OAuthClient"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      },
+      "delete": {
+        "operationId": "IAMService_DeleteOAuthClient",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "expected_version",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      }
+    },
+    "/control/v1/iam/oauth-clients/{id}:rotate-secret": {
+      "post": {
+        "operationId": "IAMService_RotateOAuthClientSecret",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1OAuthClientRegistration"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/IAMServiceRotateOAuthClientSecretBody"
+            }
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      }
+    },
     "/control/v1/iam/permissions:check": {
       "post": {
         "operationId": "IAMService_CheckPermission",
@@ -6962,6 +7169,21 @@
         }
       }
     },
+    "IAMServiceRotateOAuthClientSecretBody": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "expected_version": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
     "IAMServiceUpdateGrantBody": {
       "type": "object",
       "properties": {
@@ -9126,6 +9348,20 @@
       },
       "description": "CreateInferenceServiceRequest defines desired state for an inference service."
     },
+    "v1CreateOAuthClientRequest": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "oauth_client": {
+          "$ref": "#/definitions/v1OAuthClient"
+        }
+      }
+    },
     "v1CreateOrgInvitationResponse": {
       "type": "object",
       "properties": {
@@ -10105,6 +10341,21 @@
       },
       "description": "ListModelsResponse contains the active model catalog."
     },
+    "v1ListOAuthClientsResponse": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1OAuthClient"
+          }
+        },
+        "next_page_token": {
+          "type": "string"
+        }
+      }
+    },
     "v1ListOrgInvitationsResponse": {
       "type": "object",
       "properties": {
@@ -10500,6 +10751,84 @@
         }
       },
       "description": "Model describes a stable Tarka model alias and its metering metadata."
+    },
+    "v1OAuthClient": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "client_id": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string",
+          "format": "int64"
+        },
+        "name": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string",
+          "description": "public, confidential, or autonomous. Autonomous clients require an agent."
+        },
+        "agent_id": {
+          "type": "string"
+        },
+        "redirect_uris": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "allowed_audiences": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Exact gateway or realm runtime resource URIs, never URL prefixes."
+        },
+        "scopes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "registration_method": {
+          "type": "string",
+          "description": "Output only: registered, cimd, or dcr."
+        }
+      },
+      "description": "A client belongs to one realm. Credentials are never returned by Get/List."
+    },
+    "v1OAuthClientRegistration": {
+      "type": "object",
+      "properties": {
+        "oauth_client": {
+          "$ref": "#/definitions/v1OAuthClient"
+        },
+        "client_secret": {
+          "type": "string",
+          "description": "Returned once on creation/rotation for confidential/autonomous clients."
+        }
+      }
     },
     "v1Org": {
       "type": "object",
@@ -11010,6 +11339,13 @@
         "issuer": {
           "type": "string",
           "description": "Output only: realm-specific authorization issuer."
+        },
+        "provisioning_phase": {
+          "type": "string",
+          "description": "Output only: current provisioning stage and a safe dependency error code."
+        },
+        "provisioning_error": {
+          "type": "string"
         }
       }
     },
