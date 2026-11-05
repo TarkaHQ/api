@@ -2176,6 +2176,219 @@
         ]
       }
     },
+    "/control/v1/iam/identity-providers/{provider_id}/directory": {
+      "get": {
+        "operationId": "IAMService_GetDirectoryStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DirectoryStatus"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "provider_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      }
+    },
+    "/control/v1/iam/identity-providers/{provider_id}/directory/groups": {
+      "get": {
+        "operationId": "IAMService_ListDirectoryGroups",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListDirectoryGroupsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "provider_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "page_token",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      }
+    },
+    "/control/v1/iam/identity-providers/{provider_id}/directory/groups/{group_id}/members": {
+      "get": {
+        "operationId": "IAMService_ListDirectoryGroupMembers",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListDirectoryUsersResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "provider_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "group_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "page_token",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      }
+    },
+    "/control/v1/iam/identity-providers/{provider_id}/directory/users": {
+      "get": {
+        "operationId": "IAMService_ListDirectoryUsers",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListDirectoryUsersResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "provider_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "page_token",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      }
+    },
     "/control/v1/iam/oauth-clients": {
       "get": {
         "operationId": "IAMService_ListOAuthClients",
@@ -3227,6 +3440,84 @@
             "required": true,
             "schema": {
               "$ref": "#/definitions/IAMServiceUpdateRoleBody"
+            }
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      }
+    },
+    "/control/v1/iam/roles/{role_id}/directory-bindings": {
+      "get": {
+        "operationId": "IAMService_GetDirectoryRoleBindings",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DirectoryRoleBindings"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "role_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      },
+      "put": {
+        "operationId": "IAMService_ReplaceDirectoryRoleBindings",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DirectoryRoleBindings"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "role_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/IAMServiceReplaceDirectoryRoleBindingsBody"
             }
           }
         ],
@@ -7169,6 +7460,29 @@
         }
       }
     },
+    "IAMServiceReplaceDirectoryRoleBindingsBody": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "expected_version": {
+          "type": "string",
+          "format": "int64"
+        },
+        "bindings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1DirectoryRoleBinding"
+          },
+          "description": "Replaces directory selectors; manual role members stay separate."
+        }
+      }
+    },
     "IAMServiceRotateOAuthClientSecretBody": {
       "type": "object",
       "properties": {
@@ -9527,6 +9841,137 @@
       },
       "description": "CurrentUser is the authenticated platform identity and its active\norganization memberships."
     },
+    "v1DirectoryGroup": {
+      "type": "object",
+      "properties": {
+        "source_id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "present": {
+          "type": "boolean"
+        },
+        "member_count": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "v1DirectoryRoleBinding": {
+      "type": "object",
+      "properties": {
+        "provider_id": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string",
+          "description": "group (stable group ID), department, or provider_role (exact value)."
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "v1DirectoryRoleBindings": {
+      "type": "object",
+      "properties": {
+        "role_id": {
+          "type": "string"
+        },
+        "role_version": {
+          "type": "string",
+          "format": "int64"
+        },
+        "bindings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1DirectoryRoleBinding"
+          }
+        }
+      }
+    },
+    "v1DirectoryStatus": {
+      "type": "object",
+      "properties": {
+        "provider_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "sync_state": {
+          "type": "string",
+          "description": "pending, syncing, current, stale, or blocked. Output only.",
+          "readOnly": true
+        },
+        "requested_generation": {
+          "type": "string",
+          "format": "int64"
+        },
+        "applied_generation": {
+          "type": "string",
+          "format": "int64"
+        },
+        "last_synced_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "next_attempt_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "valid_until": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "error_code": {
+          "type": "string"
+        }
+      }
+    },
+    "v1DirectoryUser": {
+      "type": "object",
+      "properties": {
+        "source_id": {
+          "type": "string"
+        },
+        "external_id": {
+          "type": "string"
+        },
+        "principal_id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "department": {
+          "type": "string"
+        },
+        "provider_roles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "active": {
+          "type": "boolean",
+          "description": "Provider activation, distinct from an operator's principal restriction."
+        },
+        "present": {
+          "type": "boolean"
+        },
+        "principal_status": {
+          "type": "string"
+        }
+      },
+      "description": "Directory data is observed provider state, never an automatic grant."
+    },
     "v1DiscoverTargetResponse": {
       "type": "object",
       "properties": {
@@ -10207,6 +10652,36 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1ConversationBinding"
+          }
+        },
+        "next_page_token": {
+          "type": "string"
+        }
+      }
+    },
+    "v1ListDirectoryGroupsResponse": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1DirectoryGroup"
+          }
+        },
+        "next_page_token": {
+          "type": "string"
+        }
+      }
+    },
+    "v1ListDirectoryUsersResponse": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1DirectoryUser"
           }
         },
         "next_page_token": {
