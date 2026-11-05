@@ -1,0 +1,85 @@
+// Copyright 2026 Tarka
+// SPDX-License-Identifier: Apache-2.0
+syntax = "proto3";
+package tarka.access.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/TarkaHQ/api/gen/go/tarka/access/v1;accessv1";
+
+message Application {
+  string id = 1;
+  string org_id = 2;
+  string realm_id = 3;
+  // active, suspended, revoked, or provisioning; validated by resource kind.
+  string status = 4;
+  // Optimistic concurrency version, managed by the server.
+  int64 version = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+  string name = 10;
+  string hostname = 11;
+  string agent_host_id = 12;
+  // hermes, openclaw, or http.
+  string adapter = 13;
+  repeated string operator_ids = 14;
+}
+message CreateApplicationRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  Application application = 3;
+}
+message UpdateApplicationRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+  Application application = 4;
+  int64 expected_version = 5;
+}
+message GetApplicationRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+}
+message DeleteApplicationRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+  int64 expected_version = 4;
+}
+message ListApplicationsRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  int32 page_size = 3;
+  string page_token = 4;
+}
+message ListApplicationsResponse {
+  repeated Application items = 1;
+  string next_page_token = 2;
+}
+
+service AccessService {
+  rpc CreateApplication(CreateApplicationRequest) returns (Application) {
+    option (google.api.http) = {
+      post: "/control/v1/access/applications"
+      body: "*"
+    };
+  }
+  rpc UpdateApplication(UpdateApplicationRequest) returns (Application) {
+    option (google.api.http) = {
+      put: "/control/v1/access/applications/{id}"
+      body: "*"
+    };
+  }
+  rpc GetApplication(GetApplicationRequest) returns (Application) {
+    option (google.api.http) = {get: "/control/v1/access/applications/{id}"};
+  }
+  rpc DeleteApplication(DeleteApplicationRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/control/v1/access/applications/{id}"};
+  }
+  rpc ListApplications(ListApplicationsRequest) returns (ListApplicationsResponse) {
+    option (google.api.http) = {get: "/control/v1/access/applications"};
+  }
+}

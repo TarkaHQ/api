@@ -11,6 +11,18 @@
       "description": "ProvisioningService manages Tarka identities, organizations, API keys,\nquotas, metering, object storage, hosted Git, and desired-state compute\nresources."
     },
     {
+      "name": "AccessService"
+    },
+    {
+      "name": "ChannelsService"
+    },
+    {
+      "name": "GatewayService"
+    },
+    {
+      "name": "IAMService"
+    },
+    {
       "name": "SandboxService",
       "description": "SandboxService exposes deliberately narrow code execution. It does not\naccept container images, commands, ports, mounts, shell sessions, browsers,\nor persistent volumes."
     }
@@ -26,6 +38,211 @@
     "application/json"
   ],
   "paths": {
+    "/control/v1/access/applications": {
+      "get": {
+        "operationId": "AccessService_ListApplications",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListApplicationsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "page_token",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "AccessService"
+        ]
+      },
+      "post": {
+        "operationId": "AccessService_CreateApplication",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Application"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateApplicationRequest"
+            }
+          }
+        ],
+        "tags": [
+          "AccessService"
+        ]
+      }
+    },
+    "/control/v1/access/applications/{id}": {
+      "get": {
+        "operationId": "AccessService_GetApplication",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Application"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "AccessService"
+        ]
+      },
+      "delete": {
+        "operationId": "AccessService_DeleteApplication",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "expected_version",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "AccessService"
+        ]
+      },
+      "put": {
+        "operationId": "AccessService_UpdateApplication",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Application"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/AccessServiceUpdateApplicationBody"
+            }
+          }
+        ],
+        "tags": [
+          "AccessService"
+        ]
+      }
+    },
     "/control/v1/agent-host-templates": {
       "get": {
         "summary": "ListAgentHostTemplates returns the versioned Compose templates published\nby Tarka. Template definitions never contain runtime secret values.",
@@ -46,6 +263,2973 @@
         },
         "tags": [
           "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/channels/channels": {
+      "get": {
+        "operationId": "ChannelsService_ListChannels",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListChannelsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "page_token",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ChannelsService"
+        ]
+      },
+      "post": {
+        "operationId": "ChannelsService_CreateChannel",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Channel"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateChannelRequest"
+            }
+          }
+        ],
+        "tags": [
+          "ChannelsService"
+        ]
+      }
+    },
+    "/control/v1/channels/channels/{id}": {
+      "get": {
+        "operationId": "ChannelsService_GetChannel",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Channel"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ChannelsService"
+        ]
+      },
+      "delete": {
+        "operationId": "ChannelsService_DeleteChannel",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "expected_version",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "ChannelsService"
+        ]
+      },
+      "put": {
+        "operationId": "ChannelsService_UpdateChannel",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Channel"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ChannelsServiceUpdateChannelBody"
+            }
+          }
+        ],
+        "tags": [
+          "ChannelsService"
+        ]
+      }
+    },
+    "/control/v1/channels/conversation-bindings": {
+      "get": {
+        "operationId": "ChannelsService_ListConversationBindings",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListConversationBindingsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "page_token",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ChannelsService"
+        ]
+      },
+      "post": {
+        "operationId": "ChannelsService_CreateConversationBinding",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ConversationBinding"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateConversationBindingRequest"
+            }
+          }
+        ],
+        "tags": [
+          "ChannelsService"
+        ]
+      }
+    },
+    "/control/v1/channels/conversation-bindings/{id}": {
+      "get": {
+        "operationId": "ChannelsService_GetConversationBinding",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ConversationBinding"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ChannelsService"
+        ]
+      },
+      "delete": {
+        "operationId": "ChannelsService_DeleteConversationBinding",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "expected_version",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "ChannelsService"
+        ]
+      },
+      "put": {
+        "operationId": "ChannelsService_UpdateConversationBinding",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ConversationBinding"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ChannelsServiceUpdateConversationBindingBody"
+            }
+          }
+        ],
+        "tags": [
+          "ChannelsService"
+        ]
+      }
+    },
+    "/control/v1/gateway/capabilities": {
+      "get": {
+        "operationId": "GatewayService_ListCapabilities",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListCapabilitiesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "page_token",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "GatewayService"
+        ]
+      },
+      "post": {
+        "operationId": "GatewayService_CreateCapability",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Capability"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateCapabilityRequest"
+            }
+          }
+        ],
+        "tags": [
+          "GatewayService"
+        ]
+      }
+    },
+    "/control/v1/gateway/capabilities/{id}": {
+      "get": {
+        "operationId": "GatewayService_GetCapability",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Capability"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "GatewayService"
+        ]
+      },
+      "delete": {
+        "operationId": "GatewayService_DeleteCapability",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "expected_version",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "GatewayService"
+        ]
+      },
+      "put": {
+        "operationId": "GatewayService_UpdateCapability",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Capability"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/GatewayServiceUpdateCapabilityBody"
+            }
+          }
+        ],
+        "tags": [
+          "GatewayService"
+        ]
+      }
+    },
+    "/control/v1/gateway/connections": {
+      "get": {
+        "operationId": "GatewayService_ListConnections",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListConnectionsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "page_token",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "GatewayService"
+        ]
+      },
+      "post": {
+        "operationId": "GatewayService_CreateConnection",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Connection"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateConnectionRequest"
+            }
+          }
+        ],
+        "tags": [
+          "GatewayService"
+        ]
+      }
+    },
+    "/control/v1/gateway/connections/{connection_id}/secret": {
+      "put": {
+        "operationId": "GatewayService_UploadConnectionSecret",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1UploadConnectionSecretResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "connection_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/GatewayServiceUploadConnectionSecretBody"
+            }
+          }
+        ],
+        "tags": [
+          "GatewayService"
+        ]
+      }
+    },
+    "/control/v1/gateway/connections/{connection_id}:authorize": {
+      "post": {
+        "operationId": "GatewayService_StartConnectionAuthorization",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1StartConnectionAuthorizationResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "connection_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/GatewayServiceStartConnectionAuthorizationBody"
+            }
+          }
+        ],
+        "tags": [
+          "GatewayService"
+        ]
+      }
+    },
+    "/control/v1/gateway/connections/{id}": {
+      "get": {
+        "operationId": "GatewayService_GetConnection",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Connection"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "GatewayService"
+        ]
+      },
+      "delete": {
+        "operationId": "GatewayService_DeleteConnection",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "expected_version",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "GatewayService"
+        ]
+      },
+      "put": {
+        "operationId": "GatewayService_UpdateConnection",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Connection"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/GatewayServiceUpdateConnectionBody"
+            }
+          }
+        ],
+        "tags": [
+          "GatewayService"
+        ]
+      }
+    },
+    "/control/v1/gateway/gateways": {
+      "get": {
+        "operationId": "GatewayService_ListGateways",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListGatewaysResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "page_token",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "GatewayService"
+        ]
+      },
+      "post": {
+        "operationId": "GatewayService_CreateGateway",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Gateway"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateGatewayRequest"
+            }
+          }
+        ],
+        "tags": [
+          "GatewayService"
+        ]
+      }
+    },
+    "/control/v1/gateway/gateways/{gateway_id}/publications": {
+      "get": {
+        "operationId": "GatewayService_ListPublications",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListPublicationsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "gateway_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "GatewayService"
+        ]
+      }
+    },
+    "/control/v1/gateway/gateways/{gateway_id}:publish": {
+      "post": {
+        "operationId": "GatewayService_PublishGateway",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Publication"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "gateway_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/GatewayServicePublishGatewayBody"
+            }
+          }
+        ],
+        "tags": [
+          "GatewayService"
+        ]
+      }
+    },
+    "/control/v1/gateway/gateways/{gateway_id}:rollback": {
+      "post": {
+        "operationId": "GatewayService_RollbackGateway",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Publication"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "gateway_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/GatewayServiceRollbackGatewayBody"
+            }
+          }
+        ],
+        "tags": [
+          "GatewayService"
+        ]
+      }
+    },
+    "/control/v1/gateway/gateways/{id}": {
+      "get": {
+        "operationId": "GatewayService_GetGateway",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Gateway"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "GatewayService"
+        ]
+      },
+      "delete": {
+        "operationId": "GatewayService_DeleteGateway",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "expected_version",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "GatewayService"
+        ]
+      },
+      "put": {
+        "operationId": "GatewayService_UpdateGateway",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Gateway"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/GatewayServiceUpdateGatewayBody"
+            }
+          }
+        ],
+        "tags": [
+          "GatewayService"
+        ]
+      }
+    },
+    "/control/v1/gateway/targets": {
+      "get": {
+        "operationId": "GatewayService_ListTargets",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListTargetsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "page_token",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "GatewayService"
+        ]
+      },
+      "post": {
+        "operationId": "GatewayService_CreateTarget",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Target"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateTargetRequest"
+            }
+          }
+        ],
+        "tags": [
+          "GatewayService"
+        ]
+      }
+    },
+    "/control/v1/gateway/targets/{id}": {
+      "get": {
+        "operationId": "GatewayService_GetTarget",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Target"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "GatewayService"
+        ]
+      },
+      "delete": {
+        "operationId": "GatewayService_DeleteTarget",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "expected_version",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "GatewayService"
+        ]
+      },
+      "put": {
+        "operationId": "GatewayService_UpdateTarget",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Target"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/GatewayServiceUpdateTargetBody"
+            }
+          }
+        ],
+        "tags": [
+          "GatewayService"
+        ]
+      }
+    },
+    "/control/v1/gateway/targets/{target_id}:discover": {
+      "post": {
+        "operationId": "GatewayService_DiscoverTarget",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DiscoverTargetResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "target_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/GatewayServiceDiscoverTargetBody"
+            }
+          }
+        ],
+        "tags": [
+          "GatewayService"
+        ]
+      }
+    },
+    "/control/v1/gateway/targets/{target_id}:import": {
+      "post": {
+        "operationId": "GatewayService_ImportOpenAPI",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ImportOpenAPIResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "target_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/GatewayServiceImportOpenAPIBody"
+            }
+          }
+        ],
+        "tags": [
+          "GatewayService"
+        ]
+      }
+    },
+    "/control/v1/iam/grants": {
+      "get": {
+        "operationId": "IAMService_ListGrants",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListGrantsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "page_token",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      },
+      "post": {
+        "operationId": "IAMService_CreateGrant",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Grant"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateGrantRequest"
+            }
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      }
+    },
+    "/control/v1/iam/grants/{id}": {
+      "get": {
+        "operationId": "IAMService_GetGrant",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Grant"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      },
+      "delete": {
+        "operationId": "IAMService_DeleteGrant",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "expected_version",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      },
+      "put": {
+        "operationId": "IAMService_UpdateGrant",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Grant"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/IAMServiceUpdateGrantBody"
+            }
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      }
+    },
+    "/control/v1/iam/identity-providers": {
+      "get": {
+        "operationId": "IAMService_ListIdentityProviders",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListIdentityProvidersResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "page_token",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      },
+      "post": {
+        "operationId": "IAMService_CreateIdentityProvider",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1IdentityProvider"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateIdentityProviderRequest"
+            }
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      }
+    },
+    "/control/v1/iam/identity-providers/{id}": {
+      "get": {
+        "operationId": "IAMService_GetIdentityProvider",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1IdentityProvider"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      },
+      "delete": {
+        "operationId": "IAMService_DeleteIdentityProvider",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "expected_version",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      },
+      "put": {
+        "operationId": "IAMService_UpdateIdentityProvider",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1IdentityProvider"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/IAMServiceUpdateIdentityProviderBody"
+            }
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      }
+    },
+    "/control/v1/iam/permissions:check": {
+      "post": {
+        "operationId": "IAMService_CheckPermission",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CheckPermissionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CheckPermissionRequest"
+            }
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      }
+    },
+    "/control/v1/iam/principals": {
+      "get": {
+        "operationId": "IAMService_ListPrincipals",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListPrincipalsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "page_token",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      },
+      "post": {
+        "operationId": "IAMService_CreatePrincipal",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Principal"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreatePrincipalRequest"
+            }
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      }
+    },
+    "/control/v1/iam/principals/{id}": {
+      "get": {
+        "operationId": "IAMService_GetPrincipal",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Principal"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      },
+      "delete": {
+        "operationId": "IAMService_DeletePrincipal",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "expected_version",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      },
+      "put": {
+        "operationId": "IAMService_UpdatePrincipal",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Principal"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/IAMServiceUpdatePrincipalBody"
+            }
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      }
+    },
+    "/control/v1/iam/projects": {
+      "get": {
+        "operationId": "IAMService_ListProjects",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListProjectsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "page_token",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      },
+      "post": {
+        "operationId": "IAMService_CreateProject",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Project"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateProjectRequest"
+            }
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      }
+    },
+    "/control/v1/iam/projects/{id}": {
+      "get": {
+        "operationId": "IAMService_GetProject",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Project"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      },
+      "delete": {
+        "operationId": "IAMService_DeleteProject",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "expected_version",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      },
+      "put": {
+        "operationId": "IAMService_UpdateProject",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Project"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/IAMServiceUpdateProjectBody"
+            }
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      }
+    },
+    "/control/v1/iam/realms": {
+      "get": {
+        "operationId": "IAMService_ListRealms",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListRealmsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "page_token",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      },
+      "post": {
+        "operationId": "IAMService_CreateRealm",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Realm"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateRealmRequest"
+            }
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      }
+    },
+    "/control/v1/iam/realms/{id}": {
+      "get": {
+        "operationId": "IAMService_GetRealm",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Realm"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      },
+      "delete": {
+        "operationId": "IAMService_DeleteRealm",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "expected_version",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      },
+      "put": {
+        "operationId": "IAMService_UpdateRealm",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Realm"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/IAMServiceUpdateRealmBody"
+            }
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      }
+    },
+    "/control/v1/iam/roles": {
+      "get": {
+        "operationId": "IAMService_ListRoles",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListRolesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "page_token",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      },
+      "post": {
+        "operationId": "IAMService_CreateRole",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Role"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateRoleRequest"
+            }
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      }
+    },
+    "/control/v1/iam/roles/{id}": {
+      "get": {
+        "operationId": "IAMService_GetRole",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Role"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      },
+      "delete": {
+        "operationId": "IAMService_DeleteRole",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "expected_version",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      },
+      "put": {
+        "operationId": "IAMService_UpdateRole",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Role"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/IAMServiceUpdateRoleBody"
+            }
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      }
+    },
+    "/control/v1/iam/runs": {
+      "get": {
+        "operationId": "IAMService_ListRuns",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListRunsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "page_token",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      },
+      "post": {
+        "operationId": "IAMService_CreateRun",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Run"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateRunRequest"
+            }
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      }
+    },
+    "/control/v1/iam/runs/{id}": {
+      "get": {
+        "operationId": "IAMService_GetRun",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Run"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      },
+      "delete": {
+        "operationId": "IAMService_DeleteRun",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "expected_version",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      },
+      "put": {
+        "operationId": "IAMService_UpdateRun",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Run"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/IAMServiceUpdateRunBody"
+            }
+          }
+        ],
+        "tags": [
+          "IAMService"
         ]
       }
     },
@@ -3557,6 +6741,353 @@
     }
   },
   "definitions": {
+    "AccessServiceUpdateApplicationBody": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "application": {
+          "$ref": "#/definitions/v1Application"
+        },
+        "expected_version": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "ChannelsServiceUpdateChannelBody": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "channel": {
+          "$ref": "#/definitions/v1Channel"
+        },
+        "expected_version": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "ChannelsServiceUpdateConversationBindingBody": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "conversation_binding": {
+          "$ref": "#/definitions/v1ConversationBinding"
+        },
+        "expected_version": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "GatewayServiceDiscoverTargetBody": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        }
+      }
+    },
+    "GatewayServiceImportOpenAPIBody": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "document": {
+          "type": "object",
+          "description": "OpenAPI 3.0/3.1 JSON. References must be local."
+        },
+        "operation_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "GatewayServicePublishGatewayBody": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "expected_revision": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "GatewayServiceRollbackGatewayBody": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "revision": {
+          "type": "string",
+          "format": "int64"
+        },
+        "expected_revision": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "GatewayServiceStartConnectionAuthorizationBody": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        }
+      }
+    },
+    "GatewayServiceUpdateCapabilityBody": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "capability": {
+          "$ref": "#/definitions/v1Capability"
+        },
+        "expected_version": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "GatewayServiceUpdateConnectionBody": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "connection": {
+          "$ref": "#/definitions/v1Connection"
+        },
+        "expected_version": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "GatewayServiceUpdateGatewayBody": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "gateway": {
+          "$ref": "#/definitions/v1Gateway"
+        },
+        "expected_version": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "GatewayServiceUpdateTargetBody": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "target": {
+          "$ref": "#/definitions/v1Target"
+        },
+        "expected_version": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "GatewayServiceUploadConnectionSecretBody": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "values": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Write only. Never include credentials in model messages or logs."
+        }
+      }
+    },
+    "IAMServiceUpdateGrantBody": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "grant": {
+          "$ref": "#/definitions/v1Grant"
+        },
+        "expected_version": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "IAMServiceUpdateIdentityProviderBody": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "identity_provider": {
+          "$ref": "#/definitions/v1IdentityProvider"
+        },
+        "expected_version": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "IAMServiceUpdatePrincipalBody": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "principal": {
+          "$ref": "#/definitions/v1Principal"
+        },
+        "expected_version": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "IAMServiceUpdateProjectBody": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "project": {
+          "$ref": "#/definitions/v1Project"
+        },
+        "expected_version": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "IAMServiceUpdateRealmBody": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "realm": {
+          "$ref": "#/definitions/v1Realm"
+        },
+        "expected_version": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "IAMServiceUpdateRoleBody": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "role": {
+          "$ref": "#/definitions/v1Role"
+        },
+        "expected_version": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "IAMServiceUpdateRunBody": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "run": {
+          "$ref": "#/definitions/v1Run"
+        },
+        "expected_version": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
     "ProvisioningServiceAcceptUsagePolicyBody": {
       "type": "object",
       "properties": {
@@ -4295,7 +7826,7 @@
         "NULL_VALUE"
       ],
       "default": "NULL_VALUE",
-      "description": "`NullValue` is a singleton enumeration to represent the null value for the\n`Value` type union.\n\nThe JSON representation for `NullValue` is JSON `null`.\n\n - NULL_VALUE: Null value."
+      "description": "Represents a JSON `null`.\n\n`NullValue` is a sentinel, using an enum with only one value to represent\nthe null value for the `Value` type union.\n\nA field of type `NullValue` with any value other than `0` is considered\ninvalid. Most ProtoJSON serializers will emit a `Value` with a `null_value`\nset as a JSON `null` regardless of the integer value, and so will round trip\nto a `0` value.\n\n - NULL_VALUE: Null value."
     },
     "rpcStatus": {
       "type": "object",
@@ -4935,6 +8466,56 @@
       },
       "description": "ApiKey is redacted metadata for a customer credential."
     },
+    "v1Application": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "description": "active, suspended, revoked, or provisioning; validated by resource kind."
+        },
+        "version": {
+          "type": "string",
+          "format": "int64",
+          "description": "Optimistic concurrency version, managed by the server."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "name": {
+          "type": "string"
+        },
+        "hostname": {
+          "type": "string"
+        },
+        "agent_host_id": {
+          "type": "string"
+        },
+        "adapter": {
+          "type": "string",
+          "description": "hermes, openclaw, or http."
+        },
+        "operator_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "v1BootstrapCurrentUserRequest": {
       "type": "object",
       "properties": {
@@ -4944,6 +8525,162 @@
         }
       },
       "description": "BootstrapCurrentUserRequest customizes the first organization created for an\nidentity. An empty org_name lets the server derive a display name."
+    },
+    "v1Capability": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "description": "active, suspended, revoked, or provisioning; validated by resource kind."
+        },
+        "version": {
+          "type": "string",
+          "format": "int64",
+          "description": "Optimistic concurrency version, managed by the server."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "gateway_id": {
+          "type": "string"
+        },
+        "target_id": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string",
+          "description": "http, tool, resource, resource_template, or prompt."
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "upstream_name": {
+          "type": "string"
+        },
+        "method": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "input_schema": {
+          "type": "object"
+        },
+        "output_schema": {
+          "type": "object"
+        },
+        "resource_uri": {
+          "type": "string"
+        },
+        "configuration": {
+          "type": "object"
+        }
+      }
+    },
+    "v1Channel": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "description": "active, suspended, revoked, or provisioning; validated by resource kind."
+        },
+        "version": {
+          "type": "string",
+          "format": "int64",
+          "description": "Optimistic concurrency version, managed by the server."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "provider": {
+          "type": "string",
+          "description": "telegram, discord, slack, or teams."
+        },
+        "name": {
+          "type": "string"
+        },
+        "connection_id": {
+          "type": "string"
+        },
+        "agent_id": {
+          "type": "string"
+        },
+        "configuration": {
+          "type": "object"
+        }
+      }
+    },
+    "v1CheckPermissionRequest": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "subject_id": {
+          "type": "string"
+        },
+        "actor_id": {
+          "type": "string"
+        },
+        "grant_id": {
+          "type": "string"
+        },
+        "resource": {
+          "type": "string"
+        },
+        "action": {
+          "type": "string"
+        }
+      }
+    },
+    "v1CheckPermissionResponse": {
+      "type": "object",
+      "properties": {
+        "allowed": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "policy_revision": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
     },
     "v1CloseAgentHostTerminalResponse": {
       "type": "object"
@@ -5127,6 +8864,112 @@
       },
       "description": "ComputeQuote is immutable and expires five minutes after issuance. Amounts\nuse the named currency's microcents (100,000,000 = one currency unit).\nAcceptance on creation binds org, product, location, resources and limits.\nA changed catalog, currency, expired quote or changed allocation needs a new\nquote. Legacy EU clients may omit acceptance; US East callers must supply it."
     },
+    "v1Connection": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "description": "active, suspended, revoked, or provisioning; validated by resource kind."
+        },
+        "version": {
+          "type": "string",
+          "format": "int64",
+          "description": "Optimistic concurrency version, managed by the server."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "name": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string",
+          "description": "none, api_key, bearer, basic, oauth2_authorization_code, oauth2_client_credentials."
+        },
+        "owner_id": {
+          "type": "string",
+          "description": "Empty for realm-owned connections; otherwise an IAM principal identifier."
+        },
+        "allowed_origins": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "configuration": {
+          "type": "object"
+        },
+        "credential_configured": {
+          "type": "boolean",
+          "description": "Output only. No credential value is returned.",
+          "readOnly": true
+        }
+      }
+    },
+    "v1ConversationBinding": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "description": "active, suspended, revoked, or provisioning; validated by resource kind."
+        },
+        "version": {
+          "type": "string",
+          "format": "int64",
+          "description": "Optimistic concurrency version, managed by the server."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "channel_id": {
+          "type": "string"
+        },
+        "provider_workspace_id": {
+          "type": "string"
+        },
+        "provider_conversation_id": {
+          "type": "string"
+        },
+        "subject_id": {
+          "type": "string"
+        },
+        "agent_id": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string",
+          "description": "personal or shared."
+        }
+      }
+    },
     "v1CreateApiKeyResponse": {
       "type": "object",
       "properties": {
@@ -5139,6 +8982,118 @@
         }
       },
       "description": "CreateApiKeyResponse contains metadata plus the one-time plaintext secret."
+    },
+    "v1CreateApplicationRequest": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "application": {
+          "$ref": "#/definitions/v1Application"
+        }
+      }
+    },
+    "v1CreateCapabilityRequest": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "capability": {
+          "$ref": "#/definitions/v1Capability"
+        }
+      }
+    },
+    "v1CreateChannelRequest": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "channel": {
+          "$ref": "#/definitions/v1Channel"
+        }
+      }
+    },
+    "v1CreateConnectionRequest": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "connection": {
+          "$ref": "#/definitions/v1Connection"
+        }
+      }
+    },
+    "v1CreateConversationBindingRequest": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "conversation_binding": {
+          "$ref": "#/definitions/v1ConversationBinding"
+        }
+      }
+    },
+    "v1CreateGatewayRequest": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "gateway": {
+          "$ref": "#/definitions/v1Gateway"
+        }
+      }
+    },
+    "v1CreateGrantRequest": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "grant": {
+          "$ref": "#/definitions/v1Grant"
+        }
+      }
+    },
+    "v1CreateIdentityProviderRequest": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "identity_provider": {
+          "$ref": "#/definitions/v1IdentityProvider"
+        }
+      }
     },
     "v1CreateInferenceServiceRequest": {
       "type": "object",
@@ -5197,6 +9152,76 @@
       },
       "description": "CreateOrgRequest creates an additional organization for the authenticated\nidentity. The caller becomes its owner."
     },
+    "v1CreatePrincipalRequest": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "principal": {
+          "$ref": "#/definitions/v1Principal"
+        }
+      }
+    },
+    "v1CreateProjectRequest": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "project": {
+          "$ref": "#/definitions/v1Project"
+        }
+      }
+    },
+    "v1CreateRealmRequest": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "realm": {
+          "$ref": "#/definitions/v1Realm"
+        }
+      }
+    },
+    "v1CreateRoleRequest": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "role": {
+          "$ref": "#/definitions/v1Role"
+        }
+      }
+    },
+    "v1CreateRunRequest": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "run": {
+          "$ref": "#/definitions/v1Run"
+        }
+      }
+    },
     "v1CreateStorageCredentialResponse": {
       "type": "object",
       "properties": {
@@ -5217,6 +9242,20 @@
         }
       },
       "description": "CreateStorageCredentialResponse includes the plaintext credential once.\nTarka does not persist secret_access_key and cannot return it again."
+    },
+    "v1CreateTargetRequest": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "target": {
+          "$ref": "#/definitions/v1Target"
+        }
+      }
     },
     "v1CurrentUser": {
       "type": "object",
@@ -5251,6 +9290,18 @@
         }
       },
       "description": "CurrentUser is the authenticated platform identity and its active\norganization memberships."
+    },
+    "v1DiscoverTargetResponse": {
+      "type": "object",
+      "properties": {
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Capability"
+          }
+        }
+      }
     },
     "v1EnsureHostedGitAccessRequest": {
       "type": "object",
@@ -5320,6 +9371,53 @@
       ],
       "default": "EXECUTION_STATUS_UNSPECIFIED",
       "description": "ExecutionStatus is the terminal or in-progress state of one execution."
+    },
+    "v1Gateway": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "description": "active, suspended, revoked, or provisioning; validated by resource kind."
+        },
+        "version": {
+          "type": "string",
+          "format": "int64",
+          "description": "Optimistic concurrency version, managed by the server."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "name": {
+          "type": "string"
+        },
+        "allowed_origins": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "active_revision": {
+          "type": "string",
+          "format": "int64"
+        },
+        "limits": {
+          "type": "object"
+        }
+      }
     },
     "v1GetSourceBuildLogsResponse": {
       "type": "object",
@@ -5441,6 +9539,54 @@
       },
       "description": "GitRepository describes a private Tarka-hosted Git repository."
     },
+    "v1Grant": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "description": "active, suspended, revoked, or provisioning; validated by resource kind."
+        },
+        "version": {
+          "type": "string",
+          "format": "int64",
+          "description": "Optimistic concurrency version, managed by the server."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "subject_id": {
+          "type": "string"
+        },
+        "actor_id": {
+          "type": "string"
+        },
+        "permissions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Permission"
+          }
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
     "v1HostedGitAccess": {
       "type": "object",
       "properties": {
@@ -5458,6 +9604,60 @@
         }
       },
       "description": "HostedGitAccess describes the caller's hosted Git identity."
+    },
+    "v1IdentityProvider": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "description": "active, suspended, revoked, or provisioning; validated by resource kind."
+        },
+        "version": {
+          "type": "string",
+          "format": "int64",
+          "description": "Optimistic concurrency version, managed by the server."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "protocol": {
+          "type": "string",
+          "description": "oidc, saml, or scim."
+        },
+        "name": {
+          "type": "string"
+        },
+        "configuration": {
+          "type": "object",
+          "description": "Public configuration only. Credentials use the write-only secret endpoint."
+        }
+      }
+    },
+    "v1ImportOpenAPIResponse": {
+      "type": "object",
+      "properties": {
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Capability"
+          }
+        }
+      }
     },
     "v1InferenceCapture": {
       "type": "object",
@@ -5703,6 +9903,96 @@
       },
       "description": "ListApiKeysResponse contains redacted credential metadata."
     },
+    "v1ListApplicationsResponse": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Application"
+          }
+        },
+        "next_page_token": {
+          "type": "string"
+        }
+      }
+    },
+    "v1ListCapabilitiesResponse": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Capability"
+          }
+        },
+        "next_page_token": {
+          "type": "string"
+        }
+      }
+    },
+    "v1ListChannelsResponse": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Channel"
+          }
+        },
+        "next_page_token": {
+          "type": "string"
+        }
+      }
+    },
+    "v1ListConnectionsResponse": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Connection"
+          }
+        },
+        "next_page_token": {
+          "type": "string"
+        }
+      }
+    },
+    "v1ListConversationBindingsResponse": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1ConversationBinding"
+          }
+        },
+        "next_page_token": {
+          "type": "string"
+        }
+      }
+    },
+    "v1ListGatewaysResponse": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Gateway"
+          }
+        },
+        "next_page_token": {
+          "type": "string"
+        }
+      }
+    },
     "v1ListGitHubSourceInstallationsResponse": {
       "type": "object",
       "properties": {
@@ -5742,6 +10032,36 @@
         }
       },
       "description": "ListGitRepositoriesResponse contains hosted Git repository metadata."
+    },
+    "v1ListGrantsResponse": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Grant"
+          }
+        },
+        "next_page_token": {
+          "type": "string"
+        }
+      }
+    },
+    "v1ListIdentityProvidersResponse": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1IdentityProvider"
+          }
+        },
+        "next_page_token": {
+          "type": "string"
+        }
+      }
     },
     "v1ListJobRunsResponse": {
       "type": "object",
@@ -5810,6 +10130,21 @@
       },
       "description": "ListOrgMembersResponse contains memberships in creation order."
     },
+    "v1ListPrincipalsResponse": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Principal"
+          }
+        },
+        "next_page_token": {
+          "type": "string"
+        }
+      }
+    },
     "v1ListProductAccessRequestsResponse": {
       "type": "object",
       "properties": {
@@ -5823,6 +10158,21 @@
       },
       "description": "ListProductAccessRequestsResponse contains newest requests first."
     },
+    "v1ListProjectsResponse": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Project"
+          }
+        },
+        "next_page_token": {
+          "type": "string"
+        }
+      }
+    },
     "v1ListProvisionedResourcesResponse": {
       "type": "object",
       "properties": {
@@ -5835,6 +10185,63 @@
         }
       },
       "description": "ListProvisionedResourcesResponse contains desired-state resources in\nnewest-first order."
+    },
+    "v1ListPublicationsResponse": {
+      "type": "object",
+      "properties": {
+        "publications": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Publication"
+          }
+        }
+      }
+    },
+    "v1ListRealmsResponse": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Realm"
+          }
+        },
+        "next_page_token": {
+          "type": "string"
+        }
+      }
+    },
+    "v1ListRolesResponse": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Role"
+          }
+        },
+        "next_page_token": {
+          "type": "string"
+        }
+      }
+    },
+    "v1ListRunsResponse": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Run"
+          }
+        },
+        "next_page_token": {
+          "type": "string"
+        }
+      }
     },
     "v1ListSandboxTemplatesResponse": {
       "type": "object",
@@ -5923,6 +10330,21 @@
         }
       },
       "description": "ListStorageCredentialsResponse contains redacted storage credentials."
+    },
+    "v1ListTargetsResponse": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Target"
+          }
+        },
+        "next_page_token": {
+          "type": "string"
+        }
+      }
     },
     "v1ListUsageEventsResponse": {
       "type": "object",
@@ -6164,6 +10586,17 @@
       },
       "description": "OrgMember describes one identity's access to an organization. Email is\nincluded so organization members can identify collaborators in the console."
     },
+    "v1Permission": {
+      "type": "object",
+      "properties": {
+        "resource": {
+          "type": "string"
+        },
+        "action": {
+          "type": "string"
+        }
+      }
+    },
     "v1PrepareSourceDeploymentResponse": {
       "type": "object",
       "properties": {
@@ -6226,6 +10659,50 @@
         }
       },
       "description": "PricingCatalog is versioned. All monetary integers are USD microcents,\nwith explicit denominators for tokens, seconds and compute periods."
+    },
+    "v1Principal": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "description": "active, suspended, revoked, or provisioning; validated by resource kind."
+        },
+        "version": {
+          "type": "string",
+          "format": "int64",
+          "description": "Optimistic concurrency version, managed by the server."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "kind": {
+          "type": "string",
+          "description": "user, agent, or service."
+        },
+        "name": {
+          "type": "string"
+        },
+        "external_id": {
+          "type": "string"
+        },
+        "traits": {
+          "type": "object"
+        }
+      }
     },
     "v1ProductAccessRequest": {
       "type": "object",
@@ -6334,6 +10811,40 @@
       },
       "description": "ProductSpendLimit caps one product's charges in a UTC calendar month."
     },
+    "v1Project": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "description": "active, suspended, revoked, or provisioning; validated by resource kind."
+        },
+        "version": {
+          "type": "string",
+          "format": "int64",
+          "description": "Optimistic concurrency version, managed by the server."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
     "v1ProvisionedResource": {
       "type": "object",
       "properties": {
@@ -6393,6 +10904,28 @@
       },
       "description": "ProvisionedResource is the recorded desired and observed state for a managed\nresource."
     },
+    "v1Publication": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "gateway_id": {
+          "type": "string"
+        },
+        "revision": {
+          "type": "string",
+          "format": "int64"
+        },
+        "digest": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
     "v1QuotaPolicy": {
       "type": "object",
       "properties": {
@@ -6430,6 +10963,56 @@
       },
       "description": "QuotaPolicy is the effective inference policy for an organization."
     },
+    "v1Realm": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "description": "active, suspended, revoked, or provisioning; validated by resource kind."
+        },
+        "version": {
+          "type": "string",
+          "format": "int64",
+          "description": "Optimistic concurrency version, managed by the server."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "project_id": {
+          "type": "string"
+        },
+        "environment": {
+          "type": "string"
+        },
+        "tenant_key": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "authentication": {
+          "type": "object"
+        },
+        "issuer": {
+          "type": "string",
+          "description": "Output only: realm-specific authorization issuer."
+        }
+      }
+    },
     "v1RevokeApiKeyResponse": {
       "type": "object",
       "properties": {
@@ -6438,6 +11021,100 @@
         }
       },
       "description": "RevokeApiKeyResponse contains the credential's final metadata."
+    },
+    "v1Role": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "description": "active, suspended, revoked, or provisioning; validated by resource kind."
+        },
+        "version": {
+          "type": "string",
+          "format": "int64",
+          "description": "Optimistic concurrency version, managed by the server."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "name": {
+          "type": "string"
+        },
+        "members": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "permissions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Permission"
+          }
+        }
+      }
+    },
+    "v1Run": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "description": "active, suspended, revoked, or provisioning; validated by resource kind."
+        },
+        "version": {
+          "type": "string",
+          "format": "int64",
+          "description": "Optimistic concurrency version, managed by the server."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "subject_id": {
+          "type": "string"
+        },
+        "actor_id": {
+          "type": "string"
+        },
+        "grant_id": {
+          "type": "string"
+        },
+        "conversation_id": {
+          "type": "string"
+        },
+        "policy_revision": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
     },
     "v1SandboxRuntime": {
       "type": "string",
@@ -6739,6 +11416,18 @@
       },
       "description": "SpendLimits is an organization's monthly spend limits and what it has been\ncharged in the current UTC calendar month. Every amount is in microcents of\ncurrency: one unit is 0.00000001 of it."
     },
+    "v1StartConnectionAuthorizationResponse": {
+      "type": "object",
+      "properties": {
+        "authorization_url": {
+          "type": "string"
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
     "v1StorageBucket": {
       "type": "object",
       "properties": {
@@ -6819,6 +11508,65 @@
         }
       },
       "description": "StorageCredential is redacted metadata for a bucket-scoped S3 access key."
+    },
+    "v1Target": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "description": "active, suspended, revoked, or provisioning; validated by resource kind."
+        },
+        "version": {
+          "type": "string",
+          "format": "int64",
+          "description": "Optimistic concurrency version, managed by the server."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "gateway_id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string",
+          "description": "http or mcp."
+        },
+        "url": {
+          "type": "string",
+          "description": "Public HTTPS URL or an owned Tarka service reference, never both."
+        },
+        "service_id": {
+          "type": "string"
+        },
+        "connection_id": {
+          "type": "string"
+        }
+      }
+    },
+    "v1UploadConnectionSecretResponse": {
+      "type": "object",
+      "properties": {
+        "configured": {
+          "type": "boolean"
+        }
+      }
     },
     "v1UsageAllowance": {
       "type": "object",

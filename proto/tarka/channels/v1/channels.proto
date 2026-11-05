@@ -1,0 +1,158 @@
+// Copyright 2026 Tarka
+// SPDX-License-Identifier: Apache-2.0
+syntax = "proto3";
+package tarka.channels.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/TarkaHQ/api/gen/go/tarka/channels/v1;channelsv1";
+
+message Channel {
+  string id = 1;
+  string org_id = 2;
+  string realm_id = 3;
+  // active, suspended, revoked, or provisioning; validated by resource kind.
+  string status = 4;
+  // Optimistic concurrency version, managed by the server.
+  int64 version = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+  // telegram, discord, slack, or teams.
+  string provider = 10;
+  string name = 11;
+  string connection_id = 12;
+  string agent_id = 13;
+  google.protobuf.Struct configuration = 14;
+}
+message CreateChannelRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  Channel channel = 3;
+}
+message UpdateChannelRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+  Channel channel = 4;
+  int64 expected_version = 5;
+}
+message GetChannelRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+}
+message DeleteChannelRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+  int64 expected_version = 4;
+}
+message ListChannelsRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  int32 page_size = 3;
+  string page_token = 4;
+}
+message ListChannelsResponse {
+  repeated Channel items = 1;
+  string next_page_token = 2;
+}
+message ConversationBinding {
+  string id = 1;
+  string org_id = 2;
+  string realm_id = 3;
+  // active, suspended, revoked, or provisioning; validated by resource kind.
+  string status = 4;
+  // Optimistic concurrency version, managed by the server.
+  int64 version = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+  string channel_id = 10;
+  string provider_workspace_id = 11;
+  string provider_conversation_id = 12;
+  string subject_id = 13;
+  string agent_id = 14;
+  // personal or shared.
+  string kind = 15;
+}
+message CreateConversationBindingRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  ConversationBinding conversation_binding = 3;
+}
+message UpdateConversationBindingRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+  ConversationBinding conversation_binding = 4;
+  int64 expected_version = 5;
+}
+message GetConversationBindingRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+}
+message DeleteConversationBindingRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+  int64 expected_version = 4;
+}
+message ListConversationBindingsRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  int32 page_size = 3;
+  string page_token = 4;
+}
+message ListConversationBindingsResponse {
+  repeated ConversationBinding items = 1;
+  string next_page_token = 2;
+}
+
+service ChannelsService {
+  rpc CreateChannel(CreateChannelRequest) returns (Channel) {
+    option (google.api.http) = {
+      post: "/control/v1/channels/channels"
+      body: "*"
+    };
+  }
+  rpc UpdateChannel(UpdateChannelRequest) returns (Channel) {
+    option (google.api.http) = {
+      put: "/control/v1/channels/channels/{id}"
+      body: "*"
+    };
+  }
+  rpc GetChannel(GetChannelRequest) returns (Channel) {
+    option (google.api.http) = {get: "/control/v1/channels/channels/{id}"};
+  }
+  rpc DeleteChannel(DeleteChannelRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/control/v1/channels/channels/{id}"};
+  }
+  rpc ListChannels(ListChannelsRequest) returns (ListChannelsResponse) {
+    option (google.api.http) = {get: "/control/v1/channels/channels"};
+  }
+  rpc CreateConversationBinding(CreateConversationBindingRequest) returns (ConversationBinding) {
+    option (google.api.http) = {
+      post: "/control/v1/channels/conversation-bindings"
+      body: "*"
+    };
+  }
+  rpc UpdateConversationBinding(UpdateConversationBindingRequest) returns (ConversationBinding) {
+    option (google.api.http) = {
+      put: "/control/v1/channels/conversation-bindings/{id}"
+      body: "*"
+    };
+  }
+  rpc GetConversationBinding(GetConversationBindingRequest) returns (ConversationBinding) {
+    option (google.api.http) = {get: "/control/v1/channels/conversation-bindings/{id}"};
+  }
+  rpc DeleteConversationBinding(DeleteConversationBindingRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/control/v1/channels/conversation-bindings/{id}"};
+  }
+  rpc ListConversationBindings(ListConversationBindingsRequest) returns (ListConversationBindingsResponse) {
+    option (google.api.http) = {get: "/control/v1/channels/conversation-bindings"};
+  }
+}

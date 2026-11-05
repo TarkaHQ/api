@@ -1,0 +1,524 @@
+// Copyright 2026 Tarka
+// SPDX-License-Identifier: Apache-2.0
+syntax = "proto3";
+package tarka.iam.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/TarkaHQ/api/gen/go/tarka/iam/v1;iamv1";
+
+message Project {
+  string id = 1;
+  string org_id = 2;
+  string realm_id = 3;
+  // active, suspended, revoked, or provisioning; validated by resource kind.
+  string status = 4;
+  // Optimistic concurrency version, managed by the server.
+  int64 version = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+  string name = 10;
+}
+message CreateProjectRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  Project project = 3;
+}
+message UpdateProjectRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+  Project project = 4;
+  int64 expected_version = 5;
+}
+message GetProjectRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+}
+message DeleteProjectRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+  int64 expected_version = 4;
+}
+message ListProjectsRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  int32 page_size = 3;
+  string page_token = 4;
+}
+message ListProjectsResponse {
+  repeated Project items = 1;
+  string next_page_token = 2;
+}
+message Realm {
+  string id = 1;
+  string org_id = 2;
+  string realm_id = 3;
+  // active, suspended, revoked, or provisioning; validated by resource kind.
+  string status = 4;
+  // Optimistic concurrency version, managed by the server.
+  int64 version = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+  string project_id = 10;
+  string environment = 11;
+  string tenant_key = 12;
+  string name = 13;
+  google.protobuf.Struct authentication = 14;
+  // Output only: realm-specific authorization issuer.
+  string issuer = 15;
+}
+message CreateRealmRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  Realm realm = 3;
+}
+message UpdateRealmRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+  Realm realm = 4;
+  int64 expected_version = 5;
+}
+message GetRealmRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+}
+message DeleteRealmRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+  int64 expected_version = 4;
+}
+message ListRealmsRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  int32 page_size = 3;
+  string page_token = 4;
+}
+message ListRealmsResponse {
+  repeated Realm items = 1;
+  string next_page_token = 2;
+}
+message Principal {
+  string id = 1;
+  string org_id = 2;
+  string realm_id = 3;
+  // active, suspended, revoked, or provisioning; validated by resource kind.
+  string status = 4;
+  // Optimistic concurrency version, managed by the server.
+  int64 version = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+  // user, agent, or service.
+  string kind = 10;
+  string name = 11;
+  string external_id = 12;
+  google.protobuf.Struct traits = 13;
+}
+message CreatePrincipalRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  Principal principal = 3;
+}
+message UpdatePrincipalRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+  Principal principal = 4;
+  int64 expected_version = 5;
+}
+message GetPrincipalRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+}
+message DeletePrincipalRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+  int64 expected_version = 4;
+}
+message ListPrincipalsRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  int32 page_size = 3;
+  string page_token = 4;
+}
+message ListPrincipalsResponse {
+  repeated Principal items = 1;
+  string next_page_token = 2;
+}
+message IdentityProvider {
+  string id = 1;
+  string org_id = 2;
+  string realm_id = 3;
+  // active, suspended, revoked, or provisioning; validated by resource kind.
+  string status = 4;
+  // Optimistic concurrency version, managed by the server.
+  int64 version = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+  // oidc, saml, or scim.
+  string protocol = 10;
+  string name = 11;
+  // Public configuration only. Credentials use the write-only secret endpoint.
+  google.protobuf.Struct configuration = 12;
+}
+message CreateIdentityProviderRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  IdentityProvider identity_provider = 3;
+}
+message UpdateIdentityProviderRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+  IdentityProvider identity_provider = 4;
+  int64 expected_version = 5;
+}
+message GetIdentityProviderRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+}
+message DeleteIdentityProviderRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+  int64 expected_version = 4;
+}
+message ListIdentityProvidersRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  int32 page_size = 3;
+  string page_token = 4;
+}
+message ListIdentityProvidersResponse {
+  repeated IdentityProvider items = 1;
+  string next_page_token = 2;
+}
+message Role {
+  string id = 1;
+  string org_id = 2;
+  string realm_id = 3;
+  // active, suspended, revoked, or provisioning; validated by resource kind.
+  string status = 4;
+  // Optimistic concurrency version, managed by the server.
+  int64 version = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+  string name = 10;
+  repeated string members = 11;
+  repeated Permission permissions = 12;
+}
+message CreateRoleRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  Role role = 3;
+}
+message UpdateRoleRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+  Role role = 4;
+  int64 expected_version = 5;
+}
+message GetRoleRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+}
+message DeleteRoleRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+  int64 expected_version = 4;
+}
+message ListRolesRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  int32 page_size = 3;
+  string page_token = 4;
+}
+message ListRolesResponse {
+  repeated Role items = 1;
+  string next_page_token = 2;
+}
+message Grant {
+  string id = 1;
+  string org_id = 2;
+  string realm_id = 3;
+  // active, suspended, revoked, or provisioning; validated by resource kind.
+  string status = 4;
+  // Optimistic concurrency version, managed by the server.
+  int64 version = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+  string subject_id = 10;
+  string actor_id = 11;
+  repeated Permission permissions = 12;
+  google.protobuf.Timestamp expires_at = 13;
+}
+message CreateGrantRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  Grant grant = 3;
+}
+message UpdateGrantRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+  Grant grant = 4;
+  int64 expected_version = 5;
+}
+message GetGrantRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+}
+message DeleteGrantRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+  int64 expected_version = 4;
+}
+message ListGrantsRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  int32 page_size = 3;
+  string page_token = 4;
+}
+message ListGrantsResponse {
+  repeated Grant items = 1;
+  string next_page_token = 2;
+}
+message Run {
+  string id = 1;
+  string org_id = 2;
+  string realm_id = 3;
+  // active, suspended, revoked, or provisioning; validated by resource kind.
+  string status = 4;
+  // Optimistic concurrency version, managed by the server.
+  int64 version = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+  string subject_id = 10;
+  string actor_id = 11;
+  string grant_id = 12;
+  string conversation_id = 13;
+  int64 policy_revision = 14;
+}
+message CreateRunRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  Run run = 3;
+}
+message UpdateRunRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+  Run run = 4;
+  int64 expected_version = 5;
+}
+message GetRunRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+}
+message DeleteRunRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+  int64 expected_version = 4;
+}
+message ListRunsRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  int32 page_size = 3;
+  string page_token = 4;
+}
+message ListRunsResponse {
+  repeated Run items = 1;
+  string next_page_token = 2;
+}
+message Permission {
+  string resource = 1;
+  string action = 2;
+}
+message CheckPermissionRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string subject_id = 3;
+  string actor_id = 4;
+  string grant_id = 5;
+  string resource = 6;
+  string action = 7;
+}
+message CheckPermissionResponse {
+  bool allowed = 1;
+  string reason = 2;
+  int64 policy_revision = 3;
+}
+
+service IAMService {
+  rpc CreateProject(CreateProjectRequest) returns (Project) {
+    option (google.api.http) = {
+      post: "/control/v1/iam/projects"
+      body: "*"
+    };
+  }
+  rpc UpdateProject(UpdateProjectRequest) returns (Project) {
+    option (google.api.http) = {
+      put: "/control/v1/iam/projects/{id}"
+      body: "*"
+    };
+  }
+  rpc GetProject(GetProjectRequest) returns (Project) {
+    option (google.api.http) = {get: "/control/v1/iam/projects/{id}"};
+  }
+  rpc DeleteProject(DeleteProjectRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/control/v1/iam/projects/{id}"};
+  }
+  rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse) {
+    option (google.api.http) = {get: "/control/v1/iam/projects"};
+  }
+  rpc CreateRealm(CreateRealmRequest) returns (Realm) {
+    option (google.api.http) = {
+      post: "/control/v1/iam/realms"
+      body: "*"
+    };
+  }
+  rpc UpdateRealm(UpdateRealmRequest) returns (Realm) {
+    option (google.api.http) = {
+      put: "/control/v1/iam/realms/{id}"
+      body: "*"
+    };
+  }
+  rpc GetRealm(GetRealmRequest) returns (Realm) {
+    option (google.api.http) = {get: "/control/v1/iam/realms/{id}"};
+  }
+  rpc DeleteRealm(DeleteRealmRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/control/v1/iam/realms/{id}"};
+  }
+  rpc ListRealms(ListRealmsRequest) returns (ListRealmsResponse) {
+    option (google.api.http) = {get: "/control/v1/iam/realms"};
+  }
+  rpc CreatePrincipal(CreatePrincipalRequest) returns (Principal) {
+    option (google.api.http) = {
+      post: "/control/v1/iam/principals"
+      body: "*"
+    };
+  }
+  rpc UpdatePrincipal(UpdatePrincipalRequest) returns (Principal) {
+    option (google.api.http) = {
+      put: "/control/v1/iam/principals/{id}"
+      body: "*"
+    };
+  }
+  rpc GetPrincipal(GetPrincipalRequest) returns (Principal) {
+    option (google.api.http) = {get: "/control/v1/iam/principals/{id}"};
+  }
+  rpc DeletePrincipal(DeletePrincipalRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/control/v1/iam/principals/{id}"};
+  }
+  rpc ListPrincipals(ListPrincipalsRequest) returns (ListPrincipalsResponse) {
+    option (google.api.http) = {get: "/control/v1/iam/principals"};
+  }
+  rpc CreateIdentityProvider(CreateIdentityProviderRequest) returns (IdentityProvider) {
+    option (google.api.http) = {
+      post: "/control/v1/iam/identity-providers"
+      body: "*"
+    };
+  }
+  rpc UpdateIdentityProvider(UpdateIdentityProviderRequest) returns (IdentityProvider) {
+    option (google.api.http) = {
+      put: "/control/v1/iam/identity-providers/{id}"
+      body: "*"
+    };
+  }
+  rpc GetIdentityProvider(GetIdentityProviderRequest) returns (IdentityProvider) {
+    option (google.api.http) = {get: "/control/v1/iam/identity-providers/{id}"};
+  }
+  rpc DeleteIdentityProvider(DeleteIdentityProviderRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/control/v1/iam/identity-providers/{id}"};
+  }
+  rpc ListIdentityProviders(ListIdentityProvidersRequest) returns (ListIdentityProvidersResponse) {
+    option (google.api.http) = {get: "/control/v1/iam/identity-providers"};
+  }
+  rpc CreateRole(CreateRoleRequest) returns (Role) {
+    option (google.api.http) = {
+      post: "/control/v1/iam/roles"
+      body: "*"
+    };
+  }
+  rpc UpdateRole(UpdateRoleRequest) returns (Role) {
+    option (google.api.http) = {
+      put: "/control/v1/iam/roles/{id}"
+      body: "*"
+    };
+  }
+  rpc GetRole(GetRoleRequest) returns (Role) {
+    option (google.api.http) = {get: "/control/v1/iam/roles/{id}"};
+  }
+  rpc DeleteRole(DeleteRoleRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/control/v1/iam/roles/{id}"};
+  }
+  rpc ListRoles(ListRolesRequest) returns (ListRolesResponse) {
+    option (google.api.http) = {get: "/control/v1/iam/roles"};
+  }
+  rpc CreateGrant(CreateGrantRequest) returns (Grant) {
+    option (google.api.http) = {
+      post: "/control/v1/iam/grants"
+      body: "*"
+    };
+  }
+  rpc UpdateGrant(UpdateGrantRequest) returns (Grant) {
+    option (google.api.http) = {
+      put: "/control/v1/iam/grants/{id}"
+      body: "*"
+    };
+  }
+  rpc GetGrant(GetGrantRequest) returns (Grant) {
+    option (google.api.http) = {get: "/control/v1/iam/grants/{id}"};
+  }
+  rpc DeleteGrant(DeleteGrantRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/control/v1/iam/grants/{id}"};
+  }
+  rpc ListGrants(ListGrantsRequest) returns (ListGrantsResponse) {
+    option (google.api.http) = {get: "/control/v1/iam/grants"};
+  }
+  rpc CreateRun(CreateRunRequest) returns (Run) {
+    option (google.api.http) = {
+      post: "/control/v1/iam/runs"
+      body: "*"
+    };
+  }
+  rpc UpdateRun(UpdateRunRequest) returns (Run) {
+    option (google.api.http) = {
+      put: "/control/v1/iam/runs/{id}"
+      body: "*"
+    };
+  }
+  rpc GetRun(GetRunRequest) returns (Run) {
+    option (google.api.http) = {get: "/control/v1/iam/runs/{id}"};
+  }
+  rpc DeleteRun(DeleteRunRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/control/v1/iam/runs/{id}"};
+  }
+  rpc ListRuns(ListRunsRequest) returns (ListRunsResponse) {
+    option (google.api.http) = {get: "/control/v1/iam/runs"};
+  }
+  rpc CheckPermission(CheckPermissionRequest) returns (CheckPermissionResponse) {
+    option (google.api.http) = {
+      post: "/control/v1/iam/permissions:check"
+      body: "*"
+    };
+  }
+}
