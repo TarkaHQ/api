@@ -3,7 +3,7 @@
   "info": {
     "title": "Tarka Control API",
     "description": "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management.",
-    "version": "1.20.0"
+    "version": "1.21.0"
   },
   "tags": [
     {
@@ -3575,6 +3575,7 @@
         ]
       },
       "post": {
+        "summary": "Unsupported for identity issuance. Use the authenticated runtime HTTP lifecycle.",
         "operationId": "IAMService_CreateRun",
         "responses": {
           "200": {
@@ -3695,6 +3696,7 @@
         ]
       },
       "put": {
+        "summary": "Runs are immutable outside the authenticated runtime lifecycle.",
         "operationId": "IAMService_UpdateRun",
         "responses": {
           "200": {
@@ -11894,7 +11896,7 @@
         },
         "status": {
           "type": "string",
-          "description": "active, suspended, revoked, or provisioning; validated by resource kind."
+          "description": "Output only: running, completed, failed, cancelled, invalidated, or revoked."
         },
         "version": {
           "type": "string",
@@ -11924,6 +11926,27 @@
         "policy_revision": {
           "type": "string",
           "format": "int64"
+        },
+        "permissions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Permission"
+          },
+          "description": "Output only: the immutable capability subset requested by the trusted harness."
+        },
+        "gateway_id": {
+          "type": "string"
+        },
+        "transport": {
+          "type": "string"
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "terminal_reason": {
+          "type": "string"
         }
       }
     },

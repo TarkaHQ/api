@@ -14,6 +14,7 @@ CONTROL_PATH = ROOT / "openapi" / "tarka-control-v1.swagger.json"
 INFERENCE_PATH = ROOT / "openapi" / "tarka-inference-v1.openapi.json"
 INFERENCE_GRPC_PATH = ROOT / "openapi" / "tarka-inference-v1.swagger.json"
 INFERENCE_V2_OPENAPI_PATH = ROOT / "openapi" / "tarka-inference-v2.openapi.json"
+RUNTIME_PATH = ROOT / "openapi" / "tarka-runtime-v1.openapi.json"
 HTTP_METHODS = {
     "get",
     "put",
@@ -331,6 +332,37 @@ def validate_inference_v2_openapi(document: dict[str, Any]) -> None:
         raise ValueError(f"{INFERENCE_V2_OPENAPI_PATH}: speech response must be binary")
 
 
+def validate_runtime(document: dict[str, Any]) -> None:
+    """The runtime lives on a configured HTTPS origin, outside platform-key auth."""
+    if document.get("openapi") != "3.1.0":
+        raise ValueError("runtime: expected OpenAPI 3.1")
+    if not has_bearer_requirement(document.get("security")):
+        raise ValueError("runtime: bearer authorization is required")
+    validate_bearer_definition(document, RUNTIME_PATH)
+    servers = document.get("servers", [])
+    if len(servers) != 1 or servers[0].get("url") != "https://{gateway_host}":
+        raise ValueError("runtime: configured HTTPS origin is required")
+    base = "/v1/realms/{realm_id}/runtime/runs"
+    expected = {base: {"post"}, base + "/{run_id}": {"get", "delete"},
+                base + "/{run_id}/renew": {"post"}, base + "/{run_id}/finish": {"post"}}
+    paths = document.get("paths", {})
+    if {path: set(item) for path, item in paths.items()} != expected:
+        raise ValueError("runtime: lifecycle endpoints changed")
+    for item in paths.values():
+        for operation in item.values():
+            if "security" in operation and not has_bearer_requirement(operation["security"]):
+                raise ValueError("runtime: operation weakens authorization")
+    schemas = document["components"]["schemas"]
+    for name, fields in (("StartRun", {"gateway_id", "transport", "permissions", "max_seconds"}),
+                         ("RenewRun", {"expected_version"}), ("FinishRun", {"state"})):
+        if schemas[name].get("additionalProperties") is not False or set(schemas[name]["properties"]) != fields:
+            raise ValueError("runtime: callers cannot select identity or expand authority")
+    if "credential" in schemas["RunDescription"]["properties"]:
+        raise ValueError("runtime: inspection cannot reveal credentials")
+    operation_ids(document, RUNTIME_PATH)
+    walk_references(document, document, RUNTIME_PATH)
+
+
 def main() -> None:
     control = load(CONTROL_PATH)
     inference = load(INFERENCE_PATH)
@@ -340,6 +372,7 @@ def main() -> None:
     validate_inference(inference)
     validate_inference_grpc(inference_grpc)
     validate_inference_v2_openapi(inference_v2_openapi)
+    validate_runtime(load(RUNTIME_PATH))
     for source, document in (
         (CONTROL_PATH, control),
         (INFERENCE_PATH, inference),

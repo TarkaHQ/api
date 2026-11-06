@@ -306,7 +306,7 @@ message Run {
   string id = 1;
   string org_id = 2;
   string realm_id = 3;
-  // active, suspended, revoked, or provisioning; validated by resource kind.
+  // Output only: running, completed, failed, cancelled, invalidated, or revoked.
   string status = 4;
   // Optimistic concurrency version, managed by the server.
   int64 version = 5;
@@ -317,6 +317,12 @@ message Run {
   string grant_id = 12;
   string conversation_id = 13;
   int64 policy_revision = 14;
+  // Output only: the immutable capability subset requested by the trusted harness.
+  repeated Permission permissions = 15;
+  string gateway_id = 16;
+  string transport = 17;
+  google.protobuf.Timestamp expires_at = 18;
+  string terminal_reason = 19;
 }
 message CreateRunRequest {
   string org_id = 1;
@@ -689,13 +695,17 @@ service IAMService {
   rpc ListGrants(ListGrantsRequest) returns (ListGrantsResponse) {
     option (google.api.http) = {get: "/control/v1/iam/grants"};
   }
+  // Unsupported for identity issuance. Use the authenticated runtime HTTP lifecycle.
   rpc CreateRun(CreateRunRequest) returns (Run) {
+    option deprecated = true;
     option (google.api.http) = {
       post: "/control/v1/iam/runs"
       body: "*"
     };
   }
+  // Runs are immutable outside the authenticated runtime lifecycle.
   rpc UpdateRun(UpdateRunRequest) returns (Run) {
+    option deprecated = true;
     option (google.api.http) = {
       put: "/control/v1/iam/runs/{id}"
       body: "*"
