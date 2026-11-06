@@ -14,6 +14,7 @@ CONTROL_PATH = ROOT / "openapi" / "tarka-control-v1.swagger.json"
 INFERENCE_PATH = ROOT / "openapi" / "tarka-inference-v1.openapi.json"
 INFERENCE_GRPC_PATH = ROOT / "openapi" / "tarka-inference-v1.swagger.json"
 INFERENCE_V2_OPENAPI_PATH = ROOT / "openapi" / "tarka-inference-v2.openapi.json"
+IAM_OAUTH_PATH = ROOT / "openapi" / "tarka-iam-oauth-v1.openapi.json"
 RUNTIME_PATH = ROOT / "openapi" / "tarka-runtime-v1.openapi.json"
 HTTP_METHODS = {
     "get",
@@ -363,6 +364,35 @@ def validate_runtime(document: dict[str, Any]) -> None:
     walk_references(document, document, RUNTIME_PATH)
 
 
+def validate_iam_oauth(document: dict[str, Any]) -> None:
+    """Customer OAuth must not inherit platform API-key authentication."""
+    if document.get("openapi") != "3.1.0" or document.get("security") != []:
+        raise ValueError("customer OAuth: independent public discovery/onboarding required")
+    servers = document.get("servers", [])
+    if len(servers) != 1 or servers[0].get("url") != "https://{issuer_host}":
+        raise ValueError("customer OAuth: environment HTTPS issuer required")
+    expected = {"/.well-known/openid-configuration": {"get"},
+                "/.well-known/oauth-authorization-server": {"get"},
+                "/oauth2/register": {"post"}, "/oauth2/auth": {"get"},
+                "/oauth2/token": {"post"}}
+    if {path: set(item) for path, item in document.get("paths", {}).items()} != expected:
+        raise ValueError("customer OAuth: public endpoint set mismatch")
+    schemas = document["components"]["schemas"]
+    metadata = schemas["PublicClientRegistration"]
+    if metadata["properties"]["token_endpoint_auth_method"].get("enum") != ["none"]:
+        raise ValueError("customer OAuth: public onboarding cannot create credentials")
+    forbidden = {tuple(item.get("required", [])) for item in metadata["not"]["anyOf"]}
+    if not {(name,) for name in ("client_id", "client_secret", "agent_id", "allowed_audiences", "resource")}.issubset(forbidden):
+        raise ValueError("customer OAuth: onboarding cannot select identity or authority")
+    if "client_secret" in schemas["ClientRegistrationResult"]["properties"]:
+        raise ValueError("customer OAuth: public registration cannot return a secret")
+    params = {p["name"]: p for p in document["paths"]["/oauth2/auth"]["get"]["parameters"]}
+    if params["code_challenge_method"]["schema"].get("enum") != ["S256"] or not params["resource"].get("required"):
+        raise ValueError("customer OAuth: PKCE S256 and exact resource are mandatory")
+    operation_ids(document, IAM_OAUTH_PATH)
+    walk_references(document, document, IAM_OAUTH_PATH)
+
+
 def main() -> None:
     control = load(CONTROL_PATH)
     inference = load(INFERENCE_PATH)
@@ -373,6 +403,7 @@ def main() -> None:
     validate_inference_grpc(inference_grpc)
     validate_inference_v2_openapi(inference_v2_openapi)
     validate_runtime(load(RUNTIME_PATH))
+    validate_iam_oauth(load(IAM_OAUTH_PATH))
     for source, document in (
         (CONTROL_PATH, control),
         (INFERENCE_PATH, inference),
@@ -382,7 +413,7 @@ def main() -> None:
         validate_authenticated_tls_surface(document, source)
         operation_ids(document, source)
         walk_references(document, document, source)
-    print("validated control and v1/v2 inference OpenAPI contracts")
+    print("validated control, inference, runtime and customer OAuth OpenAPI contracts")
 
 
 if __name__ == "__main__":

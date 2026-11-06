@@ -69,6 +69,10 @@ message Realm {
   string environment = 11;
   string tenant_key = 12;
   string name = 13;
+  // Customer login policy. Optional client_registration has cimd/dcr booleans
+  // (default false) and allowed_audiences: exact published gateway API/MCP
+  // audiences in this realm. Public onboarding grants no permissions; users
+  // still approve consent and every action checks current authorization.
   google.protobuf.Struct authentication = 14;
   // Output only: realm-specific authorization issuer.
   string issuer = 15;

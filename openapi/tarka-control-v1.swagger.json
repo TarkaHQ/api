@@ -3,7 +3,7 @@
   "info": {
     "title": "Tarka Control API",
     "description": "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management.",
-    "version": "1.25.0"
+    "version": "1.26.0"
   },
   "tags": [
     {
@@ -12044,7 +12044,8 @@
           "type": "string"
         },
         "authentication": {
-          "type": "object"
+          "type": "object",
+          "description": "Customer login policy. Optional client_registration has cimd/dcr booleans\n(default false) and allowed_audiences: exact published gateway API/MCP\naudiences in this realm. Public onboarding grants no permissions; users\nstill approve consent and every action checks current authorization."
         },
         "issuer": {
           "type": "string",
