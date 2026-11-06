@@ -3,12 +3,15 @@
   "info": {
     "title": "Tarka Control API",
     "description": "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management.",
-    "version": "1.27.0"
+    "version": "1.28.0"
   },
   "tags": [
     {
       "name": "ProvisioningService",
       "description": "ProvisioningService manages Tarka identities, organizations, API keys,\nquotas, metering, object storage, hosted Git, and desired-state compute\nresources."
+    },
+    {
+      "name": "IAMService"
     },
     {
       "name": "AccessService"
@@ -18,9 +21,6 @@
     },
     {
       "name": "GatewayService"
-    },
-    {
-      "name": "IAMService"
     },
     {
       "name": "SandboxService",
@@ -109,6 +109,254 @@
             "required": true,
             "schema": {
               "$ref": "#/definitions/v1CreateApplicationRequest"
+            }
+          }
+        ],
+        "tags": [
+          "AccessService"
+        ]
+      }
+    },
+    "/control/v1/access/applications/{application_id}/workspaces": {
+      "get": {
+        "operationId": "AccessService_ListWorkspaces",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListWorkspacesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "application_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "page_token",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "AccessService"
+        ]
+      }
+    },
+    "/control/v1/access/applications/{application_id}/workspaces/{id}": {
+      "get": {
+        "operationId": "AccessService_GetWorkspace",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Workspace"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "application_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "AccessService"
+        ]
+      },
+      "delete": {
+        "summary": "Permanently removes the workspace and its retained storage asynchronously.",
+        "operationId": "AccessService_DeleteWorkspace",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "application_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "expected_version",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "AccessService"
+        ]
+      }
+    },
+    "/control/v1/access/applications/{application_id}/workspaces/{id}/pause": {
+      "post": {
+        "summary": "Stops compute and withdraws active delegation; retained files are unchanged.",
+        "operationId": "AccessService_PauseWorkspace",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Workspace"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "application_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/AccessServicePauseWorkspaceBody"
+            }
+          }
+        ],
+        "tags": [
+          "AccessService"
+        ]
+      }
+    },
+    "/control/v1/access/applications/{application_id}/workspaces/{id}/resume": {
+      "post": {
+        "summary": "Rechecks billing and capacity. Resuming cannot create customer consent or\nstart an agent turn; those still require a live authorized customer session.",
+        "operationId": "AccessService_ResumeWorkspace",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Workspace"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "application_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/AccessServiceResumeWorkspaceBody"
             }
           }
         ],
@@ -7415,6 +7663,36 @@
     }
   },
   "definitions": {
+    "AccessServicePauseWorkspaceBody": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "expected_version": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "AccessServiceResumeWorkspaceBody": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "expected_version": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
     "AccessServiceUpdateApplicationBody": {
       "type": "object",
       "properties": {
@@ -9265,6 +9543,10 @@
           "type": "string",
           "description": "Output only. pending until the controller has observed the protected\ningress and private origin at the current Agent Host revision; protected\nindicates routing enforcement, independently of user permission.",
           "readOnly": true
+        },
+        "workspace": {
+          "$ref": "#/definitions/v1WorkspacePolicy",
+          "description": "Optional for Hermes/OpenClaw. Disabled or absent provisions no personal\ncompute and never falls back to the host's shared native UI."
         }
       }
     },
@@ -11392,6 +11674,21 @@
       },
       "description": "ListUsageEventsResponse contains records in newest-first order."
     },
+    "v1ListWorkspacesResponse": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Workspace"
+          }
+        },
+        "next_page_token": {
+          "type": "string"
+        }
+      }
+    },
     "v1Location": {
       "type": "object",
       "properties": {
@@ -12972,6 +13269,95 @@
         }
       },
       "description": "UsageSummary aggregates metering over a half-open UTC time interval."
+    },
+    "v1Workspace": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "application_id": {
+          "type": "string"
+        },
+        "subject_id": {
+          "type": "string"
+        },
+        "agent_id": {
+          "type": "string"
+        },
+        "agent_host_id": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "description": "provisioning, ready, suspended, failed, deleting, or deleted."
+        },
+        "version": {
+          "type": "string",
+          "format": "int64"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "last_active_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "status_reason": {
+          "type": "string",
+          "description": "Stable, non-sensitive status code for admission or runtime failures."
+        }
+      },
+      "description": "An isolated customer workspace; never contains native credentials, private\norigins, conversation contents, files or delegated bearer tokens."
+    },
+    "v1WorkspacePolicy": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enables private, separately billed workspaces on the first authorized\nvisit. Disabling access stops execution without deleting stored files."
+        },
+        "agent_id": {
+          "type": "string",
+          "description": "Same-realm agent principal used for explicit customer delegation."
+        },
+        "gateway_id": {
+          "type": "string",
+          "description": "Same-realm published API/MCP gateway. No arbitrary upstream URL."
+        },
+        "transport": {
+          "type": "string",
+          "description": "api or mcp. A run receives only the current intersection of these\npublished permissions, customer consent, user roles and agent roles."
+        },
+        "permissions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Permission"
+          }
+        },
+        "max_workspaces": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Maximum retained, nondeleted workspaces for this application, 1..25.\nOrganization admission, credit and physical capacity limits also apply."
+        },
+        "idle_timeout_seconds": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Seconds without an authorized interactive session before compute stops,\n300..3600. Persistent storage is retained until explicit deletion."
+        }
+      }
     },
     "v1WriteAgentHostTerminalResponse": {
       "type": "object",
