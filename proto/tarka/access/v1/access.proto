@@ -25,6 +25,10 @@ message Application {
   // hermes, openclaw, or http.
   string adapter = 13;
   repeated string operator_ids = 14;
+  // Output only. pending until the controller has observed the protected
+  // ingress and private origin at the current Agent Host revision; protected
+  // indicates routing enforcement, independently of user permission.
+  string protection_state = 15;
 }
 message CreateApplicationRequest {
   string org_id = 1;

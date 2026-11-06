@@ -3,7 +3,7 @@
   "info": {
     "title": "Tarka Control API",
     "description": "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management.",
-    "version": "1.21.0"
+    "version": "1.22.0"
   },
   "tags": [
     {
@@ -9051,6 +9051,11 @@
           "items": {
             "type": "string"
           }
+        },
+        "protection_state": {
+          "type": "string",
+          "description": "Output only. pending until the controller has observed the protected\ningress and private origin at the current Agent Host revision; protected\nindicates routing enforcement, independently of user permission.",
+          "readOnly": true
         }
       }
     },
