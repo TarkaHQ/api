@@ -24,6 +24,20 @@ message Gateway {
   repeated string allowed_origins = 11;
   int64 active_revision = 12;
   google.protobuf.Struct limits = 13;
+  // Output only. Canonical connection settings, available before publication.
+  // Presence does not indicate deployment readiness or grant access.
+  GatewayEndpoints endpoints = 14;
+}
+message GatewayEndpoints {
+  // Append a published operation path to this URL.
+  string api_base_url = 1;
+  // Exact OAuth resource audience for the API endpoint (without /api).
+  string api_audience = 2;
+  string mcp_url = 3;
+  // Exact OAuth resource audience for MCP, equal to mcp_url.
+  string mcp_audience = 4;
+  // Environment OAuth issuer, when provisioned.
+  string issuer = 5;
 }
 message CreateGatewayRequest {
   string org_id = 1;

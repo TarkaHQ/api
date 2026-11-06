@@ -3,7 +3,7 @@
   "info": {
     "title": "Tarka Control API",
     "description": "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management.",
-    "version": "1.24.0"
+    "version": "1.25.0"
   },
   "tags": [
     {
@@ -10299,6 +10299,35 @@
         },
         "limits": {
           "type": "object"
+        },
+        "endpoints": {
+          "$ref": "#/definitions/v1GatewayEndpoints",
+          "description": "Output only. Canonical connection settings, available before publication.\nPresence does not indicate deployment readiness or grant access.",
+          "readOnly": true
+        }
+      }
+    },
+    "v1GatewayEndpoints": {
+      "type": "object",
+      "properties": {
+        "api_base_url": {
+          "type": "string",
+          "description": "Append a published operation path to this URL."
+        },
+        "api_audience": {
+          "type": "string",
+          "description": "Exact OAuth resource audience for the API endpoint (without /api)."
+        },
+        "mcp_url": {
+          "type": "string"
+        },
+        "mcp_audience": {
+          "type": "string",
+          "description": "Exact OAuth resource audience for MCP, equal to mcp_url."
+        },
+        "issuer": {
+          "type": "string",
+          "description": "Environment OAuth issuer, when provisioned."
         }
       }
     },
