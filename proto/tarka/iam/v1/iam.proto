@@ -173,6 +173,17 @@ message IdentityProvider {
   string name = 11;
   // Public configuration only. Credentials use the write-only secret endpoint.
   google.protobuf.Struct configuration = 12;
+  // Output only: an OIDC client secret has been stored. This does not imply
+  // successful provider reconciliation or a completed sign-in test.
+  bool credential_configured = 13;
+}
+message UploadIdentityProviderSecretRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string provider_id = 3;
+  int64 expected_version = 4;
+  // Write only. OIDC client secret, stored in the environment's vault.
+  string client_secret = 5;
 }
 message CreateIdentityProviderRequest {
   string org_id = 1;
@@ -527,6 +538,12 @@ message RotateOAuthClientSecretRequest {
 }
 
 service IAMService {
+  rpc UploadIdentityProviderSecret(UploadIdentityProviderSecretRequest) returns (IdentityProvider) {
+    option (google.api.http) = {
+      put: "/control/v1/iam/identity-providers/{provider_id}/secret"
+      body: "*"
+    };
+  }
   rpc GetDirectoryStatus(GetDirectoryStatusRequest) returns (DirectoryStatus) {
     option (google.api.http) = {get: "/control/v1/iam/identity-providers/{provider_id}/directory"};
   }

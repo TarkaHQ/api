@@ -3,7 +3,7 @@
   "info": {
     "title": "Tarka Control API",
     "description": "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management.",
-    "version": "1.22.0"
+    "version": "1.23.0"
   },
   "tags": [
     {
@@ -2382,6 +2382,44 @@
             "in": "query",
             "required": false,
             "type": "string"
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      }
+    },
+    "/control/v1/iam/identity-providers/{provider_id}/secret": {
+      "put": {
+        "operationId": "IAMService_UploadIdentityProviderSecret",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1IdentityProvider"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "provider_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/IAMServiceUploadIdentityProviderSecretBody"
+            }
           }
         ],
         "tags": [
@@ -7626,6 +7664,25 @@
         }
       }
     },
+    "IAMServiceUploadIdentityProviderSecretBody": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "expected_version": {
+          "type": "string",
+          "format": "int64"
+        },
+        "client_secret": {
+          "type": "string",
+          "description": "Write only. OIDC client secret, stored in the environment's vault."
+        }
+      }
+    },
     "ProvisioningServiceAcceptUsagePolicyBody": {
       "type": "object",
       "properties": {
@@ -10332,6 +10389,10 @@
         "configuration": {
           "type": "object",
           "description": "Public configuration only. Credentials use the write-only secret endpoint."
+        },
+        "credential_configured": {
+          "type": "boolean",
+          "description": "Output only: an OIDC client secret has been stored. This does not imply\nsuccessful provider reconciliation or a completed sign-in test."
         }
       }
     },
