@@ -24,7 +24,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Tarka Control API"
     description: "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management."
-    version: "1.23.0"
+    version: "1.24.0"
   }
   host: "tarka.rest"
   schemes: HTTPS

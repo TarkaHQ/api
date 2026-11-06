@@ -3,7 +3,7 @@
   "info": {
     "title": "Tarka Control API",
     "description": "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management.",
-    "version": "1.23.0"
+    "version": "1.24.0"
   },
   "tags": [
     {
@@ -2218,6 +2218,48 @@
         ]
       }
     },
+    "/control/v1/iam/identity-providers/{provider_id}/directory/connection": {
+      "get": {
+        "operationId": "IAMService_GetDirectoryConnection",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DirectoryConnection"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "provider_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      }
+    },
     "/control/v1/iam/identity-providers/{provider_id}/directory/groups": {
       "get": {
         "operationId": "IAMService_ListDirectoryGroups",
@@ -2382,6 +2424,44 @@
             "in": "query",
             "required": false,
             "type": "string"
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      }
+    },
+    "/control/v1/iam/identity-providers/{provider_id}/directory:rotate-token": {
+      "post": {
+        "operationId": "IAMService_RotateDirectoryToken",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DirectoryTokenRegistration"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "provider_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/IAMServiceRotateDirectoryTokenBody"
+            }
           }
         ],
         "tags": [
@@ -7523,6 +7603,22 @@
         }
       }
     },
+    "IAMServiceRotateDirectoryTokenBody": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "expected_version": {
+          "type": "string",
+          "format": "int64",
+          "description": "Current credential_version, or zero to generate the initial token."
+        }
+      }
+    },
     "IAMServiceRotateOAuthClientSecretBody": {
       "type": "object",
       "properties": {
@@ -9905,6 +10001,36 @@
       },
       "description": "CurrentUser is the authenticated platform identity and its active\norganization memberships."
     },
+    "v1DirectoryConnection": {
+      "type": "object",
+      "properties": {
+        "provider_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "endpoint": {
+          "type": "string"
+        },
+        "credential_version": {
+          "type": "string",
+          "format": "int64",
+          "description": "Zero until the first token is generated. Independent of provider version."
+        },
+        "provider_version": {
+          "type": "string",
+          "format": "int64"
+        },
+        "ready": {
+          "type": "boolean"
+        },
+        "credential_configured": {
+          "type": "boolean"
+        }
+      },
+      "description": "Customer SCIM credentials authenticate only this provider's directory API.\nNative provider credentials are internal and never returned by these methods."
+    },
     "v1DirectoryGroup": {
       "type": "object",
       "properties": {
@@ -9993,6 +10119,18 @@
         },
         "error_code": {
           "type": "string"
+        }
+      }
+    },
+    "v1DirectoryTokenRegistration": {
+      "type": "object",
+      "properties": {
+        "connection": {
+          "$ref": "#/definitions/v1DirectoryConnection"
+        },
+        "token": {
+          "type": "string",
+          "description": "Returned once on successful generation/rotation; never returned by Get/List."
         }
       }
     },

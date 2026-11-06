@@ -405,6 +405,35 @@ message GetDirectoryStatusRequest {
   string realm_id = 2;
   string provider_id = 3;
 }
+// Customer SCIM credentials authenticate only this provider's directory API.
+// Native provider credentials are internal and never returned by these methods.
+message DirectoryConnection {
+  string provider_id = 1;
+  string realm_id = 2;
+  string endpoint = 3;
+  // Zero until the first token is generated. Independent of provider version.
+  int64 credential_version = 4;
+  int64 provider_version = 5;
+  bool ready = 6;
+  bool credential_configured = 7;
+}
+message GetDirectoryConnectionRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string provider_id = 3;
+}
+message RotateDirectoryTokenRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string provider_id = 3;
+  // Current credential_version, or zero to generate the initial token.
+  int64 expected_version = 4;
+}
+message DirectoryTokenRegistration {
+  DirectoryConnection connection = 1;
+  // Returned once on successful generation/rotation; never returned by Get/List.
+  string token = 2;
+}
 message ListDirectoryUsersRequest {
   string org_id = 1;
   string realm_id = 2;
@@ -538,6 +567,15 @@ message RotateOAuthClientSecretRequest {
 }
 
 service IAMService {
+  rpc GetDirectoryConnection(GetDirectoryConnectionRequest) returns (DirectoryConnection) {
+    option (google.api.http) = {get: "/control/v1/iam/identity-providers/{provider_id}/directory/connection"};
+  }
+  rpc RotateDirectoryToken(RotateDirectoryTokenRequest) returns (DirectoryTokenRegistration) {
+    option (google.api.http) = {
+      post: "/control/v1/iam/identity-providers/{provider_id}/directory:rotate-token"
+      body: "*"
+    };
+  }
   rpc UploadIdentityProviderSecret(UploadIdentityProviderSecretRequest) returns (IdentityProvider) {
     option (google.api.http) = {
       put: "/control/v1/iam/identity-providers/{provider_id}/secret"
