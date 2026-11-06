@@ -3,7 +3,7 @@
   "info": {
     "title": "Tarka Control API",
     "description": "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management.",
-    "version": "1.26.0"
+    "version": "1.27.0"
   },
   "tags": [
     {
@@ -1478,6 +1478,62 @@
             "schema": {
               "$ref": "#/definitions/GatewayServiceUpdateGatewayBody"
             }
+          }
+        ],
+        "tags": [
+          "GatewayService"
+        ]
+      }
+    },
+    "/control/v1/gateway/private-services": {
+      "get": {
+        "operationId": "GatewayService_ListPrivateServices",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListPrivateServicesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "page_token",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "agent_host_id",
+            "description": "Optional owned host filter.",
+            "in": "query",
+            "required": false,
+            "type": "string"
           }
         ],
         "tags": [
@@ -9604,7 +9660,8 @@
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "Exact HTTPS origins or tarka-service://{owned-private-service-id}."
         },
         "configuration": {
           "type": "object"
@@ -11106,6 +11163,21 @@
         }
       }
     },
+    "v1ListPrivateServicesResponse": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1PrivateService"
+          }
+        },
+        "next_page_token": {
+          "type": "string"
+        }
+      }
+    },
     "v1ListProductAccessRequestsResponse": {
       "type": "object",
       "properties": {
@@ -11742,6 +11814,43 @@
           "type": "object"
         }
       }
+    },
+    "v1PrivateService": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "org_id": {
+          "type": "string"
+        },
+        "agent_host_id": {
+          "type": "string"
+        },
+        "host_name": {
+          "type": "string"
+        },
+        "service": {
+          "type": "string"
+        },
+        "port": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "location": {
+          "type": "string"
+        },
+        "revision": {
+          "type": "string",
+          "format": "int64"
+        },
+        "state": {
+          "type": "string",
+          "description": "ready, deployment_pending, service_removed, or host_unavailable."
+        }
+      },
+      "description": "Output only. A controller-observed service belonging to this organization.\nCredentials use tarka-service://{id} as their exact allowed origin. Publishing\na target binds its current deployment revision; a new revision needs republishing.\nManaged Hermes/OpenClaw workspaces have their own access boundary and are omitted.",
+      "readOnly": true
     },
     "v1ProductAccessRequest": {
       "type": "object",
@@ -12625,6 +12734,10 @@
         },
         "connection_id": {
           "type": "string"
+        },
+        "service_path": {
+          "type": "string",
+          "description": "For service_id destinations only. Canonical absolute base path (HTTP) or\nMCP endpoint path; defaults to /. Queries and templates are not allowed."
         }
       }
     },

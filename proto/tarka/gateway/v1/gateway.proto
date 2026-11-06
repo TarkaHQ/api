@@ -90,6 +90,37 @@ message Target {
   string url = 13;
   string service_id = 14;
   string connection_id = 15;
+  // For service_id destinations only. Canonical absolute base path (HTTP) or
+  // MCP endpoint path; defaults to /. Queries and templates are not allowed.
+  string service_path = 16;
+}
+// Output only. A controller-observed service belonging to this organization.
+// Credentials use tarka-service://{id} as their exact allowed origin. Publishing
+// a target binds its current deployment revision; a new revision needs republishing.
+// Managed Hermes/OpenClaw workspaces have their own access boundary and are omitted.
+message PrivateService {
+  string id = 1;
+  string org_id = 2;
+  string agent_host_id = 3;
+  string host_name = 4;
+  string service = 5;
+  uint32 port = 6;
+  string location = 7;
+  int64 revision = 8;
+  // ready, deployment_pending, service_removed, or host_unavailable.
+  string state = 9;
+}
+message ListPrivateServicesRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  int32 page_size = 3;
+  string page_token = 4;
+  // Optional owned host filter.
+  string agent_host_id = 5;
+}
+message ListPrivateServicesResponse {
+  repeated PrivateService items = 1;
+  string next_page_token = 2;
 }
 message CreateTargetRequest {
   string org_id = 1;
@@ -139,6 +170,7 @@ message Connection {
   string kind = 11;
   // Empty for realm-owned connections; otherwise an IAM principal identifier.
   string owner_id = 12;
+  // Exact HTTPS origins or tarka-service://{owned-private-service-id}.
   repeated string allowed_origins = 13;
   google.protobuf.Struct configuration = 14;
   // Output only. No credential value is returned.
@@ -302,6 +334,9 @@ message StartConnectionAuthorizationResponse {
 }
 
 service GatewayService {
+  rpc ListPrivateServices(ListPrivateServicesRequest) returns (ListPrivateServicesResponse) {
+    option (google.api.http) = {get: "/control/v1/gateway/private-services"};
+  }
   rpc CreateGateway(CreateGatewayRequest) returns (Gateway) {
     option (google.api.http) = {
       post: "/control/v1/gateway/gateways"
