@@ -3,7 +3,7 @@
   "info": {
     "title": "Tarka Control API",
     "description": "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management.",
-    "version": "1.28.0"
+    "version": "1.29.0"
   },
   "tags": [
     {
@@ -1276,6 +1276,44 @@
             "required": true,
             "schema": {
               "$ref": "#/definitions/GatewayServiceStartConnectionAuthorizationBody"
+            }
+          }
+        ],
+        "tags": [
+          "GatewayService"
+        ]
+      }
+    },
+    "/control/v1/gateway/connections/{connection_id}:diagnose": {
+      "post": {
+        "operationId": "GatewayService_DiagnoseConnection",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ConnectionDiagnostics"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "connection_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/GatewayServiceDiagnoseConnectionBody"
             }
           }
         ],
@@ -7747,6 +7785,17 @@
         }
       }
     },
+    "GatewayServiceDiagnoseConnectionBody": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        }
+      }
+    },
     "GatewayServiceDiscoverTargetBody": {
       "type": "object",
       "properties": {
@@ -9954,6 +10003,59 @@
           "readOnly": true
         }
       }
+    },
+    "v1ConnectionDiagnosticCheck": {
+      "type": "object",
+      "properties": {
+        "component": {
+          "type": "string",
+          "description": "connection, realm, credentials, or oauth_metadata."
+        },
+        "status": {
+          "type": "string",
+          "description": "passed, failed, or skipped."
+        },
+        "code": {
+          "type": "string",
+          "description": "Stable code, never a provider response, credential or URL."
+        }
+      }
+    },
+    "v1ConnectionDiagnostics": {
+      "type": "object",
+      "properties": {
+        "connection_id": {
+          "type": "string"
+        },
+        "connection_version": {
+          "type": "string",
+          "format": "int64"
+        },
+        "credential_generation": {
+          "type": "string",
+          "format": "int64"
+        },
+        "status": {
+          "type": "string",
+          "description": "ready, setup_required, reauthorization_required, unavailable, or disabled."
+        },
+        "checked_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "credential_expires_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "checks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1ConnectionDiagnosticCheck"
+          }
+        }
+      },
+      "description": "A bounded, read-only check of configuration, vault availability and OAuth\nmetadata. It never exchanges or refreshes tokens or invokes an upstream tool.\nA ready result does not assert upstream permission to perform an operation."
     },
     "v1ConversationBinding": {
       "type": "object",

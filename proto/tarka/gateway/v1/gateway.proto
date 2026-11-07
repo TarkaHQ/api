@@ -304,6 +304,32 @@ message UploadConnectionSecretRequest {
 message UploadConnectionSecretResponse {
   bool configured = 1;
 }
+message DiagnoseConnectionRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string connection_id = 3;
+}
+// A bounded, read-only check of configuration, vault availability and OAuth
+// metadata. It never exchanges or refreshes tokens or invokes an upstream tool.
+// A ready result does not assert upstream permission to perform an operation.
+message ConnectionDiagnostics {
+  string connection_id = 1;
+  int64 connection_version = 2;
+  int64 credential_generation = 3;
+  // ready, setup_required, reauthorization_required, unavailable, or disabled.
+  string status = 4;
+  google.protobuf.Timestamp checked_at = 5;
+  google.protobuf.Timestamp credential_expires_at = 6;
+  repeated ConnectionDiagnosticCheck checks = 7;
+}
+message ConnectionDiagnosticCheck {
+  // connection, realm, credentials, or oauth_metadata.
+  string component = 1;
+  // passed, failed, or skipped.
+  string status = 2;
+  // Stable code, never a provider response, credential or URL.
+  string code = 3;
+}
 message DiscoverTargetRequest {
   string org_id = 1;
   string realm_id = 2;
@@ -439,6 +465,12 @@ service GatewayService {
   rpc UploadConnectionSecret(UploadConnectionSecretRequest) returns (UploadConnectionSecretResponse) {
     option (google.api.http) = {
       put: "/control/v1/gateway/connections/{connection_id}/secret"
+      body: "*"
+    };
+  }
+  rpc DiagnoseConnection(DiagnoseConnectionRequest) returns (ConnectionDiagnostics) {
+    option (google.api.http) = {
+      post: "/control/v1/gateway/connections/{connection_id}:diagnose"
       body: "*"
     };
   }
