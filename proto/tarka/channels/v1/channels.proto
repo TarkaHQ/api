@@ -23,9 +23,54 @@ message Channel {
   // telegram, discord, slack, or teams.
   string provider = 10;
   string name = 11;
+  // Optional legacy connection reference. Messaging credentials are configured
+  // independently using ConfigureChannelInstallation.
   string connection_id = 12;
   string agent_id = 13;
   google.protobuf.Struct configuration = 14;
+}
+// Contains public installation metadata only. Credentials are never returned.
+// A ready installation proves signed provider delivery, not customer consent
+// or permission to execute an agent.
+message ChannelInstallation {
+  string channel_id = 1;
+  int64 channel_version = 2;
+  int64 credential_generation = 3;
+  // setup_required, registering, awaiting_delivery, ready,
+  // configuration_changed, or disabled.
+  string status = 4;
+  string provider = 5;
+  string workspace_id = 6;
+  string application_id = 7;
+  string bot_id = 8;
+  string webhook_url = 9;
+  google.protobuf.Timestamp verified_at = 10;
+  // Stable code identifying the remaining provider setup action.
+  string setup_code = 11;
+}
+message GetChannelInstallationRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string channel_id = 3;
+}
+message ConfigureChannelInstallationRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string channel_id = 3;
+  int64 expected_version = 4;
+  // Zero for initial setup; otherwise the currently observed generation.
+  int64 expected_credential_generation = 5;
+  // Write-only: Telegram/Discord bot_token; Slack bot_token + signing_secret;
+  // Teams client_secret. Public workspace/application IDs belong in the
+  // channel configuration. Provider APIs verify immutable bot ownership.
+  map<string, string> credentials = 6;
+}
+message RevokeChannelInstallationRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string channel_id = 3;
+  int64 expected_version = 4;
+  int64 expected_credential_generation = 5;
 }
 message CreateChannelRequest {
   string org_id = 1;
@@ -113,6 +158,21 @@ message ListConversationBindingsResponse {
 }
 
 service ChannelsService {
+  rpc GetChannelInstallation(GetChannelInstallationRequest) returns (ChannelInstallation) {
+    option (google.api.http) = {get: "/control/v1/channels/channels/{channel_id}/installation"};
+  }
+  rpc ConfigureChannelInstallation(ConfigureChannelInstallationRequest) returns (ChannelInstallation) {
+    option (google.api.http) = {
+      post: "/control/v1/channels/channels/{channel_id}/installation:configure"
+      body: "*"
+    };
+  }
+  rpc RevokeChannelInstallation(RevokeChannelInstallationRequest) returns (ChannelInstallation) {
+    option (google.api.http) = {
+      post: "/control/v1/channels/channels/{channel_id}/installation:revoke"
+      body: "*"
+    };
+  }
   rpc CreateChannel(CreateChannelRequest) returns (Channel) {
     option (google.api.http) = {
       post: "/control/v1/channels/channels"

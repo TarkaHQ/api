@@ -3,7 +3,7 @@
   "info": {
     "title": "Tarka Control API",
     "description": "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management.",
-    "version": "1.29.0"
+    "version": "1.30.0"
   },
   "tags": [
     {
@@ -585,6 +585,124 @@
             "required": true,
             "schema": {
               "$ref": "#/definitions/v1CreateChannelRequest"
+            }
+          }
+        ],
+        "tags": [
+          "ChannelsService"
+        ]
+      }
+    },
+    "/control/v1/channels/channels/{channel_id}/installation": {
+      "get": {
+        "operationId": "ChannelsService_GetChannelInstallation",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ChannelInstallation"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "channel_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ChannelsService"
+        ]
+      }
+    },
+    "/control/v1/channels/channels/{channel_id}/installation:configure": {
+      "post": {
+        "operationId": "ChannelsService_ConfigureChannelInstallation",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ChannelInstallation"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "channel_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ChannelsServiceConfigureChannelInstallationBody"
+            }
+          }
+        ],
+        "tags": [
+          "ChannelsService"
+        ]
+      }
+    },
+    "/control/v1/channels/channels/{channel_id}/installation:revoke": {
+      "post": {
+        "operationId": "ChannelsService_RevokeChannelInstallation",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ChannelInstallation"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "channel_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ChannelsServiceRevokeChannelInstallationBody"
             }
           }
         ],
@@ -7749,6 +7867,52 @@
         }
       }
     },
+    "ChannelsServiceConfigureChannelInstallationBody": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "expected_version": {
+          "type": "string",
+          "format": "int64"
+        },
+        "expected_credential_generation": {
+          "type": "string",
+          "format": "int64",
+          "description": "Zero for initial setup; otherwise the currently observed generation."
+        },
+        "credentials": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Write-only: Telegram/Discord bot_token; Slack bot_token + signing_secret;\nTeams client_secret. Public workspace/application IDs belong in the\nchannel configuration. Provider APIs verify immutable bot ownership."
+        }
+      }
+    },
+    "ChannelsServiceRevokeChannelInstallationBody": {
+      "type": "object",
+      "properties": {
+        "org_id": {
+          "type": "string"
+        },
+        "realm_id": {
+          "type": "string"
+        },
+        "expected_version": {
+          "type": "string",
+          "format": "int64"
+        },
+        "expected_credential_generation": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
     "ChannelsServiceUpdateChannelBody": {
       "type": "object",
       "properties": {
@@ -9714,7 +9878,8 @@
           "type": "string"
         },
         "connection_id": {
-          "type": "string"
+          "type": "string",
+          "description": "Optional legacy connection reference. Messaging credentials are configured\nindependently using ConfigureChannelInstallation."
         },
         "agent_id": {
           "type": "string"
@@ -9723,6 +9888,50 @@
           "type": "object"
         }
       }
+    },
+    "v1ChannelInstallation": {
+      "type": "object",
+      "properties": {
+        "channel_id": {
+          "type": "string"
+        },
+        "channel_version": {
+          "type": "string",
+          "format": "int64"
+        },
+        "credential_generation": {
+          "type": "string",
+          "format": "int64"
+        },
+        "status": {
+          "type": "string",
+          "description": "setup_required, registering, awaiting_delivery, ready,\nconfiguration_changed, or disabled."
+        },
+        "provider": {
+          "type": "string"
+        },
+        "workspace_id": {
+          "type": "string"
+        },
+        "application_id": {
+          "type": "string"
+        },
+        "bot_id": {
+          "type": "string"
+        },
+        "webhook_url": {
+          "type": "string"
+        },
+        "verified_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "setup_code": {
+          "type": "string",
+          "description": "Stable code identifying the remaining provider setup action."
+        }
+      },
+      "description": "Contains public installation metadata only. Credentials are never returned.\nA ready installation proves signed provider delivery, not customer consent\nor permission to execute an agent."
     },
     "v1CheckPermissionRequest": {
       "type": "object",
