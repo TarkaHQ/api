@@ -94,6 +94,7 @@ message Target {
   // MCP endpoint path; defaults to /. Queries and templates are not allowed.
   string service_path = 16;
 }
+
 // Output only. A controller-observed service belonging to this organization.
 // Credentials use tarka-service://{id} as their exact allowed origin. Publishing
 // a target binds its current deployment revision; a new revision needs republishing.
@@ -309,6 +310,7 @@ message DiagnoseConnectionRequest {
   string realm_id = 2;
   string connection_id = 3;
 }
+
 // A bounded, read-only check of configuration, vault availability and OAuth
 // metadata. It never exchanges or refreshes tokens or invokes an upstream tool.
 // A ready result does not assert upstream permission to perform an operation.

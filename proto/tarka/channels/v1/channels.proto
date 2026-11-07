@@ -29,6 +29,7 @@ message Channel {
   string agent_id = 13;
   google.protobuf.Struct configuration = 14;
 }
+
 // Contains public installation metadata only. Credentials are never returned.
 // A ready installation proves signed provider delivery, not customer consent
 // or permission to execute an agent.

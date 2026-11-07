@@ -372,6 +372,7 @@ message ListRunsResponse {
   repeated Run items = 1;
   string next_page_token = 2;
 }
+
 // Directory data is observed provider state, never an automatic grant.
 message DirectoryUser {
   string source_id = 1;
@@ -409,6 +410,7 @@ message GetDirectoryStatusRequest {
   string realm_id = 2;
   string provider_id = 3;
 }
+
 // Customer SCIM credentials authenticate only this provider's directory API.
 // Native provider credentials are internal and never returned by these methods.
 message DirectoryConnection {
