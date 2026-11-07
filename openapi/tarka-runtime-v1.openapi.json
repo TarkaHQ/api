@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Tarka trusted agent runtime",
-    "version": "1.0.0",
-    "description": "Server-to-server harness lifecycle on the configured IAM gateway HTTPS origin. Rejects browser Origin headers. Parent OAuth tokens stay inside the trusted harness and Infisical. A run is limited to one realm, gateway, API or MCP audience and explicit capability subset; authorization is checked online on every gateway request. Leases last at most five minutes and cannot outlive the parent token or run. Renewal requires the same parent consent context; the run expires after at most one hour or fifteen minutes without renewal. Four active leases per subject and 100 per realm. Start and renew are not idempotent and must not be automatically retried after uncertain outcomes."
+    "version": "1.1.0",
+    "description": "Server-to-server harness lifecycle on the configured IAM gateway HTTPS origin. Rejects browser Origin headers. Parent OAuth tokens stay inside the trusted harness and Infisical. A run is limited to one realm, gateway, API or MCP audience and explicit capability subset; authorization is checked online on every gateway request. Leases last at most five minutes and cannot outlive the parent token or run. Renewal requires the same parent consent context; the run expires after at most one hour or fifteen minutes without renewal. Four active leases per subject and 100 per realm. Start and renew are not idempotent and must not be automatically retried after uncertain outcomes. Independent messaging claim and private reply endpoints bind each verified provider event to a customer-approved run. Both the worker OAuth token and customer Ory session are checked online. Never retry a claim or reply after an uncertain outcome."
   },
   "servers": [
     {
@@ -1156,6 +1156,491 @@
           }
         }
       }
+    },
+    "/v1/realms/{realm_id}/channels/{channel_id}/claim": {
+      "post": {
+        "operationId": "claimMessage",
+        "description": "Requires the assigned agent autonomous OAuth token for runtime.execute and the exact runtime audience, plus channel use permission. Returns one newly claimed verified message and its customer-delegated run lease, or 204 when none is available. Messages sent before consent are never retroactively authorized. Claimed messages are not automatically requeued. Poll no more often than every five seconds. Caller cannot select a user, grant, tool scope or conversation.",
+        "parameters": [
+          {
+            "name": "realm_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "channel_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClaimMessage"
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "description": "Error",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Error",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Error",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Error",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Error",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Error",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No available message",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Verified message with a bounded delegated runtime",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageDelivery"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/realms/{realm_id}/channels/{channel_id}/runs/{run_id}/reply": {
+      "post": {
+        "operationId": "replyToMessage",
+        "description": "Requires the current messaging run credential. Rechecks live worker and customer sessions, channel policy and every delegated capability before releasing text. Sends only to the proven private chat or ephemeral interaction. A durable send reservation prevents retries after timeout or lost provider response. Success finishes the run.",
+        "parameters": [
+          {
+            "name": "realm_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "channel_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReplyMessage"
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "description": "Error",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Error",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Error",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Error",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Error",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Error",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "Private reply completed; run finished",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1410,6 +1895,60 @@
           "audience",
           "expires_at",
           "credential"
+        ]
+      },
+      "ClaimMessage": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {}
+      },
+      "ReplyMessage": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000,
+            "description": "Plain text private reply. Recipient and provider endpoint are server-derived."
+          }
+        },
+        "required": [
+          "text"
+        ]
+      },
+      "MessageDelivery": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "run": {
+            "$ref": "#/components/schemas/Run"
+          },
+          "audience": {
+            "type": "string",
+            "format": "uri"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "credential": {
+            "type": "string",
+            "pattern": "^tr_run_[A-Za-z0-9_-]{43}$",
+            "description": "One-time opaque run bearer. Keep inside the trusted harness; never log, persist in agent workspace, or include in model input."
+          },
+          "prompt": {
+            "type": "string",
+            "maxLength": 16000,
+            "description": "Untrusted provider message. Pass as user input, never as harness configuration or system instructions."
+          }
+        },
+        "required": [
+          "run",
+          "audience",
+          "expires_at",
+          "credential",
+          "prompt"
         ]
       }
     }

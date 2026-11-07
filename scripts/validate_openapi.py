@@ -346,6 +346,8 @@ def validate_runtime(document: dict[str, Any]) -> None:
     base = "/v1/realms/{realm_id}/runtime/runs"
     expected = {base: {"post"}, base + "/{run_id}": {"get", "delete"},
                 base + "/{run_id}/renew": {"post"}, base + "/{run_id}/finish": {"post"}}
+    channel = "/v1/realms/{realm_id}/channels/{channel_id}"
+    expected.update({channel + "/claim": {"post"}, channel + "/runs/{run_id}/reply": {"post"}})
     paths = document.get("paths", {})
     if {path: set(item) for path, item in paths.items()} != expected:
         raise ValueError("runtime: lifecycle endpoints changed")
@@ -355,7 +357,8 @@ def validate_runtime(document: dict[str, Any]) -> None:
                 raise ValueError("runtime: operation weakens authorization")
     schemas = document["components"]["schemas"]
     for name, fields in (("StartRun", {"gateway_id", "transport", "permissions", "max_seconds"}),
-                         ("RenewRun", {"expected_version"}), ("FinishRun", {"state"})):
+                         ("RenewRun", {"expected_version"}), ("FinishRun", {"state"}),
+                         ("ClaimMessage", set()), ("ReplyMessage", {"text"})):
         if schemas[name].get("additionalProperties") is not False or set(schemas[name]["properties"]) != fields:
             raise ValueError("runtime: callers cannot select identity or expand authority")
     if "credential" in schemas["RunDescription"]["properties"]:
