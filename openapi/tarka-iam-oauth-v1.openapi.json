@@ -1,0 +1,974 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Tarka customer OAuth and client onboarding",
+    "version": "1.0.0",
+    "description": "Customer identity endpoints on a canonical environment issuer host. These are separate from platform developer authentication and the Control API. Public client onboarding is opt-in through Realm.authentication.client_registration; its allowed_audiences contain exact published gateway API/MCP resource URLs in the same environment. Runtime and hosted-access clients remain administratively registered. Availability of this contract is not deployment readiness."
+  },
+  "servers": [
+    {
+      "url": "https://{issuer_host}",
+      "variables": {
+        "issuer_host": {
+          "default": "iam.example.com",
+          "description": "The hostname from the environment issuer returned by the Control API."
+        }
+      }
+    }
+  ],
+  "security": [],
+  "paths": {
+    "/.well-known/openid-configuration": {
+      "get": {
+        "operationId": "getCustomerOIDCMetadata",
+        "responses": {
+          "200": {
+            "description": "Current environment discovery. Onboarding fields are present only when enabled.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationMetadata"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request, client metadata, grant, scope or target.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Registration or access is disabled for this environment.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Durable authentication or registration limit reached; honor Retry-After.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Dependency unavailable; do not automatically repeat a credential exchange.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/.well-known/oauth-authorization-server": {
+      "get": {
+        "operationId": "getCustomerAuthorizationMetadata",
+        "responses": {
+          "200": {
+            "description": "Current environment discovery. Onboarding fields are present only when enabled.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationMetadata"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request, client metadata, grant, scope or target.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Registration or access is disabled for this environment.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Durable authentication or registration limit reached; honor Retry-After.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Dependency unavailable; do not automatically repeat a credential exchange.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/oauth2/register": {
+      "post": {
+        "operationId": "registerCustomerOAuthClient",
+        "description": "Opt-in public-client registration. JSON limit 5 KiB. Registration grants no permissions and creates no user or agent. Audiences come from the environment policy, never this request. Requires no Authorization header, browser cookie or platform API key. Names are unverified. Five new or changed clients per source and 100 per environment per hour; 250 active self-registered clients within the total 500-client capacity. Creation is not idempotent; do not automatically retry an uncertain result. No client secret or registration management token is issued.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicClientRegistration"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Effective registered metadata.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientRegistrationResult"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Public registration disabled.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Metadata exceeds 5 KiB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthError"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request, client metadata, grant, scope or target.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Registration or access is disabled for this environment.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Durable authentication or registration limit reached; honor Retry-After.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Dependency unavailable; do not automatically repeat a credential exchange.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/oauth2/auth": {
+      "get": {
+        "operationId": "authorizeCustomerOAuthClient",
+        "description": "Authorization code with PKCE S256 and one exact resource audience. A client_id may be an existing registered identifier or a public HTTPS CIMD URL when enabled. CIMD is fetched without credentials, redirects or stale fallback; limit 5 KiB and five seconds. Metadata changes invalidate prior consent contexts. Consent and live user permissions are always required. Invalid client metadata produces a local error and never redirects to the untrusted client.",
+        "parameters": [
+          {
+            "name": "client_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 2048
+            }
+          },
+          {
+            "name": "redirect_uri",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri",
+              "maxLength": 2048
+            }
+          },
+          {
+            "name": "response_type",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "code"
+              ]
+            }
+          },
+          {
+            "name": "scope",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 16,
+              "maxLength": 2048
+            }
+          },
+          {
+            "name": "code_challenge",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{43}$"
+            }
+          },
+          {
+            "name": "code_challenge_method",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "S256"
+              ]
+            }
+          },
+          {
+            "name": "resource",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            }
+          },
+          {
+            "name": "nonce",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 8192
+            }
+          },
+          {
+            "name": "prompt",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "none, login, consent, or login consent. none must appear alone."
+            }
+          },
+          {
+            "name": "max_age",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 86400
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirect to the environment login/consent flow."
+          },
+          "303": {
+            "description": "Continue browser flow or return code/error to exact registered redirect, with state and issuer iss parameter."
+          },
+          "400": {
+            "description": "Invalid request, client metadata, grant, scope or target.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Registration or access is disabled for this environment.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Durable authentication or registration limit reached; honor Retry-After.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Dependency unavailable; do not automatically repeat a credential exchange.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/oauth2/token": {
+      "post": {
+        "operationId": "exchangeCustomerOAuthToken",
+        "description": "Form limit 32 KiB. Public clients use client_id plus PKCE for code exchange; confidential and autonomous clients authenticate separately. CIMD clients are revalidated on exchange and cannot bootstrap a new registration here. Machine grants require an administratively registered, agent-bound client. Exact audience, live consent, client version and user/session state are checked before exposing tokens. Never automatically retry a lost code/refresh response.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "grant_type",
+                  "resource"
+                ],
+                "properties": {
+                  "client_id": {
+                    "type": "string",
+                    "maxLength": 8192
+                  },
+                  "client_secret": {
+                    "type": "string",
+                    "maxLength": 8192
+                  },
+                  "code": {
+                    "type": "string",
+                    "maxLength": 8192
+                  },
+                  "refresh_token": {
+                    "type": "string",
+                    "maxLength": 8192
+                  },
+                  "scope": {
+                    "type": "string",
+                    "maxLength": 8192
+                  },
+                  "grant_type": {
+                    "type": "string",
+                    "enum": [
+                      "authorization_code",
+                      "refresh_token",
+                      "client_credentials"
+                    ]
+                  },
+                  "resource": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "Exact requested audience; not a prefix."
+                  },
+                  "redirect_uri": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "code_verifier": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9._~-]{43,128}$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Realm-local tokens; never expose upstream connector credentials.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Client authentication failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthError"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request, client metadata, grant, scope or target.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Registration or access is disabled for this environment.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Durable authentication or registration limit reached; honor Retry-After.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Dependency unavailable; do not automatically repeat a credential exchange.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "OAuthError": {
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Stable OAuth error code. Internal provider diagnostics are never included."
+          }
+        }
+      },
+      "PublicClientRegistration": {
+        "type": "object",
+        "required": [
+          "client_name",
+          "redirect_uris"
+        ],
+        "properties": {
+          "client_name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120,
+            "description": "Self-asserted display name; not verified by Tarka."
+          },
+          "redirect_uris": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uri",
+              "maxLength": 2048
+            },
+            "minItems": 1,
+            "maxItems": 16,
+            "uniqueItems": true,
+            "description": "Exact HTTPS redirects, or literal loopback HTTP addresses with explicit ports. No fragments or custom schemes."
+          },
+          "grant_types": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "authorization_code",
+                "refresh_token"
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 2,
+            "uniqueItems": true
+          },
+          "response_types": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "code"
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 1
+          },
+          "token_endpoint_auth_method": {
+            "type": "string",
+            "enum": [
+              "none"
+            ]
+          },
+          "token_endpoint_auth_methods_supported": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "none"
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 1
+          },
+          "scope": {
+            "type": "string",
+            "maxLength": 256,
+            "description": "Space-separated subset of openid profile email offline_access gateway.invoke. Offline access requires refresh_token support and explicit consent."
+          }
+        },
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "client_id"
+              ]
+            },
+            {
+              "required": [
+                "client_secret"
+              ]
+            },
+            {
+              "required": [
+                "registration_access_token"
+              ]
+            },
+            {
+              "required": [
+                "software_statement"
+              ]
+            },
+            {
+              "required": [
+                "jwks"
+              ]
+            },
+            {
+              "required": [
+                "jwks_uri"
+              ]
+            },
+            {
+              "required": [
+                "agent_id"
+              ]
+            },
+            {
+              "required": [
+                "allowed_audiences"
+              ]
+            },
+            {
+              "required": [
+                "audience"
+              ]
+            },
+            {
+              "required": [
+                "resource"
+              ]
+            },
+            {
+              "required": [
+                "sector_identifier_uri"
+              ]
+            },
+            {
+              "required": [
+                "request_uris"
+              ]
+            }
+          ]
+        }
+      },
+      "ClientIDMetadataDocument": {
+        "type": "object",
+        "required": [
+          "client_name",
+          "redirect_uris",
+          "client_id"
+        ],
+        "properties": {
+          "client_name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120,
+            "description": "Self-asserted display name; not verified by Tarka."
+          },
+          "redirect_uris": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uri",
+              "maxLength": 2048
+            },
+            "minItems": 1,
+            "maxItems": 16,
+            "uniqueItems": true,
+            "description": "Exact HTTPS redirects, or literal loopback HTTP addresses with explicit ports. No fragments or custom schemes."
+          },
+          "grant_types": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "authorization_code",
+                "refresh_token"
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 2,
+            "uniqueItems": true
+          },
+          "response_types": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "code"
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 1
+          },
+          "token_endpoint_auth_method": {
+            "type": "string",
+            "enum": [
+              "none"
+            ]
+          },
+          "token_endpoint_auth_methods_supported": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "none"
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 1
+          },
+          "scope": {
+            "type": "string",
+            "maxLength": 256,
+            "description": "Space-separated subset of openid profile email offline_access gateway.invoke. Offline access requires refresh_token support and explicit consent."
+          },
+          "client_id": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 2048,
+            "description": "Exact public HTTPS document URL; non-root path, no dot segments, userinfo, query or fragment. The returned client_id must exactly equal the fetched URL."
+          }
+        },
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "client_secret"
+              ]
+            },
+            {
+              "required": [
+                "registration_access_token"
+              ]
+            },
+            {
+              "required": [
+                "software_statement"
+              ]
+            },
+            {
+              "required": [
+                "jwks"
+              ]
+            },
+            {
+              "required": [
+                "jwks_uri"
+              ]
+            },
+            {
+              "required": [
+                "agent_id"
+              ]
+            },
+            {
+              "required": [
+                "allowed_audiences"
+              ]
+            },
+            {
+              "required": [
+                "audience"
+              ]
+            },
+            {
+              "required": [
+                "resource"
+              ]
+            },
+            {
+              "required": [
+                "sector_identifier_uri"
+              ]
+            },
+            {
+              "required": [
+                "request_uris"
+              ]
+            }
+          ]
+        }
+      },
+      "ClientRegistrationResult": {
+        "type": "object",
+        "required": [
+          "client_id",
+          "client_id_issued_at",
+          "client_name",
+          "redirect_uris",
+          "grant_types",
+          "response_types",
+          "token_endpoint_auth_method",
+          "scope"
+        ],
+        "properties": {
+          "client_name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120,
+            "description": "Self-asserted display name; not verified by Tarka."
+          },
+          "redirect_uris": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uri",
+              "maxLength": 2048
+            },
+            "minItems": 1,
+            "maxItems": 16,
+            "uniqueItems": true,
+            "description": "Exact HTTPS redirects, or literal loopback HTTP addresses with explicit ports. No fragments or custom schemes."
+          },
+          "grant_types": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "authorization_code",
+                "refresh_token"
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 2,
+            "uniqueItems": true
+          },
+          "response_types": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "code"
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 1
+          },
+          "token_endpoint_auth_method": {
+            "type": "string",
+            "enum": [
+              "none"
+            ]
+          },
+          "token_endpoint_auth_methods_supported": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "none"
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 1
+          },
+          "scope": {
+            "type": "string",
+            "maxLength": 256,
+            "description": "Space-separated subset of openid profile email offline_access gateway.invoke. Offline access requires refresh_token support and explicit consent."
+          },
+          "client_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "client_id_issued_at": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "AuthorizationMetadata": {
+        "type": "object",
+        "required": [
+          "issuer",
+          "authorization_endpoint",
+          "token_endpoint",
+          "jwks_uri",
+          "code_challenge_methods_supported"
+        ],
+        "properties": {
+          "issuer": {
+            "type": "string",
+            "format": "uri"
+          },
+          "authorization_endpoint": {
+            "type": "string",
+            "format": "uri"
+          },
+          "token_endpoint": {
+            "type": "string",
+            "format": "uri"
+          },
+          "jwks_uri": {
+            "type": "string",
+            "format": "uri"
+          },
+          "registration_endpoint": {
+            "type": "string",
+            "format": "uri",
+            "description": "Present only while DCR is enabled."
+          },
+          "client_id_metadata_document_supported": {
+            "type": "boolean",
+            "description": "True only while CIMD is enabled."
+          },
+          "authorization_response_iss_parameter_supported": {
+            "const": true
+          },
+          "code_challenge_methods_supported": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "S256"
+              ]
+            }
+          }
+        }
+      },
+      "TokenResult": {
+        "type": "object",
+        "required": [
+          "access_token",
+          "token_type",
+          "expires_in"
+        ],
+        "properties": {
+          "access_token": {
+            "type": "string"
+          },
+          "token_type": {
+            "type": "string",
+            "enum": [
+              "bearer",
+              "Bearer"
+            ]
+          },
+          "expires_in": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 300
+          },
+          "refresh_token": {
+            "type": "string"
+          },
+          "id_token": {
+            "type": "string"
+          },
+          "scope": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

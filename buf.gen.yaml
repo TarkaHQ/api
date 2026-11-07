@@ -7,6 +7,10 @@ plugins:
     types:
       - tarka.provisioning.v1.ProvisioningService
       - tarka.provisioning.v1.SandboxService
+      - tarka.iam.v1.IAMService
+      - tarka.gateway.v1.GatewayService
+      - tarka.access.v1.AccessService
+      - tarka.channels.v1.ChannelsService
     opt:
       - allow_merge=true
       - merge_file_name=tarka-control-v1

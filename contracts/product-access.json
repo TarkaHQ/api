@@ -56,23 +56,54 @@
       "description": "Private repositories hosted by Tarka",
       "group": "data",
       "api_key_scope": false
+    },
+    {
+      "id": "iam",
+      "label": "Identity and access",
+      "description": "Hosted application authentication and agent authorization",
+      "group": "data",
+      "api_key_scope": false
+    },
+    {
+      "id": "gateway",
+      "label": "API and MCP gateways",
+      "description": "Protected APIs, MCP connections and credential brokerage",
+      "group": "data",
+      "api_key_scope": false
     }
   ],
   "presets": [
     {
       "id": "models",
       "label": "All model APIs",
-      "products": ["himalaya", "inference", "utilities"]
+      "products": [
+        "himalaya",
+        "inference",
+        "utilities"
+      ]
     },
     {
       "id": "compute",
       "label": "Compute beta",
-      "products": ["agents", "jobs", "sandboxes"]
+      "products": [
+        "agents",
+        "jobs",
+        "sandboxes"
+      ]
     },
     {
       "id": "full_beta",
       "label": "Full beta access",
-      "products": ["himalaya", "inference", "utilities", "agents", "jobs", "sandboxes", "storage", "git"]
+      "products": [
+        "himalaya",
+        "inference",
+        "utilities",
+        "agents",
+        "jobs",
+        "sandboxes",
+        "storage",
+        "git"
+      ]
     }
   ]
 }

@@ -1,0 +1,196 @@
+// Copyright 2026 Tarka
+// SPDX-License-Identifier: Apache-2.0
+syntax = "proto3";
+package tarka.access.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+import "tarka/iam/v1/iam.proto";
+
+option go_package = "github.com/TarkaHQ/api/gen/go/tarka/access/v1;accessv1";
+
+message Application {
+  string id = 1;
+  string org_id = 2;
+  string realm_id = 3;
+  // active, suspended, revoked, or provisioning; validated by resource kind.
+  string status = 4;
+  // Optimistic concurrency version, managed by the server.
+  int64 version = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+  string name = 10;
+  string hostname = 11;
+  string agent_host_id = 12;
+  // hermes, openclaw, or http.
+  string adapter = 13;
+  repeated string operator_ids = 14;
+  // Output only. pending until the controller has observed the protected
+  // ingress and private origin at the current Agent Host revision; protected
+  // indicates routing enforcement, independently of user permission.
+  string protection_state = 15;
+  // Optional for Hermes/OpenClaw. Disabled or absent provisions no personal
+  // compute and never falls back to the host's shared native UI.
+  WorkspacePolicy workspace = 16;
+}
+
+message WorkspacePolicy {
+  // Enables private, separately billed workspaces on the first authorized
+  // visit. Disabling access stops execution without deleting stored files.
+  bool enabled = 1;
+  // Same-realm agent principal used for explicit customer delegation.
+  string agent_id = 2;
+  // Same-realm published API/MCP gateway. No arbitrary upstream URL.
+  string gateway_id = 3;
+  // api or mcp. A run receives only the current intersection of these
+  // published permissions, customer consent, user roles and agent roles.
+  string transport = 4;
+  repeated tarka.iam.v1.Permission permissions = 5;
+  // Maximum retained, nondeleted workspaces for this application, 1..25.
+  // Organization admission, credit and physical capacity limits also apply.
+  int32 max_workspaces = 6;
+  // Seconds without an authorized interactive session before compute stops,
+  // 300..3600. Persistent storage is retained until explicit deletion.
+  int32 idle_timeout_seconds = 7;
+}
+
+// An isolated customer workspace; never contains native credentials, private
+// origins, conversation contents, files or delegated bearer tokens.
+message Workspace {
+  string id = 1;
+  string org_id = 2;
+  string realm_id = 3;
+  string application_id = 4;
+  string subject_id = 5;
+  string agent_id = 6;
+  string agent_host_id = 7;
+  // provisioning, ready, suspended, failed, deleting, or deleted.
+  string status = 8;
+  int64 version = 9;
+  google.protobuf.Timestamp created_at = 10;
+  google.protobuf.Timestamp updated_at = 11;
+  google.protobuf.Timestamp last_active_at = 12;
+  // Stable, non-sensitive status code for admission or runtime failures.
+  string status_reason = 13;
+}
+message ListWorkspacesRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string application_id = 3;
+  int32 page_size = 4;
+  string page_token = 5;
+}
+message ListWorkspacesResponse {
+  repeated Workspace items = 1;
+  string next_page_token = 2;
+}
+message GetWorkspaceRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string application_id = 3;
+  string id = 4;
+}
+message PauseWorkspaceRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string application_id = 3;
+  string id = 4;
+  int64 expected_version = 5;
+}
+message ResumeWorkspaceRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string application_id = 3;
+  string id = 4;
+  int64 expected_version = 5;
+}
+message DeleteWorkspaceRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string application_id = 3;
+  string id = 4;
+  int64 expected_version = 5;
+}
+message CreateApplicationRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  Application application = 3;
+}
+message UpdateApplicationRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+  Application application = 4;
+  int64 expected_version = 5;
+}
+message GetApplicationRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+}
+message DeleteApplicationRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+  int64 expected_version = 4;
+}
+message ListApplicationsRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  int32 page_size = 3;
+  string page_token = 4;
+}
+message ListApplicationsResponse {
+  repeated Application items = 1;
+  string next_page_token = 2;
+}
+
+service AccessService {
+  rpc CreateApplication(CreateApplicationRequest) returns (Application) {
+    option (google.api.http) = {
+      post: "/control/v1/access/applications"
+      body: "*"
+    };
+  }
+  rpc UpdateApplication(UpdateApplicationRequest) returns (Application) {
+    option (google.api.http) = {
+      put: "/control/v1/access/applications/{id}"
+      body: "*"
+    };
+  }
+  rpc GetApplication(GetApplicationRequest) returns (Application) {
+    option (google.api.http) = {get: "/control/v1/access/applications/{id}"};
+  }
+  rpc DeleteApplication(DeleteApplicationRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/control/v1/access/applications/{id}"};
+  }
+  rpc ListApplications(ListApplicationsRequest) returns (ListApplicationsResponse) {
+    option (google.api.http) = {get: "/control/v1/access/applications"};
+  }
+  rpc ListWorkspaces(ListWorkspacesRequest) returns (ListWorkspacesResponse) {
+    option (google.api.http) = {get: "/control/v1/access/applications/{application_id}/workspaces"};
+  }
+  rpc GetWorkspace(GetWorkspaceRequest) returns (Workspace) {
+    option (google.api.http) = {get: "/control/v1/access/applications/{application_id}/workspaces/{id}"};
+  }
+  // Stops compute and withdraws active delegation; retained files are unchanged.
+  rpc PauseWorkspace(PauseWorkspaceRequest) returns (Workspace) {
+    option (google.api.http) = {
+      post: "/control/v1/access/applications/{application_id}/workspaces/{id}/pause"
+      body: "*"
+    };
+  }
+  // Rechecks billing and capacity. Resuming cannot create customer consent or
+  // start an agent turn; those still require a live authorized customer session.
+  rpc ResumeWorkspace(ResumeWorkspaceRequest) returns (Workspace) {
+    option (google.api.http) = {
+      post: "/control/v1/access/applications/{application_id}/workspaces/{id}/resume"
+      body: "*"
+    };
+  }
+  // Permanently removes the workspace and its retained storage asynchronously.
+  rpc DeleteWorkspace(DeleteWorkspaceRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/control/v1/access/applications/{application_id}/workspaces/{id}"};
+  }
+}

@@ -1,0 +1,497 @@
+// Copyright 2026 Tarka
+// SPDX-License-Identifier: Apache-2.0
+syntax = "proto3";
+package tarka.gateway.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/TarkaHQ/api/gen/go/tarka/gateway/v1;gatewayv1";
+
+message Gateway {
+  string id = 1;
+  string org_id = 2;
+  string realm_id = 3;
+  // active, suspended, revoked, or provisioning; validated by resource kind.
+  string status = 4;
+  // Optimistic concurrency version, managed by the server.
+  int64 version = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+  string name = 10;
+  repeated string allowed_origins = 11;
+  int64 active_revision = 12;
+  google.protobuf.Struct limits = 13;
+  // Output only. Canonical connection settings, available before publication.
+  // Presence does not indicate deployment readiness or grant access.
+  GatewayEndpoints endpoints = 14;
+}
+message GatewayEndpoints {
+  // Append a published operation path to this URL.
+  string api_base_url = 1;
+  // Exact OAuth resource audience for the API endpoint (without /api).
+  string api_audience = 2;
+  string mcp_url = 3;
+  // Exact OAuth resource audience for MCP, equal to mcp_url.
+  string mcp_audience = 4;
+  // Environment OAuth issuer, when provisioned.
+  string issuer = 5;
+}
+message CreateGatewayRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  Gateway gateway = 3;
+}
+message UpdateGatewayRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+  Gateway gateway = 4;
+  int64 expected_version = 5;
+}
+message GetGatewayRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+}
+message DeleteGatewayRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+  int64 expected_version = 4;
+}
+message ListGatewaysRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  int32 page_size = 3;
+  string page_token = 4;
+}
+message ListGatewaysResponse {
+  repeated Gateway items = 1;
+  string next_page_token = 2;
+}
+message Target {
+  string id = 1;
+  string org_id = 2;
+  string realm_id = 3;
+  // active, suspended, revoked, or provisioning; validated by resource kind.
+  string status = 4;
+  // Optimistic concurrency version, managed by the server.
+  int64 version = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+  string gateway_id = 10;
+  string name = 11;
+  // http or mcp.
+  string kind = 12;
+  // Public HTTPS URL or an owned Tarka service reference, never both.
+  string url = 13;
+  string service_id = 14;
+  string connection_id = 15;
+  // For service_id destinations only. Canonical absolute base path (HTTP) or
+  // MCP endpoint path; defaults to /. Queries and templates are not allowed.
+  string service_path = 16;
+}
+
+// Output only. A controller-observed service belonging to this organization.
+// Credentials use tarka-service://{id} as their exact allowed origin. Publishing
+// a target binds its current deployment revision; a new revision needs republishing.
+// Managed Hermes/OpenClaw workspaces have their own access boundary and are omitted.
+message PrivateService {
+  string id = 1;
+  string org_id = 2;
+  string agent_host_id = 3;
+  string host_name = 4;
+  string service = 5;
+  uint32 port = 6;
+  string location = 7;
+  int64 revision = 8;
+  // ready, deployment_pending, service_removed, or host_unavailable.
+  string state = 9;
+}
+message ListPrivateServicesRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  int32 page_size = 3;
+  string page_token = 4;
+  // Optional owned host filter.
+  string agent_host_id = 5;
+}
+message ListPrivateServicesResponse {
+  repeated PrivateService items = 1;
+  string next_page_token = 2;
+}
+message CreateTargetRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  Target target = 3;
+}
+message UpdateTargetRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+  Target target = 4;
+  int64 expected_version = 5;
+}
+message GetTargetRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+}
+message DeleteTargetRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+  int64 expected_version = 4;
+}
+message ListTargetsRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  int32 page_size = 3;
+  string page_token = 4;
+}
+message ListTargetsResponse {
+  repeated Target items = 1;
+  string next_page_token = 2;
+}
+message Connection {
+  string id = 1;
+  string org_id = 2;
+  string realm_id = 3;
+  // active, suspended, revoked, or provisioning; validated by resource kind.
+  string status = 4;
+  // Optimistic concurrency version, managed by the server.
+  int64 version = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+  string name = 10;
+  // none, api_key, bearer, basic, oauth2_authorization_code, oauth2_client_credentials.
+  string kind = 11;
+  // Empty for realm-owned connections; otherwise an IAM principal identifier.
+  string owner_id = 12;
+  // Exact HTTPS origins or tarka-service://{owned-private-service-id}.
+  repeated string allowed_origins = 13;
+  google.protobuf.Struct configuration = 14;
+  // Output only. No credential value is returned.
+  bool credential_configured = 15;
+}
+message CreateConnectionRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  Connection connection = 3;
+}
+message UpdateConnectionRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+  Connection connection = 4;
+  int64 expected_version = 5;
+}
+message GetConnectionRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+}
+message DeleteConnectionRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+  int64 expected_version = 4;
+}
+message ListConnectionsRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  int32 page_size = 3;
+  string page_token = 4;
+}
+message ListConnectionsResponse {
+  repeated Connection items = 1;
+  string next_page_token = 2;
+}
+message Capability {
+  string id = 1;
+  string org_id = 2;
+  string realm_id = 3;
+  // active, suspended, revoked, or provisioning; validated by resource kind.
+  string status = 4;
+  // Optimistic concurrency version, managed by the server.
+  int64 version = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+  string gateway_id = 10;
+  string target_id = 11;
+  // http, tool, resource, resource_template, or prompt.
+  string kind = 12;
+  string name = 13;
+  string description = 14;
+  string upstream_name = 15;
+  string method = 16;
+  string path = 17;
+  google.protobuf.Struct input_schema = 18;
+  google.protobuf.Struct output_schema = 19;
+  string resource_uri = 20;
+  google.protobuf.Struct configuration = 21;
+}
+message CreateCapabilityRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  Capability capability = 3;
+}
+message UpdateCapabilityRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+  Capability capability = 4;
+  int64 expected_version = 5;
+}
+message GetCapabilityRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+}
+message DeleteCapabilityRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+  int64 expected_version = 4;
+}
+message ListCapabilitiesRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  int32 page_size = 3;
+  string page_token = 4;
+}
+message ListCapabilitiesResponse {
+  repeated Capability items = 1;
+  string next_page_token = 2;
+}
+message PublishGatewayRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string gateway_id = 3;
+  int64 expected_revision = 4;
+}
+message Publication {
+  string id = 1;
+  string gateway_id = 2;
+  int64 revision = 3;
+  string digest = 4;
+  google.protobuf.Timestamp created_at = 5;
+}
+message ListPublicationsRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string gateway_id = 3;
+}
+message ListPublicationsResponse {
+  repeated Publication publications = 1;
+}
+message RollbackGatewayRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string gateway_id = 3;
+  int64 revision = 4;
+  int64 expected_revision = 5;
+}
+message UploadConnectionSecretRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string connection_id = 3;
+  // Write only. Never include credentials in model messages or logs.
+  map<string, string> values = 4;
+}
+message UploadConnectionSecretResponse {
+  bool configured = 1;
+}
+message DiagnoseConnectionRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string connection_id = 3;
+}
+
+// A bounded, read-only check of configuration, vault availability and OAuth
+// metadata. It never exchanges or refreshes tokens or invokes an upstream tool.
+// A ready result does not assert upstream permission to perform an operation.
+message ConnectionDiagnostics {
+  string connection_id = 1;
+  int64 connection_version = 2;
+  int64 credential_generation = 3;
+  // ready, setup_required, reauthorization_required, unavailable, or disabled.
+  string status = 4;
+  google.protobuf.Timestamp checked_at = 5;
+  google.protobuf.Timestamp credential_expires_at = 6;
+  repeated ConnectionDiagnosticCheck checks = 7;
+}
+message ConnectionDiagnosticCheck {
+  // connection, realm, credentials, or oauth_metadata.
+  string component = 1;
+  // passed, failed, or skipped.
+  string status = 2;
+  // Stable code, never a provider response, credential or URL.
+  string code = 3;
+}
+message DiscoverTargetRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string target_id = 3;
+}
+message DiscoverTargetResponse {
+  repeated Capability capabilities = 1;
+}
+message ImportOpenAPIRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string target_id = 3;
+  // OpenAPI 3.0/3.1 JSON. References must be local.
+  google.protobuf.Struct document = 4;
+  repeated string operation_ids = 5;
+}
+message ImportOpenAPIResponse {
+  repeated Capability capabilities = 1;
+}
+message StartConnectionAuthorizationRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string connection_id = 3;
+}
+message StartConnectionAuthorizationResponse {
+  string authorization_url = 1;
+  google.protobuf.Timestamp expires_at = 2;
+}
+
+service GatewayService {
+  rpc ListPrivateServices(ListPrivateServicesRequest) returns (ListPrivateServicesResponse) {
+    option (google.api.http) = {get: "/control/v1/gateway/private-services"};
+  }
+  rpc CreateGateway(CreateGatewayRequest) returns (Gateway) {
+    option (google.api.http) = {
+      post: "/control/v1/gateway/gateways"
+      body: "*"
+    };
+  }
+  rpc UpdateGateway(UpdateGatewayRequest) returns (Gateway) {
+    option (google.api.http) = {
+      put: "/control/v1/gateway/gateways/{id}"
+      body: "*"
+    };
+  }
+  rpc GetGateway(GetGatewayRequest) returns (Gateway) {
+    option (google.api.http) = {get: "/control/v1/gateway/gateways/{id}"};
+  }
+  rpc DeleteGateway(DeleteGatewayRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/control/v1/gateway/gateways/{id}"};
+  }
+  rpc ListGateways(ListGatewaysRequest) returns (ListGatewaysResponse) {
+    option (google.api.http) = {get: "/control/v1/gateway/gateways"};
+  }
+  rpc CreateTarget(CreateTargetRequest) returns (Target) {
+    option (google.api.http) = {
+      post: "/control/v1/gateway/targets"
+      body: "*"
+    };
+  }
+  rpc UpdateTarget(UpdateTargetRequest) returns (Target) {
+    option (google.api.http) = {
+      put: "/control/v1/gateway/targets/{id}"
+      body: "*"
+    };
+  }
+  rpc GetTarget(GetTargetRequest) returns (Target) {
+    option (google.api.http) = {get: "/control/v1/gateway/targets/{id}"};
+  }
+  rpc DeleteTarget(DeleteTargetRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/control/v1/gateway/targets/{id}"};
+  }
+  rpc ListTargets(ListTargetsRequest) returns (ListTargetsResponse) {
+    option (google.api.http) = {get: "/control/v1/gateway/targets"};
+  }
+  rpc CreateConnection(CreateConnectionRequest) returns (Connection) {
+    option (google.api.http) = {
+      post: "/control/v1/gateway/connections"
+      body: "*"
+    };
+  }
+  rpc UpdateConnection(UpdateConnectionRequest) returns (Connection) {
+    option (google.api.http) = {
+      put: "/control/v1/gateway/connections/{id}"
+      body: "*"
+    };
+  }
+  rpc GetConnection(GetConnectionRequest) returns (Connection) {
+    option (google.api.http) = {get: "/control/v1/gateway/connections/{id}"};
+  }
+  rpc DeleteConnection(DeleteConnectionRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/control/v1/gateway/connections/{id}"};
+  }
+  rpc ListConnections(ListConnectionsRequest) returns (ListConnectionsResponse) {
+    option (google.api.http) = {get: "/control/v1/gateway/connections"};
+  }
+  rpc CreateCapability(CreateCapabilityRequest) returns (Capability) {
+    option (google.api.http) = {
+      post: "/control/v1/gateway/capabilities"
+      body: "*"
+    };
+  }
+  rpc UpdateCapability(UpdateCapabilityRequest) returns (Capability) {
+    option (google.api.http) = {
+      put: "/control/v1/gateway/capabilities/{id}"
+      body: "*"
+    };
+  }
+  rpc GetCapability(GetCapabilityRequest) returns (Capability) {
+    option (google.api.http) = {get: "/control/v1/gateway/capabilities/{id}"};
+  }
+  rpc DeleteCapability(DeleteCapabilityRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/control/v1/gateway/capabilities/{id}"};
+  }
+  rpc ListCapabilities(ListCapabilitiesRequest) returns (ListCapabilitiesResponse) {
+    option (google.api.http) = {get: "/control/v1/gateway/capabilities"};
+  }
+  rpc PublishGateway(PublishGatewayRequest) returns (Publication) {
+    option (google.api.http) = {
+      post: "/control/v1/gateway/gateways/{gateway_id}:publish"
+      body: "*"
+    };
+  }
+  rpc ListPublications(ListPublicationsRequest) returns (ListPublicationsResponse) {
+    option (google.api.http) = {get: "/control/v1/gateway/gateways/{gateway_id}/publications"};
+  }
+  rpc RollbackGateway(RollbackGatewayRequest) returns (Publication) {
+    option (google.api.http) = {
+      post: "/control/v1/gateway/gateways/{gateway_id}:rollback"
+      body: "*"
+    };
+  }
+  rpc UploadConnectionSecret(UploadConnectionSecretRequest) returns (UploadConnectionSecretResponse) {
+    option (google.api.http) = {
+      put: "/control/v1/gateway/connections/{connection_id}/secret"
+      body: "*"
+    };
+  }
+  rpc DiagnoseConnection(DiagnoseConnectionRequest) returns (ConnectionDiagnostics) {
+    option (google.api.http) = {
+      post: "/control/v1/gateway/connections/{connection_id}:diagnose"
+      body: "*"
+    };
+  }
+  rpc DiscoverTarget(DiscoverTargetRequest) returns (DiscoverTargetResponse) {
+    option (google.api.http) = {
+      post: "/control/v1/gateway/targets/{target_id}:discover"
+      body: "*"
+    };
+  }
+  rpc ImportOpenAPI(ImportOpenAPIRequest) returns (ImportOpenAPIResponse) {
+    option (google.api.http) = {
+      post: "/control/v1/gateway/targets/{target_id}:import"
+      body: "*"
+    };
+  }
+  rpc StartConnectionAuthorization(StartConnectionAuthorizationRequest) returns (StartConnectionAuthorizationResponse) {
+    option (google.api.http) = {
+      post: "/control/v1/gateway/connections/{connection_id}:authorize"
+      body: "*"
+    };
+  }
+}

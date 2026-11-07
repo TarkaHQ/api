@@ -1,0 +1,790 @@
+// Copyright 2026 Tarka
+// SPDX-License-Identifier: Apache-2.0
+syntax = "proto3";
+package tarka.iam.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/TarkaHQ/api/gen/go/tarka/iam/v1;iamv1";
+
+message Project {
+  string id = 1;
+  string org_id = 2;
+  string realm_id = 3;
+  // active, suspended, revoked, or provisioning; validated by resource kind.
+  string status = 4;
+  // Optimistic concurrency version, managed by the server.
+  int64 version = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+  string name = 10;
+}
+message CreateProjectRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  Project project = 3;
+}
+message UpdateProjectRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+  Project project = 4;
+  int64 expected_version = 5;
+}
+message GetProjectRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+}
+message DeleteProjectRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+  int64 expected_version = 4;
+}
+message ListProjectsRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  int32 page_size = 3;
+  string page_token = 4;
+}
+message ListProjectsResponse {
+  repeated Project items = 1;
+  string next_page_token = 2;
+}
+message Realm {
+  string id = 1;
+  string org_id = 2;
+  string realm_id = 3;
+  // active, suspended, revoked, or provisioning; validated by resource kind.
+  string status = 4;
+  // Optimistic concurrency version, managed by the server.
+  int64 version = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+  string project_id = 10;
+  string environment = 11;
+  string tenant_key = 12;
+  string name = 13;
+  // Customer login policy. Optional client_registration has cimd/dcr booleans
+  // (default false) and allowed_audiences: exact published gateway API/MCP
+  // audiences in this realm. Public onboarding grants no permissions; users
+  // still approve consent and every action checks current authorization.
+  google.protobuf.Struct authentication = 14;
+  // Output only: realm-specific authorization issuer.
+  string issuer = 15;
+  // Output only: current provisioning stage and a safe dependency error code.
+  string provisioning_phase = 16;
+  string provisioning_error = 17;
+}
+message CreateRealmRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  Realm realm = 3;
+}
+message UpdateRealmRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+  Realm realm = 4;
+  int64 expected_version = 5;
+}
+message GetRealmRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+}
+message DeleteRealmRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+  int64 expected_version = 4;
+}
+message ListRealmsRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  int32 page_size = 3;
+  string page_token = 4;
+}
+message ListRealmsResponse {
+  repeated Realm items = 1;
+  string next_page_token = 2;
+}
+message Principal {
+  string id = 1;
+  string org_id = 2;
+  string realm_id = 3;
+  // active, suspended, revoked, or provisioning; validated by resource kind.
+  string status = 4;
+  // Optimistic concurrency version, managed by the server.
+  int64 version = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+  // user, agent, or service.
+  string kind = 10;
+  string name = 11;
+  string external_id = 12;
+  google.protobuf.Struct traits = 13;
+}
+message CreatePrincipalRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  Principal principal = 3;
+}
+message UpdatePrincipalRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+  Principal principal = 4;
+  int64 expected_version = 5;
+}
+message GetPrincipalRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+}
+message DeletePrincipalRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+  int64 expected_version = 4;
+}
+message ListPrincipalsRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  int32 page_size = 3;
+  string page_token = 4;
+}
+message ListPrincipalsResponse {
+  repeated Principal items = 1;
+  string next_page_token = 2;
+}
+message IdentityProvider {
+  string id = 1;
+  string org_id = 2;
+  string realm_id = 3;
+  // active, suspended, revoked, or provisioning; validated by resource kind.
+  string status = 4;
+  // Optimistic concurrency version, managed by the server.
+  int64 version = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+  // oidc, saml, or scim.
+  string protocol = 10;
+  string name = 11;
+  // Public configuration only. Credentials use the write-only secret endpoint.
+  google.protobuf.Struct configuration = 12;
+  // Output only: an OIDC client secret has been stored. This does not imply
+  // successful provider reconciliation or a completed sign-in test.
+  bool credential_configured = 13;
+}
+message UploadIdentityProviderSecretRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string provider_id = 3;
+  int64 expected_version = 4;
+  // Write only. OIDC client secret, stored in the environment's vault.
+  string client_secret = 5;
+}
+message CreateIdentityProviderRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  IdentityProvider identity_provider = 3;
+}
+message UpdateIdentityProviderRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+  IdentityProvider identity_provider = 4;
+  int64 expected_version = 5;
+}
+message GetIdentityProviderRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+}
+message DeleteIdentityProviderRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+  int64 expected_version = 4;
+}
+message ListIdentityProvidersRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  int32 page_size = 3;
+  string page_token = 4;
+}
+message ListIdentityProvidersResponse {
+  repeated IdentityProvider items = 1;
+  string next_page_token = 2;
+}
+message Role {
+  string id = 1;
+  string org_id = 2;
+  string realm_id = 3;
+  // active, suspended, revoked, or provisioning; validated by resource kind.
+  string status = 4;
+  // Optimistic concurrency version, managed by the server.
+  int64 version = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+  string name = 10;
+  repeated string members = 11;
+  repeated Permission permissions = 12;
+}
+message CreateRoleRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  Role role = 3;
+}
+message UpdateRoleRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+  Role role = 4;
+  int64 expected_version = 5;
+}
+message GetRoleRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+}
+message DeleteRoleRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+  int64 expected_version = 4;
+}
+message ListRolesRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  int32 page_size = 3;
+  string page_token = 4;
+}
+message ListRolesResponse {
+  repeated Role items = 1;
+  string next_page_token = 2;
+}
+message Grant {
+  string id = 1;
+  string org_id = 2;
+  string realm_id = 3;
+  // active, suspended, revoked, or provisioning; validated by resource kind.
+  string status = 4;
+  // Optimistic concurrency version, managed by the server.
+  int64 version = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+  string subject_id = 10;
+  string actor_id = 11;
+  repeated Permission permissions = 12;
+  google.protobuf.Timestamp expires_at = 13;
+}
+message CreateGrantRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  Grant grant = 3;
+}
+message UpdateGrantRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+  Grant grant = 4;
+  int64 expected_version = 5;
+}
+message GetGrantRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+}
+message DeleteGrantRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+  int64 expected_version = 4;
+}
+message ListGrantsRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  int32 page_size = 3;
+  string page_token = 4;
+}
+message ListGrantsResponse {
+  repeated Grant items = 1;
+  string next_page_token = 2;
+}
+message Run {
+  string id = 1;
+  string org_id = 2;
+  string realm_id = 3;
+  // Output only: running, completed, failed, cancelled, invalidated, or revoked.
+  string status = 4;
+  // Optimistic concurrency version, managed by the server.
+  int64 version = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+  string subject_id = 10;
+  string actor_id = 11;
+  string grant_id = 12;
+  string conversation_id = 13;
+  int64 policy_revision = 14;
+  // Output only: the immutable capability subset requested by the trusted harness.
+  repeated Permission permissions = 15;
+  string gateway_id = 16;
+  string transport = 17;
+  google.protobuf.Timestamp expires_at = 18;
+  string terminal_reason = 19;
+}
+message CreateRunRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  Run run = 3;
+}
+message UpdateRunRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+  Run run = 4;
+  int64 expected_version = 5;
+}
+message GetRunRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+}
+message DeleteRunRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+  int64 expected_version = 4;
+}
+message ListRunsRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  int32 page_size = 3;
+  string page_token = 4;
+}
+message ListRunsResponse {
+  repeated Run items = 1;
+  string next_page_token = 2;
+}
+
+// Directory data is observed provider state, never an automatic grant.
+message DirectoryUser {
+  string source_id = 1;
+  string external_id = 2;
+  string principal_id = 3;
+  string name = 4;
+  string email = 5;
+  string department = 6;
+  repeated string provider_roles = 7;
+  // Provider activation, distinct from an operator's principal restriction.
+  bool active = 8;
+  bool present = 9;
+  string principal_status = 10;
+}
+message DirectoryGroup {
+  string source_id = 1;
+  string name = 2;
+  bool present = 3;
+  int64 member_count = 4;
+}
+message DirectoryStatus {
+  string provider_id = 1;
+  string realm_id = 2;
+  // pending, syncing, current, stale, or blocked. Output only.
+  string sync_state = 3;
+  int64 requested_generation = 4;
+  int64 applied_generation = 5;
+  google.protobuf.Timestamp last_synced_at = 6;
+  google.protobuf.Timestamp next_attempt_at = 7;
+  google.protobuf.Timestamp valid_until = 8;
+  string error_code = 9;
+}
+message GetDirectoryStatusRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string provider_id = 3;
+}
+
+// Customer SCIM credentials authenticate only this provider's directory API.
+// Native provider credentials are internal and never returned by these methods.
+message DirectoryConnection {
+  string provider_id = 1;
+  string realm_id = 2;
+  string endpoint = 3;
+  // Zero until the first token is generated. Independent of provider version.
+  int64 credential_version = 4;
+  int64 provider_version = 5;
+  bool ready = 6;
+  bool credential_configured = 7;
+}
+message GetDirectoryConnectionRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string provider_id = 3;
+}
+message RotateDirectoryTokenRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string provider_id = 3;
+  // Current credential_version, or zero to generate the initial token.
+  int64 expected_version = 4;
+}
+message DirectoryTokenRegistration {
+  DirectoryConnection connection = 1;
+  // Returned once on successful generation/rotation; never returned by Get/List.
+  string token = 2;
+}
+message ListDirectoryUsersRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string provider_id = 3;
+  int32 page_size = 4;
+  string page_token = 5;
+}
+message ListDirectoryUsersResponse {
+  repeated DirectoryUser items = 1;
+  string next_page_token = 2;
+}
+message ListDirectoryGroupsRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string provider_id = 3;
+  int32 page_size = 4;
+  string page_token = 5;
+}
+message ListDirectoryGroupsResponse {
+  repeated DirectoryGroup items = 1;
+  string next_page_token = 2;
+}
+message ListDirectoryGroupMembersRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string provider_id = 3;
+  string group_id = 4;
+  int32 page_size = 5;
+  string page_token = 6;
+}
+message DirectoryRoleBinding {
+  string provider_id = 1;
+  // group (stable group ID), department, or provider_role (exact value).
+  string kind = 2;
+  string value = 3;
+}
+message DirectoryRoleBindings {
+  string role_id = 1;
+  int64 role_version = 2;
+  repeated DirectoryRoleBinding bindings = 3;
+}
+message GetDirectoryRoleBindingsRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string role_id = 3;
+}
+message ReplaceDirectoryRoleBindingsRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string role_id = 3;
+  int64 expected_version = 4;
+  // Replaces directory selectors; manual role members stay separate.
+  repeated DirectoryRoleBinding bindings = 5;
+}
+message Permission {
+  string resource = 1;
+  string action = 2;
+}
+message CheckPermissionRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string subject_id = 3;
+  string actor_id = 4;
+  string grant_id = 5;
+  string resource = 6;
+  string action = 7;
+}
+message CheckPermissionResponse {
+  bool allowed = 1;
+  string reason = 2;
+  int64 policy_revision = 3;
+}
+
+// A client belongs to one realm. Credentials are never returned by Get/List.
+message OAuthClient {
+  string id = 1;
+  string org_id = 2;
+  string realm_id = 3;
+  string client_id = 4;
+  string status = 5;
+  int64 version = 6;
+  string name = 7;
+  // public, confidential, or autonomous. Autonomous clients require an agent.
+  string kind = 8;
+  string agent_id = 9;
+  repeated string redirect_uris = 10;
+  // Exact gateway or realm runtime resource URIs, never URL prefixes.
+  repeated string allowed_audiences = 11;
+  repeated string scopes = 12;
+  google.protobuf.Timestamp created_at = 13;
+  google.protobuf.Timestamp updated_at = 14;
+  // Output only: registered, cimd, or dcr.
+  string registration_method = 15;
+}
+message CreateOAuthClientRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  OAuthClient oauth_client = 3;
+}
+message OAuthClientRegistration {
+  OAuthClient oauth_client = 1;
+  // Returned once on creation/rotation for confidential/autonomous clients.
+  string client_secret = 2;
+}
+message GetOAuthClientRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+}
+message ListOAuthClientsRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  int32 page_size = 3;
+  string page_token = 4;
+}
+message ListOAuthClientsResponse {
+  repeated OAuthClient items = 1;
+  string next_page_token = 2;
+}
+message DeleteOAuthClientRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+  int64 expected_version = 4;
+}
+message RotateOAuthClientSecretRequest {
+  string org_id = 1;
+  string realm_id = 2;
+  string id = 3;
+  int64 expected_version = 4;
+}
+
+service IAMService {
+  rpc GetDirectoryConnection(GetDirectoryConnectionRequest) returns (DirectoryConnection) {
+    option (google.api.http) = {get: "/control/v1/iam/identity-providers/{provider_id}/directory/connection"};
+  }
+  rpc RotateDirectoryToken(RotateDirectoryTokenRequest) returns (DirectoryTokenRegistration) {
+    option (google.api.http) = {
+      post: "/control/v1/iam/identity-providers/{provider_id}/directory:rotate-token"
+      body: "*"
+    };
+  }
+  rpc UploadIdentityProviderSecret(UploadIdentityProviderSecretRequest) returns (IdentityProvider) {
+    option (google.api.http) = {
+      put: "/control/v1/iam/identity-providers/{provider_id}/secret"
+      body: "*"
+    };
+  }
+  rpc GetDirectoryStatus(GetDirectoryStatusRequest) returns (DirectoryStatus) {
+    option (google.api.http) = {get: "/control/v1/iam/identity-providers/{provider_id}/directory"};
+  }
+  rpc ListDirectoryUsers(ListDirectoryUsersRequest) returns (ListDirectoryUsersResponse) {
+    option (google.api.http) = {get: "/control/v1/iam/identity-providers/{provider_id}/directory/users"};
+  }
+  rpc ListDirectoryGroups(ListDirectoryGroupsRequest) returns (ListDirectoryGroupsResponse) {
+    option (google.api.http) = {get: "/control/v1/iam/identity-providers/{provider_id}/directory/groups"};
+  }
+  rpc ListDirectoryGroupMembers(ListDirectoryGroupMembersRequest) returns (ListDirectoryUsersResponse) {
+    option (google.api.http) = {get: "/control/v1/iam/identity-providers/{provider_id}/directory/groups/{group_id}/members"};
+  }
+  rpc GetDirectoryRoleBindings(GetDirectoryRoleBindingsRequest) returns (DirectoryRoleBindings) {
+    option (google.api.http) = {get: "/control/v1/iam/roles/{role_id}/directory-bindings"};
+  }
+  rpc ReplaceDirectoryRoleBindings(ReplaceDirectoryRoleBindingsRequest) returns (DirectoryRoleBindings) {
+    option (google.api.http) = {
+      put: "/control/v1/iam/roles/{role_id}/directory-bindings"
+      body: "*"
+    };
+  }
+  rpc CreateOAuthClient(CreateOAuthClientRequest) returns (OAuthClientRegistration) {
+    option (google.api.http) = {
+      post: "/control/v1/iam/oauth-clients"
+      body: "*"
+    };
+  }
+  rpc GetOAuthClient(GetOAuthClientRequest) returns (OAuthClient) {
+    option (google.api.http) = {get: "/control/v1/iam/oauth-clients/{id}"};
+  }
+  rpc ListOAuthClients(ListOAuthClientsRequest) returns (ListOAuthClientsResponse) {
+    option (google.api.http) = {get: "/control/v1/iam/oauth-clients"};
+  }
+  rpc DeleteOAuthClient(DeleteOAuthClientRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/control/v1/iam/oauth-clients/{id}"};
+  }
+  rpc RotateOAuthClientSecret(RotateOAuthClientSecretRequest) returns (OAuthClientRegistration) {
+    option (google.api.http) = {
+      post: "/control/v1/iam/oauth-clients/{id}:rotate-secret"
+      body: "*"
+    };
+  }
+  rpc CreateProject(CreateProjectRequest) returns (Project) {
+    option (google.api.http) = {
+      post: "/control/v1/iam/projects"
+      body: "*"
+    };
+  }
+  rpc UpdateProject(UpdateProjectRequest) returns (Project) {
+    option (google.api.http) = {
+      put: "/control/v1/iam/projects/{id}"
+      body: "*"
+    };
+  }
+  rpc GetProject(GetProjectRequest) returns (Project) {
+    option (google.api.http) = {get: "/control/v1/iam/projects/{id}"};
+  }
+  rpc DeleteProject(DeleteProjectRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/control/v1/iam/projects/{id}"};
+  }
+  rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse) {
+    option (google.api.http) = {get: "/control/v1/iam/projects"};
+  }
+  rpc CreateRealm(CreateRealmRequest) returns (Realm) {
+    option (google.api.http) = {
+      post: "/control/v1/iam/realms"
+      body: "*"
+    };
+  }
+  rpc UpdateRealm(UpdateRealmRequest) returns (Realm) {
+    option (google.api.http) = {
+      put: "/control/v1/iam/realms/{id}"
+      body: "*"
+    };
+  }
+  rpc GetRealm(GetRealmRequest) returns (Realm) {
+    option (google.api.http) = {get: "/control/v1/iam/realms/{id}"};
+  }
+  rpc DeleteRealm(DeleteRealmRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/control/v1/iam/realms/{id}"};
+  }
+  rpc ListRealms(ListRealmsRequest) returns (ListRealmsResponse) {
+    option (google.api.http) = {get: "/control/v1/iam/realms"};
+  }
+  rpc CreatePrincipal(CreatePrincipalRequest) returns (Principal) {
+    option (google.api.http) = {
+      post: "/control/v1/iam/principals"
+      body: "*"
+    };
+  }
+  rpc UpdatePrincipal(UpdatePrincipalRequest) returns (Principal) {
+    option (google.api.http) = {
+      put: "/control/v1/iam/principals/{id}"
+      body: "*"
+    };
+  }
+  rpc GetPrincipal(GetPrincipalRequest) returns (Principal) {
+    option (google.api.http) = {get: "/control/v1/iam/principals/{id}"};
+  }
+  rpc DeletePrincipal(DeletePrincipalRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/control/v1/iam/principals/{id}"};
+  }
+  rpc ListPrincipals(ListPrincipalsRequest) returns (ListPrincipalsResponse) {
+    option (google.api.http) = {get: "/control/v1/iam/principals"};
+  }
+  rpc CreateIdentityProvider(CreateIdentityProviderRequest) returns (IdentityProvider) {
+    option (google.api.http) = {
+      post: "/control/v1/iam/identity-providers"
+      body: "*"
+    };
+  }
+  rpc UpdateIdentityProvider(UpdateIdentityProviderRequest) returns (IdentityProvider) {
+    option (google.api.http) = {
+      put: "/control/v1/iam/identity-providers/{id}"
+      body: "*"
+    };
+  }
+  rpc GetIdentityProvider(GetIdentityProviderRequest) returns (IdentityProvider) {
+    option (google.api.http) = {get: "/control/v1/iam/identity-providers/{id}"};
+  }
+  rpc DeleteIdentityProvider(DeleteIdentityProviderRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/control/v1/iam/identity-providers/{id}"};
+  }
+  rpc ListIdentityProviders(ListIdentityProvidersRequest) returns (ListIdentityProvidersResponse) {
+    option (google.api.http) = {get: "/control/v1/iam/identity-providers"};
+  }
+  rpc CreateRole(CreateRoleRequest) returns (Role) {
+    option (google.api.http) = {
+      post: "/control/v1/iam/roles"
+      body: "*"
+    };
+  }
+  rpc UpdateRole(UpdateRoleRequest) returns (Role) {
+    option (google.api.http) = {
+      put: "/control/v1/iam/roles/{id}"
+      body: "*"
+    };
+  }
+  rpc GetRole(GetRoleRequest) returns (Role) {
+    option (google.api.http) = {get: "/control/v1/iam/roles/{id}"};
+  }
+  rpc DeleteRole(DeleteRoleRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/control/v1/iam/roles/{id}"};
+  }
+  rpc ListRoles(ListRolesRequest) returns (ListRolesResponse) {
+    option (google.api.http) = {get: "/control/v1/iam/roles"};
+  }
+  rpc CreateGrant(CreateGrantRequest) returns (Grant) {
+    option (google.api.http) = {
+      post: "/control/v1/iam/grants"
+      body: "*"
+    };
+  }
+  rpc UpdateGrant(UpdateGrantRequest) returns (Grant) {
+    option (google.api.http) = {
+      put: "/control/v1/iam/grants/{id}"
+      body: "*"
+    };
+  }
+  rpc GetGrant(GetGrantRequest) returns (Grant) {
+    option (google.api.http) = {get: "/control/v1/iam/grants/{id}"};
+  }
+  rpc DeleteGrant(DeleteGrantRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/control/v1/iam/grants/{id}"};
+  }
+  rpc ListGrants(ListGrantsRequest) returns (ListGrantsResponse) {
+    option (google.api.http) = {get: "/control/v1/iam/grants"};
+  }
+  // Unsupported for identity issuance. Use the authenticated runtime HTTP lifecycle.
+  rpc CreateRun(CreateRunRequest) returns (Run) {
+    option deprecated = true;
+    option (google.api.http) = {
+      post: "/control/v1/iam/runs"
+      body: "*"
+    };
+  }
+  // Runs are immutable outside the authenticated runtime lifecycle.
+  rpc UpdateRun(UpdateRunRequest) returns (Run) {
+    option deprecated = true;
+    option (google.api.http) = {
+      put: "/control/v1/iam/runs/{id}"
+      body: "*"
+    };
+  }
+  rpc GetRun(GetRunRequest) returns (Run) {
+    option (google.api.http) = {get: "/control/v1/iam/runs/{id}"};
+  }
+  rpc DeleteRun(DeleteRunRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/control/v1/iam/runs/{id}"};
+  }
+  rpc ListRuns(ListRunsRequest) returns (ListRunsResponse) {
+    option (google.api.http) = {get: "/control/v1/iam/runs"};
+  }
+  rpc CheckPermission(CheckPermissionRequest) returns (CheckPermissionResponse) {
+    option (google.api.http) = {
+      post: "/control/v1/iam/permissions:check"
+      body: "*"
+    };
+  }
+}
