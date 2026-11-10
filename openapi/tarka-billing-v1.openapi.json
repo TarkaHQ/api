@@ -1,0 +1,308 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Tarka organization billing verification",
+    "version": "1.0.0",
+    "description": "Additive HTTP billing contract for organization card verification. Verification does not make a purchase, grant an entitlement or mark an organization as paid. Product requests can return card_verification_required even for free products. Existing balance, ledger and plan fields remain available on the billing response."
+  },
+  "servers": [
+    {
+      "url": "https://tarka.rest"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/control/v1/orgs/{org_id}/billing": {
+      "parameters": [
+        {
+          "name": "org_id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "getOrganizationBillingVerification",
+        "summary": "Read billing and the caller\u2019s organization verification status",
+        "responses": {
+          "200": {
+            "description": "Current billing state. Requires organization membership. Risk scores and reasons are never returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingVerification"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Request refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/control/v1/orgs/{org_id}/billing/checkout": {
+      "parameters": [
+        {
+          "name": "org_id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "createOrganizationBillingCheckout",
+        "summary": "Create a Stripe checkout session (owners/admins only)",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/CardSetup"
+                  },
+                  {
+                    "$ref": "#/components/schemas/TopUp"
+                  },
+                  {
+                    "$ref": "#/components/schemas/Subscription"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Hosted Stripe Checkout URL. Returning from Checkout is not verification proof; read billing status after the server verifies Stripe state.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "url"
+                  ],
+                  "properties": {
+                    "url": {
+                      "type": "string",
+                      "format": "uri"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Request refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Request refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "BillingVerification": {
+        "type": "object",
+        "required": [
+          "org_id",
+          "enabled",
+          "can_manage",
+          "verification_required",
+          "has_verified_card"
+        ],
+        "properties": {
+          "org_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "Whether Stripe billing is configured."
+          },
+          "can_manage": {
+            "type": "boolean"
+          },
+          "verification_required": {
+            "type": "boolean",
+            "description": "Whether this caller must verify this organization before product use."
+          },
+          "has_verified_card": {
+            "type": "boolean",
+            "description": "The organization has an attached, successfully verified, unexpired live-mode card."
+          }
+        },
+        "additionalProperties": true
+      },
+      "CardSetup": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "purpose",
+          "currency"
+        ],
+        "properties": {
+          "purpose": {
+            "const": "card_setup"
+          },
+          "currency": {
+            "enum": [
+              "usd",
+              "eur"
+            ]
+          }
+        }
+      },
+      "TopUp": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "purpose",
+          "currency",
+          "amount_cents"
+        ],
+        "properties": {
+          "purpose": {
+            "const": "top_up"
+          },
+          "currency": {
+            "enum": [
+              "usd",
+              "eur"
+            ]
+          },
+          "amount_cents": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
+      "Subscription": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "purpose",
+          "currency",
+          "plan"
+        ],
+        "properties": {
+          "purpose": {
+            "const": "subscription"
+          },
+          "currency": {
+            "enum": [
+              "usd",
+              "eur"
+            ]
+          },
+          "plan": {
+            "type": "string"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Stable error code. Product access can return card_verification_required (403); a failed gate lookup returns card_verification_unavailable (503)."
+          }
+        }
+      }
+    }
+  }
+}

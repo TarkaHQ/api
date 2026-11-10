@@ -15,6 +15,7 @@ INFERENCE_PATH = ROOT / "openapi" / "tarka-inference-v1.openapi.json"
 INFERENCE_GRPC_PATH = ROOT / "openapi" / "tarka-inference-v1.swagger.json"
 INFERENCE_V2_OPENAPI_PATH = ROOT / "openapi" / "tarka-inference-v2.openapi.json"
 IAM_OAUTH_PATH = ROOT / "openapi" / "tarka-iam-oauth-v1.openapi.json"
+BILLING_PATH = ROOT / "openapi" / "tarka-billing-v1.openapi.json"
 RUNTIME_PATH = ROOT / "openapi" / "tarka-runtime-v1.openapi.json"
 HTTP_METHODS = {
     "get",
@@ -408,6 +409,7 @@ def main() -> None:
     validate_runtime(load(RUNTIME_PATH))
     validate_iam_oauth(load(IAM_OAUTH_PATH))
     for source, document in (
+        (BILLING_PATH, load(BILLING_PATH)),
         (CONTROL_PATH, control),
         (INFERENCE_PATH, inference),
         (INFERENCE_GRPC_PATH, inference_grpc),
