@@ -6207,6 +6207,408 @@
         ]
       }
     },
+    "/control/v1/orgs/{org_id}/project-resources": {
+      "get": {
+        "summary": "Lists organization resources with their shared project assignment.",
+        "operationId": "ProvisioningService_ListProjectResources",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListProjectResourcesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "project_id",
+            "description": "Empty includes all projects in this organization.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "page_token",
+            "description": "Opaque cursor scoped to this organization and filter.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/project-resources/{resource_type}/{resource_id}/project": {
+      "put": {
+        "summary": "Changes grouping only, without changing resource permissions or runtime state.",
+        "operationId": "ProvisioningService_MoveProjectResource",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ProjectResource"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "resource_type",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "resource_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProvisioningServiceMoveProjectResourceBody"
+            }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/projects": {
+      "get": {
+        "operationId": "IAMService_ListProjects2",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListProjectsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "page_token",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      },
+      "post": {
+        "operationId": "IAMService_CreateProject2",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Project"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/IAMServiceCreateProjectBody"
+            }
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/projects/{id}": {
+      "get": {
+        "operationId": "IAMService_GetProject2",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Project"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      },
+      "delete": {
+        "operationId": "IAMService_DeleteProject2",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "realm_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "expected_version",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      },
+      "put": {
+        "operationId": "IAMService_UpdateProject2",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Project"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/IAMServiceUpdateProjectBody"
+            }
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/projects/{project_id}/identity": {
+      "get": {
+        "summary": "Reads the internal production scope without provisioning services.",
+        "operationId": "IAMService_GetProjectIdentity",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ProjectIdentity"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/projects/{project_id}:enable-identity": {
+      "post": {
+        "summary": "Repeated and concurrent calls return the same production scope.",
+        "operationId": "IAMService_EnableProjectIdentity",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ProjectIdentity"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/IAMServiceEnableProjectIdentityBody"
+            }
+          }
+        ],
+        "tags": [
+          "IAMService"
+        ]
+      }
+    },
     "/control/v1/orgs/{org_id}/quota-policy": {
       "get": {
         "summary": "GetQuotaPolicy returns an organization's effective inference quota policy.",
@@ -8127,6 +8529,20 @@
         }
       }
     },
+    "IAMServiceCreateProjectBody": {
+      "type": "object",
+      "properties": {
+        "realm_id": {
+          "type": "string"
+        },
+        "project": {
+          "$ref": "#/definitions/v1Project"
+        }
+      }
+    },
+    "IAMServiceEnableProjectIdentityBody": {
+      "type": "object"
+    },
     "IAMServiceReplaceDirectoryRoleBindingsBody": {
       "type": "object",
       "properties": {
@@ -8238,9 +8654,6 @@
     "IAMServiceUpdateProjectBody": {
       "type": "object",
       "properties": {
-        "org_id": {
-          "type": "string"
-        },
         "realm_id": {
           "type": "string"
         },
@@ -8700,6 +9113,18 @@
         }
       },
       "description": "CreateStorageCredentialRequest creates one access key scoped to a bucket."
+    },
+    "ProvisioningServiceMoveProjectResourceBody": {
+      "type": "object",
+      "properties": {
+        "project_id": {
+          "type": "string"
+        },
+        "expected_project_id": {
+          "type": "string",
+          "description": "Required; moving fails if another caller has changed the assignment."
+        }
+      }
     },
     "ProvisioningServicePrepareAgentHostSecretsBody": {
       "type": "object",
@@ -11784,6 +12209,21 @@
       },
       "description": "ListProductAccessRequestsResponse contains newest requests first."
     },
+    "v1ListProjectResourcesResponse": {
+      "type": "object",
+      "properties": {
+        "resources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1ProjectResource"
+          }
+        },
+        "next_page_token": {
+          "type": "string"
+        }
+      }
+    },
     "v1ListProjectsResponse": {
       "type": "object",
       "properties": {
@@ -12598,8 +13038,77 @@
         },
         "name": {
           "type": "string"
+        },
+        "is_default": {
+          "type": "boolean",
+          "description": "Output only. Every organization has one protected default project.",
+          "readOnly": true
         }
-      }
+      },
+      "description": "An organization project groups platform resources and shares its identity with IAM."
+    },
+    "v1ProjectIdentity": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Opaque identity scope used by IAM and Gateway resource requests.",
+          "readOnly": true
+        },
+        "project_id": {
+          "type": "string",
+          "readOnly": true
+        },
+        "status": {
+          "type": "string",
+          "readOnly": true
+        },
+        "issuer": {
+          "type": "string",
+          "readOnly": true
+        },
+        "provisioning_phase": {
+          "type": "string",
+          "readOnly": true
+        },
+        "provisioning_error": {
+          "type": "string",
+          "readOnly": true
+        }
+      },
+      "description": "Project identity status. Internal environment and tenant configuration is\nmanaged by the platform and is not part of this interface."
+    },
+    "v1ProjectResource": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "org_id": {
+          "type": "string"
+        },
+        "project_id": {
+          "type": "string"
+        },
+        "resource_type": {
+          "type": "string",
+          "description": "agent, job, inference_service, bucket, git_repo, sandbox,\nsandbox_template, api_key, or source_repository."
+        },
+        "name": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "external_url": {
+          "type": "string"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "description": "Metadata for a resource grouped in a project. Credentials are never returned."
     },
     "v1ProvisionedResource": {
       "type": "object",

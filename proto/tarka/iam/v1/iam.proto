@@ -4,12 +4,14 @@ syntax = "proto3";
 package tarka.iam.v1;
 
 import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/TarkaHQ/api/gen/go/tarka/iam/v1;iamv1";
 
+// An organization project groups platform resources and shares its identity with IAM.
 message Project {
   string id = 1;
   string org_id = 2;
@@ -21,6 +23,8 @@ message Project {
   google.protobuf.Timestamp created_at = 6;
   google.protobuf.Timestamp updated_at = 7;
   string name = 10;
+  // Output only. Every organization has one protected default project.
+  bool is_default = 11;
 }
 message CreateProjectRequest {
   string org_id = 1;
@@ -54,6 +58,29 @@ message ListProjectsRequest {
 message ListProjectsResponse {
   repeated Project items = 1;
   string next_page_token = 2;
+}
+
+// Enable identity services for a project. Idempotently creates its internal
+// production scope; clients never choose an environment or tenant.
+message GetProjectIdentityRequest {
+  string org_id = 1;
+  string project_id = 2;
+}
+message EnableProjectIdentityRequest {
+  string org_id = 1;
+  string project_id = 2;
+}
+
+// Project identity status. Internal environment and tenant configuration is
+// managed by the platform and is not part of this interface.
+message ProjectIdentity {
+  // Opaque identity scope used by IAM and Gateway resource requests.
+  string id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+  string project_id = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+  string status = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+  string issuer = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
+  string provisioning_phase = 5 [(google.api.field_behavior) = OUTPUT_ONLY];
+  string provisioning_error = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
 }
 message Realm {
   string id = 1;
@@ -630,26 +657,54 @@ service IAMService {
       body: "*"
     };
   }
+  // Reads the internal production scope without provisioning services.
+  rpc GetProjectIdentity(GetProjectIdentityRequest) returns (ProjectIdentity) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/projects/{project_id}/identity"};
+  }
+  // Repeated and concurrent calls return the same production scope.
+  rpc EnableProjectIdentity(EnableProjectIdentityRequest) returns (ProjectIdentity) {
+    option (google.api.http) = {
+      post: "/control/v1/orgs/{org_id}/projects/{project_id}:enable-identity"
+      body: "*"
+    };
+  }
   rpc CreateProject(CreateProjectRequest) returns (Project) {
     option (google.api.http) = {
       post: "/control/v1/iam/projects"
       body: "*"
+      additional_bindings: {
+        post: "/control/v1/orgs/{org_id}/projects"
+        body: "*"
+      }
     };
   }
   rpc UpdateProject(UpdateProjectRequest) returns (Project) {
     option (google.api.http) = {
       put: "/control/v1/iam/projects/{id}"
       body: "*"
+      additional_bindings: {
+        put: "/control/v1/orgs/{org_id}/projects/{id}"
+        body: "*"
+      }
     };
   }
   rpc GetProject(GetProjectRequest) returns (Project) {
-    option (google.api.http) = {get: "/control/v1/iam/projects/{id}"};
+    option (google.api.http) = {
+      get: "/control/v1/iam/projects/{id}"
+      additional_bindings: {get: "/control/v1/orgs/{org_id}/projects/{id}"}
+    };
   }
   rpc DeleteProject(DeleteProjectRequest) returns (google.protobuf.Empty) {
-    option (google.api.http) = {delete: "/control/v1/iam/projects/{id}"};
+    option (google.api.http) = {
+      delete: "/control/v1/iam/projects/{id}"
+      additional_bindings: {delete: "/control/v1/orgs/{org_id}/projects/{id}"}
+    };
   }
   rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse) {
-    option (google.api.http) = {get: "/control/v1/iam/projects"};
+    option (google.api.http) = {
+      get: "/control/v1/iam/projects"
+      additional_bindings: {get: "/control/v1/orgs/{org_id}/projects"}
+    };
   }
   rpc CreateRealm(CreateRealmRequest) returns (Realm) {
     option (google.api.http) = {
