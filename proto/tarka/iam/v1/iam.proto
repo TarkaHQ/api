@@ -4,6 +4,7 @@ syntax = "proto3";
 package tarka.iam.v1;
 
 import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
@@ -58,6 +59,7 @@ message ListProjectsResponse {
   repeated Project items = 1;
   string next_page_token = 2;
 }
+
 // Enable identity services for a project. Idempotently creates its internal
 // production scope; clients never choose an environment or tenant.
 message GetProjectIdentityRequest {
@@ -67,6 +69,18 @@ message GetProjectIdentityRequest {
 message EnableProjectIdentityRequest {
   string org_id = 1;
   string project_id = 2;
+}
+
+// Project identity status. Internal environment and tenant configuration is
+// managed by the platform and is not part of this interface.
+message ProjectIdentity {
+  // Opaque identity scope used by IAM and Gateway resource requests.
+  string id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+  string project_id = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+  string status = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+  string issuer = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
+  string provisioning_phase = 5 [(google.api.field_behavior) = OUTPUT_ONLY];
+  string provisioning_error = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
 }
 message Realm {
   string id = 1;
@@ -644,11 +658,11 @@ service IAMService {
     };
   }
   // Reads the internal production scope without provisioning services.
-  rpc GetProjectIdentity(GetProjectIdentityRequest) returns (Realm) {
+  rpc GetProjectIdentity(GetProjectIdentityRequest) returns (ProjectIdentity) {
     option (google.api.http) = {get: "/control/v1/orgs/{org_id}/projects/{project_id}/identity"};
   }
   // Repeated and concurrent calls return the same production scope.
-  rpc EnableProjectIdentity(EnableProjectIdentityRequest) returns (Realm) {
+  rpc EnableProjectIdentity(EnableProjectIdentityRequest) returns (ProjectIdentity) {
     option (google.api.http) = {
       post: "/control/v1/orgs/{org_id}/projects/{project_id}:enable-identity"
       body: "*"

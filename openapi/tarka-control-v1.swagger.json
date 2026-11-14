@@ -6535,7 +6535,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1Realm"
+              "$ref": "#/definitions/v1ProjectIdentity"
             }
           },
           "default": {
@@ -6572,7 +6572,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1Realm"
+              "$ref": "#/definitions/v1ProjectIdentity"
             }
           },
           "default": {
@@ -13046,6 +13046,37 @@
         }
       },
       "description": "An organization project groups platform resources and shares its identity with IAM."
+    },
+    "v1ProjectIdentity": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Opaque identity scope used by IAM and Gateway resource requests.",
+          "readOnly": true
+        },
+        "project_id": {
+          "type": "string",
+          "readOnly": true
+        },
+        "status": {
+          "type": "string",
+          "readOnly": true
+        },
+        "issuer": {
+          "type": "string",
+          "readOnly": true
+        },
+        "provisioning_phase": {
+          "type": "string",
+          "readOnly": true
+        },
+        "provisioning_error": {
+          "type": "string",
+          "readOnly": true
+        }
+      },
+      "description": "Project identity status. Internal environment and tenant configuration is\nmanaged by the platform and is not part of this interface."
     },
     "v1ProjectResource": {
       "type": "object",
