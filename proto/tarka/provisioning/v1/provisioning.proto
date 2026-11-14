@@ -536,6 +536,17 @@ service ProvisioningService {
     option (google.api.http) = {get: "/control/v1/orgs/{org_id}/usage/summary"};
   }
 
+  // Lists organization resources with their shared project assignment.
+  rpc ListProjectResources(ListProjectResourcesRequest) returns (ListProjectResourcesResponse) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/project-resources"};
+  }
+  // Changes grouping only, without changing resource permissions or runtime state.
+  rpc MoveProjectResource(MoveProjectResourceRequest) returns (ProjectResource) {
+    option (google.api.http) = {
+      put: "/control/v1/orgs/{org_id}/project-resources/{resource_type}/{resource_id}/project"
+      body: "*"
+    };
+  }
   // ListProvisionedResources returns desired-state resources, optionally
   // filtered by resource type.
   rpc ListProvisionedResources(ListProvisionedResourcesRequest) returns (ListProvisionedResourcesResponse) {
@@ -1848,4 +1859,38 @@ message PreviewOrgInvitationRequest {
 }
 message AcceptOrgInvitationRequest {
   string token = 1;
+}
+
+// Metadata for a resource grouped in a project. Credentials are never returned.
+message ProjectResource {
+  string id = 1;
+  string org_id = 2;
+  string project_id = 3;
+  // agent, job, inference_service, bucket, git_repo, sandbox,
+  // sandbox_template, api_key, or source_repository.
+  string resource_type = 4;
+  string name = 5;
+  string status = 6;
+  string external_url = 7;
+  google.protobuf.Timestamp updated_at = 8;
+}
+message ListProjectResourcesRequest {
+  string org_id = 1;
+  // Empty includes all projects in this organization.
+  string project_id = 2;
+  int32 page_size = 3;
+  // Opaque cursor scoped to this organization and filter.
+  string page_token = 4;
+}
+message ListProjectResourcesResponse {
+  repeated ProjectResource resources = 1;
+  string next_page_token = 2;
+}
+message MoveProjectResourceRequest {
+  string org_id = 1;
+  string resource_type = 2;
+  string resource_id = 3;
+  string project_id = 4;
+  // Required; moving fails if another caller has changed the assignment.
+  string expected_project_id = 5;
 }
