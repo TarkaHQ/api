@@ -13,6 +13,7 @@ import "tarka/provisioning/v1/agent_secrets.proto";
 import "tarka/provisioning/v1/billing_quote.proto";
 import "tarka/provisioning/v1/job.proto";
 import "tarka/provisioning/v1/registry_credentials.proto";
+import "tarka/provisioning/v1/sandbox.proto";
 import "tarka/provisioning/v1/source_builds.proto";
 
 option csharp_namespace = "Tarka.Provisioning.V1";
@@ -24,7 +25,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Tarka Control API"
     description: "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management."
-    version: "1.30.0"
+    version: "1.31.0"
   }
   host: "tarka.rest"
   schemes: HTTPS
@@ -57,6 +58,23 @@ service ProvisioningService {
   // Public, read-only; never includes credentials or upstream acquisition prices.
   rpc GetPricingCatalog(GetPricingCatalogRequest) returns (PricingCatalog) {
     option (google.api.http) = {get: "/control/v1/pricing"};
+  }
+
+  // Lists the organization's admitted compute resources, optionally scoped to a project.
+  rpc ListComputeWorkloads(ListComputeWorkloadsRequest) returns (ListComputeWorkloadsResponse) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/compute/workloads"};
+  }
+
+  rpc GetComputeWorkload(GetComputeWorkloadRequest) returns (ComputeWorkload) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/compute/workloads/{workload_id}"};
+  }
+
+  // Uses the same admission, lifecycle, and idempotency rules as the selected profile.
+  rpc CreateComputeWorkload(CreateComputeWorkloadRequest) returns (ComputeWorkload) {
+    option (google.api.http) = {
+      post: "/control/v1/orgs/{org_id}/compute/workloads"
+      body: "*"
+    };
   }
 
   // CreateComputeQuote returns a five-minute quote without reserving funds.
@@ -1893,4 +1911,47 @@ message MoveProjectResourceRequest {
   string project_id = 4;
   // Required; moving fails if another caller has changed the assignment.
   string expected_project_id = 5;
+}
+
+// Stable inventory metadata. IDs are shared with the corresponding profile API.
+message ComputeWorkload {
+  string id = 1;
+  string org_id = 2;
+  string project_id = 3;
+  // service, job, or session
+  string kind = 4;
+  // hosted_agent, batch_job, or code_sandbox
+  string profile = 5;
+  string name = 6;
+  string status = 7;
+  string location = 8;
+  string endpoint = 9;
+  google.protobuf.Timestamp updated_at = 10;
+}
+
+message ListComputeWorkloadsRequest {
+  string org_id = 1;
+  string project_id = 2;
+  int32 page_size = 3;
+  string page_token = 4;
+}
+
+message ListComputeWorkloadsResponse {
+  repeated ComputeWorkload workloads = 1;
+  string next_page_token = 2;
+}
+
+message GetComputeWorkloadRequest {
+  string org_id = 1;
+  string workload_id = 2;
+}
+
+message CreateComputeWorkloadRequest {
+  string org_id = 1;
+  // The enclosing organization owns the workload. Nested org_id may be omitted.
+  oneof profile {
+    CreateAgentHostRequest hosted_agent = 2;
+    CreateJobRequest batch_job = 3;
+    CreateCodeSandboxRequest code_sandbox = 4;
+  }
 }
