@@ -12213,7 +12213,7 @@
         },
         "allow_spot": {
           "type": "boolean",
-          "description": "allow_spot requires retryable=true and max_attempts>=2. Unqualified Spot\ncapacity is rejected; this flag never silently weakens isolation."
+          "description": "allow_spot requires retryable=true and max_attempts\u003e=2. Unqualified Spot\ncapacity is rejected; this flag never silently weakens isolation."
         }
       },
       "description": "JobRetryPolicy is explicit consent to possible repeated external effects.\nOnly qualified infrastructure interruptions can retry, after confirmed\ntermination of the old attempt. Exit failures and timeouts are not retried.\nQueue redelivery and lease expiry alone never authorize another attempt."
@@ -12303,7 +12303,7 @@
         },
         "logs_url": {
           "type": "string",
-          "description": "logs_url is an HTTPS download of bounded combined stdout/stderr. It is\nempty if logs are unavailable or have expired, and is valid for <=5 minutes."
+          "description": "logs_url is an HTTPS download of bounded combined stdout/stderr. It is\nempty if logs are unavailable or have expired, and is valid for \u003c=5 minutes."
         },
         "download_expires_at": {
           "type": "string",
