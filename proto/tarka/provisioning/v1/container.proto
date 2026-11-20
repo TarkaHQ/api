@@ -41,3 +41,32 @@ message ListContainerTemplatesRequest {
 message ListContainerTemplatesResponse {
   repeated ContainerTemplate templates = 1;
 }
+
+// Registers a private, scale-to-zero HTTP container in eu-1. Each replica has
+// the EU session allocation and rate. The image's entrypoint listens on PORT.
+message HTTPServiceSpec {
+  string name = 1;
+  ContainerSource container = 2;
+  // One active replica per service. Zero selects 60 idle seconds.
+  int32 idle_timeout_seconds = 3;
+  // Bind an update to the currently deployed revision. Zero creates a service.
+  uint64 expected_revision = 4;
+}
+message InvokeHTTPServiceRequest {
+  string org_id = 1;
+  string workload_id = 2;
+  string method = 3;
+  string path = 4;
+  string content_type = 5;
+  bytes body = 6;
+}
+message InvokeHTTPServiceResponse {
+  int32 status = 1;
+  string content_type = 2;
+  bytes body = 3;
+}
+message DeleteHTTPServiceRequest {
+  string org_id = 1;
+  string workload_id = 2;
+  uint64 expected_revision = 3;
+}

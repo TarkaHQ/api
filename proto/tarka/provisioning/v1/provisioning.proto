@@ -83,6 +83,16 @@ service ProvisioningService {
     };
   }
 
+  rpc InvokeHTTPService(InvokeHTTPServiceRequest) returns (InvokeHTTPServiceResponse) {
+    option (google.api.http) = {
+      post: "/control/v1/orgs/{org_id}/compute/workloads/{workload_id}:invoke"
+      body: "*"
+    };
+  }
+  rpc DeleteHTTPService(DeleteHTTPServiceRequest) returns (ComputeWorkload) {
+    option (google.api.http) = {delete: "/control/v1/orgs/{org_id}/compute/services/{workload_id}"};
+  }
+
   // CreateComputeQuote returns a five-minute quote without reserving funds.
   rpc CreateComputeQuote(CreateComputeQuoteRequest) returns (ComputeQuote) {
     option (google.api.http) = {
@@ -968,6 +978,7 @@ message CreateAgentHostRequest {
   // Mutually exclusive with github_registry_credentials. Omission preserves
   // named credentials. Dry runs do not consume the test; apply consumes it once.
   string registry_test_id = 21;
+  ContainerSource container = 22;
   // location selects where the host runs, such as "eu-1" or "us-1" (see
   // ListLocations). Empty selects the default location for a new host and
   // keeps the current location for an existing one. A host cannot move:
@@ -1928,13 +1939,15 @@ message ComputeWorkload {
   string project_id = 3;
   // service, job, or session
   string kind = 4;
-  // hosted_agent, batch_job, or code_sandbox
+  // hosted_agent, http_service, batch_job, code_sandbox, or container_session
   string profile = 5;
   string name = 6;
   string status = 7;
   string location = 8;
   string endpoint = 9;
   google.protobuf.Timestamp updated_at = 10;
+  uint64 revision = 11;
+  string image = 12;
 }
 
 message ListComputeWorkloadsRequest {
@@ -1961,5 +1974,6 @@ message CreateComputeWorkloadRequest {
     CreateAgentHostRequest hosted_agent = 2;
     CreateJobRequest batch_job = 3;
     CreateCodeSandboxRequest code_sandbox = 4;
+    HTTPServiceSpec http_service = 5;
   }
 }

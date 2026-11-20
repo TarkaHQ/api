@@ -5480,6 +5480,49 @@
         ]
       }
     },
+    "/control/v1/orgs/{org_id}/compute/services/{workload_id}": {
+      "delete": {
+        "operationId": "ProvisioningService_DeleteHTTPService",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ComputeWorkload"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "workload_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "expected_revision",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
     "/control/v1/orgs/{org_id}/compute/templates": {
       "get": {
         "summary": "Lists the platform's versioned, digest-pinned container templates.",
@@ -5627,6 +5670,50 @@
             "in": "path",
             "required": true,
             "type": "string"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/compute/workloads/{workload_id}:invoke": {
+      "post": {
+        "operationId": "ProvisioningService_InvokeHTTPService",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1InvokeHTTPServiceResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "workload_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProvisioningServiceInvokeHTTPServiceBody"
+            }
           }
         ],
         "tags": [
@@ -9025,6 +9112,9 @@
           "type": "string",
           "description": "Applies a successful, unexpired pull test's complete named-credential set.\nBound to organization, host name, current credential versions and images.\nMutually exclusive with github_registry_credentials. Omission preserves\nnamed credentials. Dry runs do not consume the test; apply consumes it once."
         },
+        "container": {
+          "$ref": "#/definitions/v1ContainerSource"
+        },
         "location": {
           "type": "string",
           "description": "Placement location such as \"eu-1\" or \"us-1\" (see ListLocations). Empty selects the default location.",
@@ -9128,6 +9218,9 @@
         },
         "code_sandbox": {
           "$ref": "#/definitions/v1CreateCodeSandboxRequest"
+        },
+        "http_service": {
+          "$ref": "#/definitions/v1HTTPServiceSpec"
         }
       }
     },
@@ -9285,6 +9378,24 @@
         }
       },
       "description": "CreateStorageCredentialRequest creates one access key scoped to a bucket."
+    },
+    "ProvisioningServiceInvokeHTTPServiceBody": {
+      "type": "object",
+      "properties": {
+        "method": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "content_type": {
+          "type": "string"
+        },
+        "body": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
     },
     "ProvisioningServiceMoveProjectResourceBody": {
       "type": "object",
@@ -10786,7 +10897,7 @@
         },
         "profile": {
           "type": "string",
-          "title": "hosted_agent, batch_job, or code_sandbox"
+          "title": "hosted_agent, http_service, batch_job, code_sandbox, or container_session"
         },
         "name": {
           "type": "string"
@@ -10803,6 +10914,13 @@
         "updated_at": {
           "type": "string",
           "format": "date-time"
+        },
+        "revision": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "image": {
+          "type": "string"
         }
       },
       "description": "Stable inventory metadata. IDs are shared with the corresponding profile API."
@@ -11098,6 +11216,9 @@
         "registry_test_id": {
           "type": "string",
           "description": "Applies a successful, unexpired pull test's complete named-credential set.\nBound to organization, host name, current credential versions and images.\nMutually exclusive with github_registry_credentials. Omission preserves\nnamed credentials. Dry runs do not consume the test; apply consumes it once."
+        },
+        "container": {
+          "$ref": "#/definitions/v1ContainerSource"
         },
         "location": {
           "type": "string",
@@ -12057,6 +12178,28 @@
         }
       }
     },
+    "v1HTTPServiceSpec": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "container": {
+          "$ref": "#/definitions/v1ContainerSource"
+        },
+        "idle_timeout_seconds": {
+          "type": "integer",
+          "format": "int32",
+          "description": "One active replica per service. Zero selects 60 idle seconds."
+        },
+        "expected_revision": {
+          "type": "string",
+          "format": "uint64",
+          "description": "Bind an update to the currently deployed revision. Zero creates a service."
+        }
+      },
+      "description": "Registers a private, scale-to-zero HTTP container in eu-1. Each replica has\nthe EU session allocation and rate. The image's entrypoint listens on PORT."
+    },
     "v1HostedGitAccess": {
       "type": "object",
       "properties": {
@@ -12174,6 +12317,22 @@
         }
       },
       "description": "InferenceCapture describes customer-controlled S3 delivery, independent of\nResponses store:true and free Himalaya's Tarka-owned evaluation archive."
+    },
+    "v1InvokeHTTPServiceResponse": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "content_type": {
+          "type": "string"
+        },
+        "body": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
     },
     "v1JobResources": {
       "type": "object",
