@@ -22,6 +22,16 @@ message ManagedDatabase {
   string gateway_id = 9;
   string public_url = 10;
   string active_release = 11;
+  DatabaseSource source = 12;
+  // Last Git revision processed and any actionable synchronization error.
+  string source_commit = 13;
+  string source_error = 14;
+}
+message DatabaseSource {
+  string repository_id = 1;
+  string branch = 2;
+  // Repository-relative JSON file, defaults to database.json.
+  string manifest_path = 3;
 }
 message CreateManagedDatabaseRequest {
   string org_id = 1;
@@ -53,6 +63,8 @@ message UpdateManagedDatabaseRequest {
   optional bool public_http_enabled = 5;
   // Set to an empty string to withdraw this database from its gateway.
   optional string gateway_id = 6;
+  // Set an empty source to disconnect. Connected GitHub branches follow pushes.
+  DatabaseSource source = 7;
 }
 message DatabaseAttachment {
   string database_id = 1;

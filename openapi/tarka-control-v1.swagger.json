@@ -9980,6 +9980,10 @@
         "gateway_id": {
           "type": "string",
           "description": "Set to an empty string to withdraw this database from its gateway."
+        },
+        "source": {
+          "$ref": "#/definitions/v1DatabaseSource",
+          "description": "Set an empty source to disconnect. Connected GitHub branches follow pushes."
         }
       }
     },
@@ -12160,6 +12164,21 @@
         }
       }
     },
+    "v1DatabaseSource": {
+      "type": "object",
+      "properties": {
+        "repository_id": {
+          "type": "string"
+        },
+        "branch": {
+          "type": "string"
+        },
+        "manifest_path": {
+          "type": "string",
+          "description": "Repository-relative JSON file, defaults to database.json."
+        }
+      }
+    },
     "v1DirectoryConnection": {
       "type": "object",
       "properties": {
@@ -13709,6 +13728,16 @@
           "type": "string"
         },
         "active_release": {
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/definitions/v1DatabaseSource"
+        },
+        "source_commit": {
+          "type": "string",
+          "description": "Last Git revision processed and any actionable synchronization error."
+        },
+        "source_error": {
           "type": "string"
         }
       },
