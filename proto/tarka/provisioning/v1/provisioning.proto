@@ -56,6 +56,10 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
 // quotas, metering, object storage, hosted Git, and desired-state compute
 // resources.
 service ProvisioningService {
+  rpc GetDatabaseManifest(GetDatabaseManifestRequest) returns (DatabaseManifest) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/databases/{database_id}/manifest"};
+  }
+
   rpc CreateManagedDatabase(CreateManagedDatabaseRequest) returns (ManagedDatabase) {
     option (google.api.http) = {
       post: "/control/v1/orgs/{org_id}/databases"

@@ -89,3 +89,14 @@ message ApproveDatabaseReleaseRequest {
   string release_id = 3;
   string expected_digest = 4;
 }
+
+message GetDatabaseManifestRequest {
+  string org_id = 1;
+  string database_id = 2;
+  // Empty selects the active release.
+  string digest = 3;
+}
+message DatabaseManifest {
+  string manifest_json = 1;
+  DatabaseRelease release = 2;
+}

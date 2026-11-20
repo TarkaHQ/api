@@ -5934,6 +5934,49 @@
         ]
       }
     },
+    "/control/v1/orgs/{org_id}/databases/{database_id}/manifest": {
+      "get": {
+        "operationId": "ProvisioningService_GetDatabaseManifest",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DatabaseManifest"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "database_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "digest",
+            "description": "Empty selects the active release.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
     "/control/v1/orgs/{org_id}/databases/{database_id}/releases": {
       "post": {
         "operationId": "ProvisioningService_SubmitDatabaseRelease",
@@ -12080,6 +12123,17 @@
           "items": {
             "type": "string"
           }
+        }
+      }
+    },
+    "v1DatabaseManifest": {
+      "type": "object",
+      "properties": {
+        "manifest_json": {
+          "type": "string"
+        },
+        "release": {
+          "$ref": "#/definitions/v1DatabaseRelease"
         }
       }
     },
