@@ -1,0 +1,43 @@
+// Copyright 2026 Tarka
+// SPDX-License-Identifier: Apache-2.0
+
+syntax = "proto3";
+
+package tarka.provisioning.v1;
+
+option csharp_namespace = "Tarka.Provisioning.V1";
+option go_package = "github.com/TarkaHQ/api/gen/go/tarka/provisioning/v1;provisioningv1";
+option java_multiple_files = true;
+option java_outer_classname = "ContainerProto";
+option java_package = "com.tarka.provisioning.v1";
+
+// A shared input to container workloads. Admission resolves it to an immutable
+// OCI image before allocating capacity.
+message ContainerSource {
+  oneof source {
+    string image = 1;
+    string template = 2;
+    ContainerBuildImage build = 3;
+  }
+}
+
+message ContainerBuildImage {
+  // A completed source build in the caller's organization.
+  string build_id = 1;
+  // The service name from that build.
+  string service = 2;
+}
+
+message ContainerTemplate {
+  string name = 1;
+  string image = 2;
+  string description = 3;
+}
+
+message ListContainerTemplatesRequest {
+  string org_id = 1;
+}
+
+message ListContainerTemplatesResponse {
+  repeated ContainerTemplate templates = 1;
+}

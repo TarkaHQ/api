@@ -11,6 +11,7 @@ import "google/protobuf/timestamp.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
 import "tarka/provisioning/v1/agent_secrets.proto";
 import "tarka/provisioning/v1/billing_quote.proto";
+import "tarka/provisioning/v1/container.proto";
 import "tarka/provisioning/v1/job.proto";
 import "tarka/provisioning/v1/registry_credentials.proto";
 import "tarka/provisioning/v1/sandbox.proto";
@@ -25,7 +26,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Tarka Control API"
     description: "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management."
-    version: "1.31.0"
+    version: "1.32.0"
   }
   host: "tarka.rest"
   schemes: HTTPS
@@ -58,6 +59,11 @@ service ProvisioningService {
   // Public, read-only; never includes credentials or upstream acquisition prices.
   rpc GetPricingCatalog(GetPricingCatalogRequest) returns (PricingCatalog) {
     option (google.api.http) = {get: "/control/v1/pricing"};
+  }
+
+  // Lists the platform's versioned, digest-pinned container templates.
+  rpc ListContainerTemplates(ListContainerTemplatesRequest) returns (ListContainerTemplatesResponse) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/compute/templates"};
   }
 
   // Lists the organization's admitted compute resources, optionally scoped to a project.
@@ -1228,6 +1234,8 @@ message CreateJobRequest {
   string accepted_quote_id = 12;
   // Omission defaults to 1 GiB for US East; zero disables networking.
   optional uint64 max_network_bytes = 13;
+  // Alternative to image. The selected template or build resolves to a pinned image.
+  ContainerSource container = 14;
 }
 
 // ProvisionedResource is the recorded desired and observed state for a managed

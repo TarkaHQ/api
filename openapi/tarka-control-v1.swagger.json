@@ -3,7 +3,7 @@
   "info": {
     "title": "Tarka Control API",
     "description": "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management.",
-    "version": "1.31.0"
+    "version": "1.32.0"
   },
   "tags": [
     {
@@ -5480,6 +5480,37 @@
         ]
       }
     },
+    "/control/v1/orgs/{org_id}/compute/templates": {
+      "get": {
+        "summary": "Lists the platform's versioned, digest-pinned container templates.",
+        "operationId": "ProvisioningService_ListContainerTemplates",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListContainerTemplatesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
     "/control/v1/orgs/{org_id}/compute/workloads": {
       "get": {
         "summary": "Lists the organization's admitted compute resources, optionally scoped to a project.",
@@ -9209,6 +9240,10 @@
           "type": "string",
           "format": "uint64",
           "description": "Omission defaults to 1 GiB for US East; zero disables networking."
+        },
+        "container": {
+          "$ref": "#/definitions/v1ContainerSource",
+          "description": "Alternative to image. The selected template or build resolves to a pinned image."
         }
       },
       "description": "CreateJobRequest defines desired state for a finite-duration container job."
@@ -9554,6 +9589,10 @@
           "type": "string",
           "format": "uint64",
           "description": "US East omission defaults to 1 GiB; zero disables outbound networking."
+        },
+        "container": {
+          "$ref": "#/definitions/v1ContainerSource",
+          "description": "Select a container session instead of a language-specific code template."
         }
       },
       "description": "CreateCodeSandboxRequest starts a sandbox from a ready template."
@@ -9607,6 +9646,13 @@
         "idempotency_key": {
           "type": "string",
           "description": "idempotency_key safely retries this mutation for 24 hours. The same key\ncannot be reused with different request content."
+        },
+        "command": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "For a container session, run argv directly in its existing workspace."
         }
       },
       "description": "ExecuteRequest runs source code in an existing ready sandbox."
@@ -10594,6 +10640,10 @@
           "type": "string",
           "format": "date-time",
           "description": "queue_deadline bounds the capacity/setup wait, default ten minutes.\nExpiry fails the request and releases its unused reservation."
+        },
+        "image": {
+          "type": "string",
+          "description": "Immutable workload image for a general container session."
         }
       },
       "description": "CodeSandbox is an isolated, time-bounded execution environment."
@@ -10867,6 +10917,48 @@
       },
       "description": "A bounded, read-only check of configuration, vault availability and OAuth\nmetadata. It never exchanges or refreshes tokens or invokes an upstream tool.\nA ready result does not assert upstream permission to perform an operation."
     },
+    "v1ContainerBuildImage": {
+      "type": "object",
+      "properties": {
+        "build_id": {
+          "type": "string",
+          "description": "A completed source build in the caller's organization."
+        },
+        "service": {
+          "type": "string",
+          "description": "The service name from that build."
+        }
+      }
+    },
+    "v1ContainerSource": {
+      "type": "object",
+      "properties": {
+        "image": {
+          "type": "string"
+        },
+        "template": {
+          "type": "string"
+        },
+        "build": {
+          "$ref": "#/definitions/v1ContainerBuildImage"
+        }
+      },
+      "description": "A shared input to container workloads. Admission resolves it to an immutable\nOCI image before allocating capacity."
+    },
+    "v1ContainerTemplate": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "image": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        }
+      }
+    },
     "v1ConversationBinding": {
       "type": "object",
       "properties": {
@@ -11108,6 +11200,10 @@
           "type": "string",
           "format": "uint64",
           "description": "US East omission defaults to 1 GiB; zero disables outbound networking."
+        },
+        "container": {
+          "$ref": "#/definitions/v1ContainerSource",
+          "description": "Select a container session instead of a language-specific code template."
         }
       },
       "description": "CreateCodeSandboxRequest starts a sandbox from a ready template."
@@ -11276,6 +11372,10 @@
           "type": "string",
           "format": "uint64",
           "description": "Omission defaults to 1 GiB for US East; zero disables networking."
+        },
+        "container": {
+          "$ref": "#/definitions/v1ContainerSource",
+          "description": "Alternative to image. The selected template or build resolves to a pinned image."
         }
       },
       "description": "CreateJobRequest defines desired state for a finite-duration container job."
@@ -12113,7 +12213,7 @@
         },
         "allow_spot": {
           "type": "boolean",
-          "description": "allow_spot requires retryable=true and max_attempts\u003e=2. Unqualified Spot\ncapacity is rejected; this flag never silently weakens isolation."
+          "description": "allow_spot requires retryable=true and max_attempts>=2. Unqualified Spot\ncapacity is rejected; this flag never silently weakens isolation."
         }
       },
       "description": "JobRetryPolicy is explicit consent to possible repeated external effects.\nOnly qualified infrastructure interruptions can retry, after confirmed\ntermination of the old attempt. Exit failures and timeouts are not retried.\nQueue redelivery and lease expiry alone never authorize another attempt."
@@ -12203,7 +12303,7 @@
         },
         "logs_url": {
           "type": "string",
-          "description": "logs_url is an HTTPS download of bounded combined stdout/stderr. It is\nempty if logs are unavailable or have expired, and is valid for \u003c=5 minutes."
+          "description": "logs_url is an HTTPS download of bounded combined stdout/stderr. It is\nempty if logs are unavailable or have expired, and is valid for <=5 minutes."
         },
         "download_expires_at": {
           "type": "string",
@@ -12349,6 +12449,18 @@
         },
         "next_page_token": {
           "type": "string"
+        }
+      }
+    },
+    "v1ListContainerTemplatesResponse": {
+      "type": "object",
+      "properties": {
+        "templates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1ContainerTemplate"
+          }
         }
       }
     },
@@ -13813,7 +13925,8 @@
       "enum": [
         "SANDBOX_RUNTIME_UNSPECIFIED",
         "SANDBOX_RUNTIME_PYTHON",
-        "SANDBOX_RUNTIME_NODE"
+        "SANDBOX_RUNTIME_NODE",
+        "SANDBOX_RUNTIME_CONTAINER"
       ],
       "default": "SANDBOX_RUNTIME_UNSPECIFIED",
       "description": "SandboxRuntime is a supported source-code runtime family.\n\n - SANDBOX_RUNTIME_UNSPECIFIED: SANDBOX_RUNTIME_UNSPECIFIED is invalid for creation."
