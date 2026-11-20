@@ -3,7 +3,7 @@
   "info": {
     "title": "Tarka Control API",
     "description": "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management.",
-    "version": "1.32.0"
+    "version": "1.33.0"
   },
   "tags": [
     {
@@ -5721,6 +5721,313 @@
         ]
       }
     },
+    "/control/v1/orgs/{org_id}/databases": {
+      "get": {
+        "operationId": "ProvisioningService_ListManagedDatabases",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListManagedDatabasesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "project_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "page_token",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      },
+      "post": {
+        "operationId": "ProvisioningService_CreateManagedDatabase",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ManagedDatabase"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProvisioningServiceCreateManagedDatabaseBody"
+            }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/databases/{database_id}": {
+      "get": {
+        "operationId": "ProvisioningService_GetManagedDatabase",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ManagedDatabase"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "database_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      },
+      "patch": {
+        "operationId": "ProvisioningService_UpdateManagedDatabase",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ManagedDatabase"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "database_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProvisioningServiceUpdateManagedDatabaseBody"
+            }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/databases/{database_id}/agents/{agent_host_id}": {
+      "put": {
+        "operationId": "ProvisioningService_SetDatabaseAttachment",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DatabaseAttachment"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "database_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "agent_host_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProvisioningServiceSetDatabaseAttachmentBody"
+            }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/databases/{database_id}/releases": {
+      "post": {
+        "operationId": "ProvisioningService_SubmitDatabaseRelease",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DatabaseRelease"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "database_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProvisioningServiceSubmitDatabaseReleaseBody"
+            }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/databases/{database_id}/releases/{release_id}:approve": {
+      "post": {
+        "operationId": "ProvisioningService_ApproveDatabaseRelease",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DatabaseRelease"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "database_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "release_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProvisioningServiceApproveDatabaseReleaseBody"
+            }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
     "/control/v1/orgs/{org_id}/git-repositories": {
       "get": {
         "summary": "ListGitRepositories returns hosted Git repositories in an organization.",
@@ -8992,6 +9299,14 @@
       },
       "description": "AcceptUsagePolicyRequest requires the organization owner and the current\nunexpired estimate. Acceptance records version, owner, time and estimate.\nIt never creates unpaid debt or authorizes automatic deletion of data."
     },
+    "ProvisioningServiceApproveDatabaseReleaseBody": {
+      "type": "object",
+      "properties": {
+        "expected_digest": {
+          "type": "string"
+        }
+      }
+    },
     "ProvisioningServiceCancelJobRunBody": {
       "type": "object",
       "description": "CancelJobRunRequest requires an organization owner, admin or operator."
@@ -9341,6 +9656,24 @@
       },
       "description": "CreateJobRequest defines desired state for a finite-duration container job."
     },
+    "ProvisioningServiceCreateManagedDatabaseBody": {
+      "type": "object",
+      "properties": {
+        "project_id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "request_id": {
+          "type": "string",
+          "description": "Caller-generated UUID, reused when retrying creation."
+        },
+        "backups_enabled": {
+          "type": "boolean"
+        }
+      }
+    },
     "ProvisioningServiceCreateOrgInvitationBody": {
       "type": "object",
       "properties": {
@@ -9504,6 +9837,23 @@
         }
       }
     },
+    "ProvisioningServiceSetDatabaseAttachmentBody": {
+      "type": "object",
+      "properties": {
+        "identity_mode": {
+          "type": "string"
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "detach": {
+          "type": "boolean"
+        }
+      }
+    },
     "ProvisioningServiceStartAgentHostRegistryTestBody": {
       "type": "object",
       "properties": {
@@ -9548,6 +9898,15 @@
       },
       "description": "An immutable commit must belong to the configured repository. The backend\nverifies source access again when fetching. Idempotency keys are org scoped."
     },
+    "ProvisioningServiceSubmitDatabaseReleaseBody": {
+      "type": "object",
+      "properties": {
+        "manifest_json": {
+          "type": "string",
+          "description": "Complete UTF-8 JSON manifest. Database and parent must match the resource."
+        }
+      }
+    },
     "ProvisioningServiceUpdateInferenceCaptureBody": {
       "type": "object",
       "properties": {
@@ -9561,6 +9920,25 @@
         }
       },
       "description": "UpdateInferenceCaptureRequest replaces the organization-wide capture setting.\nDisabling stops new capture and does not delete existing objects."
+    },
+    "ProvisioningServiceUpdateManagedDatabaseBody": {
+      "type": "object",
+      "properties": {
+        "expected_version": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "backups_enabled": {
+          "type": "boolean"
+        },
+        "public_http_enabled": {
+          "type": "boolean"
+        },
+        "gateway_id": {
+          "type": "string",
+          "description": "Set to an empty string to withdraw this database from its gateway."
+        }
+      }
     },
     "ProvisioningServiceUpdateOrgBody": {
       "type": "object",
@@ -11684,6 +12062,50 @@
       },
       "description": "CurrentUser is the authenticated platform identity and its active\norganization memberships."
     },
+    "v1DatabaseAttachment": {
+      "type": "object",
+      "properties": {
+        "database_id": {
+          "type": "string"
+        },
+        "agent_host_id": {
+          "type": "string"
+        },
+        "identity_mode": {
+          "type": "string",
+          "description": "agent or delegated."
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "v1DatabaseRelease": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "database_id": {
+          "type": "string"
+        },
+        "digest": {
+          "type": "string"
+        },
+        "parent": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        },
+        "commit_sha": {
+          "type": "string"
+        }
+      }
+    },
     "v1DirectoryConnection": {
       "type": "object",
       "properties": {
@@ -12790,6 +13212,21 @@
       },
       "description": "ListLocationsResponse lists placement locations, default first."
     },
+    "v1ListManagedDatabasesResponse": {
+      "type": "object",
+      "properties": {
+        "databases": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1ManagedDatabase"
+          }
+        },
+        "next_page_token": {
+          "type": "string"
+        }
+      }
+    },
     "v1ListModelsResponse": {
       "type": "object",
       "properties": {
@@ -13182,6 +13619,46 @@
           "description": "Stable, non-secret explanation when new placement is unavailable."
         }
       }
+    },
+    "v1ManagedDatabase": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "org_id": {
+          "type": "string"
+        },
+        "project_id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "backups_enabled": {
+          "type": "boolean"
+        },
+        "public_http_enabled": {
+          "type": "boolean"
+        },
+        "gateway_id": {
+          "type": "string"
+        },
+        "public_url": {
+          "type": "string"
+        },
+        "active_release": {
+          "type": "string"
+        }
+      },
+      "description": "A project-owned, single-writer embedded Turso database."
     },
     "v1Model": {
       "type": "object",

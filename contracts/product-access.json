@@ -70,6 +70,13 @@
       "description": "Protected APIs, MCP connections and credential brokerage",
       "group": "data",
       "api_key_scope": false
+    },
+    {
+      "id": "databases",
+      "label": "Databases",
+      "description": "Serverless embedded databases for agents and Functions",
+      "group": "data",
+      "api_key_scope": false
     }
   ],
   "presets": [

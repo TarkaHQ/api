@@ -12,6 +12,7 @@ import "protoc-gen-openapiv2/options/annotations.proto";
 import "tarka/provisioning/v1/agent_secrets.proto";
 import "tarka/provisioning/v1/billing_quote.proto";
 import "tarka/provisioning/v1/container.proto";
+import "tarka/provisioning/v1/database.proto";
 import "tarka/provisioning/v1/job.proto";
 import "tarka/provisioning/v1/registry_credentials.proto";
 import "tarka/provisioning/v1/sandbox.proto";
@@ -26,7 +27,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Tarka Control API"
     description: "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management."
-    version: "1.32.0"
+    version: "1.33.0"
   }
   host: "tarka.rest"
   schemes: HTTPS
@@ -55,6 +56,43 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
 // quotas, metering, object storage, hosted Git, and desired-state compute
 // resources.
 service ProvisioningService {
+  rpc CreateManagedDatabase(CreateManagedDatabaseRequest) returns (ManagedDatabase) {
+    option (google.api.http) = {
+      post: "/control/v1/orgs/{org_id}/databases"
+      body: "*"
+    };
+  }
+  rpc GetManagedDatabase(GetManagedDatabaseRequest) returns (ManagedDatabase) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/databases/{database_id}"};
+  }
+  rpc ListManagedDatabases(ListManagedDatabasesRequest) returns (ListManagedDatabasesResponse) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/databases"};
+  }
+  rpc UpdateManagedDatabase(UpdateManagedDatabaseRequest) returns (ManagedDatabase) {
+    option (google.api.http) = {
+      patch: "/control/v1/orgs/{org_id}/databases/{database_id}"
+      body: "*"
+    };
+  }
+  rpc SetDatabaseAttachment(SetDatabaseAttachmentRequest) returns (DatabaseAttachment) {
+    option (google.api.http) = {
+      put: "/control/v1/orgs/{org_id}/databases/{database_id}/agents/{agent_host_id}"
+      body: "*"
+    };
+  }
+  rpc SubmitDatabaseRelease(SubmitDatabaseReleaseRequest) returns (DatabaseRelease) {
+    option (google.api.http) = {
+      post: "/control/v1/orgs/{org_id}/databases/{database_id}/releases"
+      body: "*"
+    };
+  }
+  rpc ApproveDatabaseRelease(ApproveDatabaseReleaseRequest) returns (DatabaseRelease) {
+    option (google.api.http) = {
+      post: "/control/v1/orgs/{org_id}/databases/{database_id}/releases/{release_id}:approve"
+      body: "*"
+    };
+  }
+
   // GetPricingCatalog exposes the active USD retail catalog and currency factors.
   // Public, read-only; never includes credentials or upstream acquisition prices.
   rpc GetPricingCatalog(GetPricingCatalogRequest) returns (PricingCatalog) {
