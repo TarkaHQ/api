@@ -1,0 +1,72 @@
+// Copyright 2026 Tarka
+// SPDX-License-Identifier: Apache-2.0
+
+syntax = "proto3";
+
+package tarka.provisioning.v1;
+
+option csharp_namespace = "Tarka.Provisioning.V1";
+option go_package = "github.com/TarkaHQ/api/gen/go/tarka/provisioning/v1;provisioningv1";
+option java_multiple_files = true;
+option java_outer_classname = "ContainerProto";
+option java_package = "com.tarka.provisioning.v1";
+
+// A shared input to container workloads. Admission resolves it to an immutable
+// OCI image before allocating capacity.
+message ContainerSource {
+  oneof source {
+    string image = 1;
+    string template = 2;
+    ContainerBuildImage build = 3;
+  }
+}
+
+message ContainerBuildImage {
+  // A completed source build in the caller's organization.
+  string build_id = 1;
+  // The service name from that build.
+  string service = 2;
+}
+
+message ContainerTemplate {
+  string name = 1;
+  string image = 2;
+  string description = 3;
+}
+
+message ListContainerTemplatesRequest {
+  string org_id = 1;
+}
+
+message ListContainerTemplatesResponse {
+  repeated ContainerTemplate templates = 1;
+}
+
+// Registers a private, scale-to-zero HTTP container in eu-1. Each replica has
+// the EU session allocation and rate. The image's entrypoint listens on PORT.
+message HTTPServiceSpec {
+  string name = 1;
+  ContainerSource container = 2;
+  // One active replica per service. Zero selects 60 idle seconds.
+  int32 idle_timeout_seconds = 3;
+  // Bind an update to the currently deployed revision. Zero creates a service.
+  uint64 expected_revision = 4;
+}
+message InvokeHTTPServiceRequest {
+  string org_id = 1;
+  string workload_id = 2;
+  string method = 3;
+  string path = 4;
+  string content_type = 5;
+  bytes body = 6;
+}
+message InvokeHTTPServiceResponse {
+  int32 status = 1;
+  string content_type = 2;
+  bytes body = 3;
+}
+message DeleteHTTPServiceRequest {
+  string org_id = 1;
+  string workload_id = 2;
+  uint64 expected_revision = 3;
+}

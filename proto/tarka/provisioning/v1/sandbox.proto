@@ -8,6 +8,7 @@ package tarka.provisioning.v1;
 import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
+import "tarka/provisioning/v1/container.proto";
 import "tarka/provisioning/v1/job.proto";
 
 option csharp_namespace = "Tarka.Provisioning.V1";
@@ -88,6 +89,7 @@ enum SandboxRuntime {
   SANDBOX_RUNTIME_UNSPECIFIED = 0;
   SANDBOX_RUNTIME_PYTHON = 1;
   SANDBOX_RUNTIME_NODE = 2;
+  SANDBOX_RUNTIME_CONTAINER = 3;
 }
 
 // SandboxTemplateStatus is the lifecycle of a reusable sandbox template.
@@ -220,6 +222,8 @@ message CodeSandbox {
   // queue_deadline bounds the capacity/setup wait, default ten minutes.
   // Expiry fails the request and releases its unused reservation.
   google.protobuf.Timestamp queue_deadline = 14;
+  // Immutable workload image for a general container session.
+  string image = 15;
 }
 
 // ListSandboxesRequest selects one organization.
@@ -258,6 +262,8 @@ message CreateCodeSandboxRequest {
   JobResources resources = 7;
   // US East omission defaults to 1 GiB; zero disables outbound networking.
   optional uint64 max_network_bytes = 8;
+  // Select a container session instead of a language-specific code template.
+  ContainerSource container = 9;
 }
 
 // GetCodeSandboxRequest selects one organization sandbox.
@@ -285,6 +291,8 @@ message ExecuteRequest {
   // idempotency_key safely retries this mutation for 24 hours. The same key
   // cannot be reused with different request content.
   string idempotency_key = 6;
+  // For a container session, run argv directly in its existing workspace.
+  repeated string command = 7;
 }
 
 // GetExecutionRequest selects one execution within an organization sandbox.

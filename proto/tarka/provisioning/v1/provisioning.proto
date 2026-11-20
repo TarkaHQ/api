@@ -11,8 +11,10 @@ import "google/protobuf/timestamp.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
 import "tarka/provisioning/v1/agent_secrets.proto";
 import "tarka/provisioning/v1/billing_quote.proto";
+import "tarka/provisioning/v1/container.proto";
 import "tarka/provisioning/v1/job.proto";
 import "tarka/provisioning/v1/registry_credentials.proto";
+import "tarka/provisioning/v1/sandbox.proto";
 import "tarka/provisioning/v1/source_builds.proto";
 
 option csharp_namespace = "Tarka.Provisioning.V1";
@@ -24,7 +26,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Tarka Control API"
     description: "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management."
-    version: "1.30.0"
+    version: "1.32.0"
   }
   host: "tarka.rest"
   schemes: HTTPS
@@ -57,6 +59,38 @@ service ProvisioningService {
   // Public, read-only; never includes credentials or upstream acquisition prices.
   rpc GetPricingCatalog(GetPricingCatalogRequest) returns (PricingCatalog) {
     option (google.api.http) = {get: "/control/v1/pricing"};
+  }
+
+  // Lists the platform's versioned, digest-pinned container templates.
+  rpc ListContainerTemplates(ListContainerTemplatesRequest) returns (ListContainerTemplatesResponse) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/compute/templates"};
+  }
+
+  // Lists the organization's admitted compute resources, optionally scoped to a project.
+  rpc ListComputeWorkloads(ListComputeWorkloadsRequest) returns (ListComputeWorkloadsResponse) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/compute/workloads"};
+  }
+
+  rpc GetComputeWorkload(GetComputeWorkloadRequest) returns (ComputeWorkload) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/compute/workloads/{workload_id}"};
+  }
+
+  // Uses the same admission, lifecycle, and idempotency rules as the selected profile.
+  rpc CreateComputeWorkload(CreateComputeWorkloadRequest) returns (ComputeWorkload) {
+    option (google.api.http) = {
+      post: "/control/v1/orgs/{org_id}/compute/workloads"
+      body: "*"
+    };
+  }
+
+  rpc InvokeHTTPService(InvokeHTTPServiceRequest) returns (InvokeHTTPServiceResponse) {
+    option (google.api.http) = {
+      post: "/control/v1/orgs/{org_id}/compute/workloads/{workload_id}:invoke"
+      body: "*"
+    };
+  }
+  rpc DeleteHTTPService(DeleteHTTPServiceRequest) returns (ComputeWorkload) {
+    option (google.api.http) = {delete: "/control/v1/orgs/{org_id}/compute/services/{workload_id}"};
   }
 
   // CreateComputeQuote returns a five-minute quote without reserving funds.
@@ -944,6 +978,7 @@ message CreateAgentHostRequest {
   // Mutually exclusive with github_registry_credentials. Omission preserves
   // named credentials. Dry runs do not consume the test; apply consumes it once.
   string registry_test_id = 21;
+  ContainerSource container = 22;
   // location selects where the host runs, such as "eu-1" or "us-1" (see
   // ListLocations). Empty selects the default location for a new host and
   // keeps the current location for an existing one. A host cannot move:
@@ -1210,6 +1245,8 @@ message CreateJobRequest {
   string accepted_quote_id = 12;
   // Omission defaults to 1 GiB for US East; zero disables networking.
   optional uint64 max_network_bytes = 13;
+  // Alternative to image. The selected template or build resolves to a pinned image.
+  ContainerSource container = 14;
 }
 
 // ProvisionedResource is the recorded desired and observed state for a managed
@@ -1893,4 +1930,50 @@ message MoveProjectResourceRequest {
   string project_id = 4;
   // Required; moving fails if another caller has changed the assignment.
   string expected_project_id = 5;
+}
+
+// Stable inventory metadata. IDs are shared with the corresponding profile API.
+message ComputeWorkload {
+  string id = 1;
+  string org_id = 2;
+  string project_id = 3;
+  // service, job, or session
+  string kind = 4;
+  // hosted_agent, http_service, batch_job, code_sandbox, or container_session
+  string profile = 5;
+  string name = 6;
+  string status = 7;
+  string location = 8;
+  string endpoint = 9;
+  google.protobuf.Timestamp updated_at = 10;
+  uint64 revision = 11;
+  string image = 12;
+}
+
+message ListComputeWorkloadsRequest {
+  string org_id = 1;
+  string project_id = 2;
+  int32 page_size = 3;
+  string page_token = 4;
+}
+
+message ListComputeWorkloadsResponse {
+  repeated ComputeWorkload workloads = 1;
+  string next_page_token = 2;
+}
+
+message GetComputeWorkloadRequest {
+  string org_id = 1;
+  string workload_id = 2;
+}
+
+message CreateComputeWorkloadRequest {
+  string org_id = 1;
+  // The enclosing organization owns the workload. Nested org_id may be omitted.
+  oneof profile {
+    CreateAgentHostRequest hosted_agent = 2;
+    CreateJobRequest batch_job = 3;
+    CreateCodeSandboxRequest code_sandbox = 4;
+    HTTPServiceSpec http_service = 5;
+  }
 }
