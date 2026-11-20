@@ -1948,6 +1948,8 @@ message ComputeWorkload {
   google.protobuf.Timestamp updated_at = 10;
   uint64 revision = 11;
   string image = 12;
+  // Generated HTTPS address of a publicly invocable HTTP service.
+  string public_url = 13;
 }
 
 message ListComputeWorkloadsRequest {
