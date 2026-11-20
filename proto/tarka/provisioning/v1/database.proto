@@ -26,6 +26,8 @@ message ManagedDatabase {
   // Last Git revision processed and any actionable synchronization error.
   string source_commit = 13;
   string source_error = 14;
+  // Most recently submitted release, including a pending Git revision.
+  DatabaseRelease latest_release = 15;
 }
 message DatabaseSource {
   string repository_id = 1;
@@ -111,4 +113,18 @@ message GetDatabaseManifestRequest {
 message DatabaseManifest {
   string manifest_json = 1;
   DatabaseRelease release = 2;
+}
+
+message ProposeDatabaseSchemaRequest {
+  string org_id = 1;
+  string database_id = 2;
+  string expected_commit = 3;
+  string manifest_json = 4;
+  // Explicitly request a pull request using optional GitHub App write access.
+  bool open_pull_request = 5;
+}
+message DatabaseSchemaProposal {
+  string base_commit = 1;
+  string patch = 2;
+  string pull_request_url = 3;
 }

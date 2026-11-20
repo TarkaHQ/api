@@ -6071,6 +6071,50 @@
         ]
       }
     },
+    "/control/v1/orgs/{org_id}/databases/{database_id}/schema:propose": {
+      "post": {
+        "operationId": "ProvisioningService_ProposeDatabaseSchema",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DatabaseSchemaProposal"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "database_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProvisioningServiceProposeDatabaseSchemaBody"
+            }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
     "/control/v1/orgs/{org_id}/git-repositories": {
       "get": {
         "summary": "ListGitRepositories returns hosted Git repositories in an organization.",
@@ -9813,6 +9857,21 @@
       },
       "description": "Resolve a branch once and inspect its Compose file without executing source.\nEmpty compose_path discovers compose.yaml, compose.yml, docker-compose.yaml,\nthen docker-compose.yml. A preview neither starts a build nor creates a host."
     },
+    "ProvisioningServiceProposeDatabaseSchemaBody": {
+      "type": "object",
+      "properties": {
+        "expected_commit": {
+          "type": "string"
+        },
+        "manifest_json": {
+          "type": "string"
+        },
+        "open_pull_request": {
+          "type": "boolean",
+          "description": "Explicitly request a pull request using optional GitHub App write access."
+        }
+      }
+    },
     "ProvisioningServicePutSourceTargetBody": {
       "type": "object",
       "properties": {
@@ -12164,6 +12223,20 @@
         }
       }
     },
+    "v1DatabaseSchemaProposal": {
+      "type": "object",
+      "properties": {
+        "base_commit": {
+          "type": "string"
+        },
+        "patch": {
+          "type": "string"
+        },
+        "pull_request_url": {
+          "type": "string"
+        }
+      }
+    },
     "v1DatabaseSource": {
       "type": "object",
       "properties": {
@@ -13739,6 +13812,10 @@
         },
         "source_error": {
           "type": "string"
+        },
+        "latest_release": {
+          "$ref": "#/definitions/v1DatabaseRelease",
+          "description": "Most recently submitted release, including a pending Git revision."
         }
       },
       "description": "A project-owned, single-writer embedded Turso database."
