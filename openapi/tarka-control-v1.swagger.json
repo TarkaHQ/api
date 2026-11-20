@@ -10921,6 +10921,10 @@
         },
         "image": {
           "type": "string"
+        },
+        "public_url": {
+          "type": "string",
+          "description": "Generated HTTPS address of a publicly invocable HTTP service."
         }
       },
       "description": "Stable inventory metadata. IDs are shared with the corresponding profile API."
@@ -12196,9 +12200,13 @@
           "type": "string",
           "format": "uint64",
           "description": "Bind an update to the currently deployed revision. Zero creates a service."
+        },
+        "public": {
+          "type": "boolean",
+          "description": "Publish a generated HTTPS endpoint. Omission preserves visibility on updates."
         }
       },
-      "description": "Registers a private, scale-to-zero HTTP container in eu-1. Each replica has\nthe EU session allocation and rate. The image's entrypoint listens on PORT."
+      "description": "Registers a scale-to-zero HTTP container in eu-1. Each replica has\nthe EU session allocation and rate. The image's entrypoint listens on PORT."
     },
     "v1HostedGitAccess": {
       "type": "object",

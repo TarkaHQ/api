@@ -42,7 +42,7 @@ message ListContainerTemplatesResponse {
   repeated ContainerTemplate templates = 1;
 }
 
-// Registers a private, scale-to-zero HTTP container in eu-1. Each replica has
+// Registers a scale-to-zero HTTP container in eu-1. Each replica has
 // the EU session allocation and rate. The image's entrypoint listens on PORT.
 message HTTPServiceSpec {
   string name = 1;
@@ -51,6 +51,8 @@ message HTTPServiceSpec {
   int32 idle_timeout_seconds = 3;
   // Bind an update to the currently deployed revision. Zero creates a service.
   uint64 expected_revision = 4;
+  // Publish a generated HTTPS endpoint. Omission preserves visibility on updates.
+  optional bool public = 5;
 }
 message InvokeHTTPServiceRequest {
   string org_id = 1;
