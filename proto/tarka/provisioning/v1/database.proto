@@ -1,0 +1,130 @@
+// Copyright 2026 Tarka
+// SPDX-License-Identifier: Apache-2.0
+syntax = "proto3";
+package tarka.provisioning.v1;
+
+option csharp_namespace = "Tarka.Provisioning.V1";
+option go_package = "github.com/TarkaHQ/api/gen/go/tarka/provisioning/v1;provisioningv1";
+option java_multiple_files = true;
+option java_outer_classname = "DatabaseProto";
+option java_package = "com.tarka.provisioning.v1";
+
+// A project-owned, single-writer embedded Turso database.
+message ManagedDatabase {
+  string id = 1;
+  string org_id = 2;
+  string project_id = 3;
+  string name = 4;
+  string state = 5;
+  uint64 version = 6;
+  bool backups_enabled = 7;
+  bool public_http_enabled = 8;
+  string gateway_id = 9;
+  string public_url = 10;
+  string active_release = 11;
+  DatabaseSource source = 12;
+  // Last Git revision processed and any actionable synchronization error.
+  string source_commit = 13;
+  string source_error = 14;
+  // Most recently submitted release, including a pending Git revision.
+  DatabaseRelease latest_release = 15;
+}
+message DatabaseSource {
+  string repository_id = 1;
+  string branch = 2;
+  // Repository-relative JSON file, defaults to database.json.
+  string manifest_path = 3;
+}
+message CreateManagedDatabaseRequest {
+  string org_id = 1;
+  string project_id = 2;
+  string name = 3;
+  // Caller-generated UUID, reused when retrying creation.
+  string request_id = 4;
+  optional bool backups_enabled = 5;
+}
+message ListManagedDatabasesRequest {
+  string org_id = 1;
+  string project_id = 2;
+  uint32 page_size = 3;
+  string page_token = 4;
+}
+message ListManagedDatabasesResponse {
+  repeated ManagedDatabase databases = 1;
+  string next_page_token = 2;
+}
+message GetManagedDatabaseRequest {
+  string org_id = 1;
+  string database_id = 2;
+}
+message UpdateManagedDatabaseRequest {
+  string org_id = 1;
+  string database_id = 2;
+  uint64 expected_version = 3;
+  optional bool backups_enabled = 4;
+  optional bool public_http_enabled = 5;
+  // Set to an empty string to withdraw this database from its gateway.
+  optional string gateway_id = 6;
+  // Set an empty source to disconnect. Connected GitHub branches follow pushes.
+  DatabaseSource source = 7;
+}
+message DatabaseAttachment {
+  string database_id = 1;
+  string agent_host_id = 2;
+  // agent or delegated.
+  string identity_mode = 3;
+  repeated string actions = 4;
+}
+message SetDatabaseAttachmentRequest {
+  string org_id = 1;
+  string database_id = 2;
+  string agent_host_id = 3;
+  string identity_mode = 4;
+  repeated string actions = 5;
+  bool detach = 6;
+}
+message DatabaseRelease {
+  string id = 1;
+  string database_id = 2;
+  string digest = 3;
+  string parent = 4;
+  string state = 5;
+  string commit_sha = 6;
+}
+message SubmitDatabaseReleaseRequest {
+  string org_id = 1;
+  string database_id = 2;
+  // Complete UTF-8 JSON manifest. Database and parent must match the resource.
+  string manifest_json = 3;
+}
+message ApproveDatabaseReleaseRequest {
+  string org_id = 1;
+  string database_id = 2;
+  string release_id = 3;
+  string expected_digest = 4;
+}
+
+message GetDatabaseManifestRequest {
+  string org_id = 1;
+  string database_id = 2;
+  // Empty selects the active release.
+  string digest = 3;
+}
+message DatabaseManifest {
+  string manifest_json = 1;
+  DatabaseRelease release = 2;
+}
+
+message ProposeDatabaseSchemaRequest {
+  string org_id = 1;
+  string database_id = 2;
+  string expected_commit = 3;
+  string manifest_json = 4;
+  // Explicitly request a pull request using optional GitHub App write access.
+  bool open_pull_request = 5;
+}
+message DatabaseSchemaProposal {
+  string base_commit = 1;
+  string patch = 2;
+  string pull_request_url = 3;
+}
