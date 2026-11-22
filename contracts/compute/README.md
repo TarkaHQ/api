@@ -95,6 +95,13 @@ this way admit agents and refuse application users until a release sets their
 rules. Submitting a release or connecting a source repository switches the
 database to `managed` mode, where only releases change the schema.
 
+`GetDatabaseManifest` returns the collections defined this way in
+`implicit_collections_json`, in the form a manifest declares them. Adding them
+unchanged to a release's `collections` adopts them with their data. Deleting
+a project's default database or a workload's own database clears that role:
+the next call without a name creates a new, empty one, and the deleted
+database is restored, if at all, as an ordinary named database.
+
 Each call is authorized as follows.
 
 | Caller | Decision | `@request.auth` in collection rules |

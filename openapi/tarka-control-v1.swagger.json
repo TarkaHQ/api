@@ -13195,6 +13195,14 @@
         },
         "release": {
           "$ref": "#/definitions/v1DatabaseRelease"
+        },
+        "implicit_collections_json": {
+          "type": "string",
+          "description": "For the active release of a database whose schema mode is implicit: the\ncollections first writes defined, as a JSON array in the form a manifest\ndeclares collections. Adding them unchanged to a manifest's collections\nadopts them without data loss. Empty for any other release."
+        },
+        "implicit_collections_truncated": {
+          "type": "boolean",
+          "description": "Set when the database defined more collections than one report carries,\nso implicit_collections_json lists only some of them."
         }
       }
     },

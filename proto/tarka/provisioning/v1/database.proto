@@ -241,6 +241,14 @@ message GetDatabaseManifestRequest {
 message DatabaseManifest {
   string manifest_json = 1;
   DatabaseRelease release = 2;
+  // For the active release of a database whose schema mode is implicit: the
+  // collections first writes defined, as a JSON array in the form a manifest
+  // declares collections. Adding them unchanged to a manifest's collections
+  // adopts them without data loss. Empty for any other release.
+  string implicit_collections_json = 3;
+  // Set when the database defined more collections than one report carries,
+  // so implicit_collections_json lists only some of them.
+  bool implicit_collections_truncated = 4;
 }
 
 message ProposeDatabaseSchemaRequest {

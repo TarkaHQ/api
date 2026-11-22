@@ -53,6 +53,11 @@ class WorkloadAccessContractTests(unittest.TestCase):
         for field in ("owner_workload_id", "project_default", "schema_mode"):
             self.assertIn(field, database)
 
+    def test_manifest_returns_the_implicitly_defined_collections(self):
+        manifest = self.definitions["v1DatabaseManifest"]["properties"]
+        self.assertEqual(manifest["implicit_collections_json"]["type"], "string")
+        self.assertEqual(manifest["implicit_collections_truncated"]["type"], "boolean")
+
     def test_in_workload_contract_documents_routes_header_and_errors(self):
         contract = (ROOT / "contracts/compute/README.md").read_text(encoding="utf-8")
         for required in (
