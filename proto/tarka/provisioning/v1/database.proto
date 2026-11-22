@@ -28,6 +28,15 @@ message ManagedDatabase {
   string source_error = 14;
   // Most recently submitted release, including a pending Git revision.
   DatabaseRelease latest_release = 15;
+  // Set when this is a compute workload's own default database. Cleared when
+  // that workload is deleted; the database and its data remain.
+  string owner_workload_id = 16;
+  // True for the project's default database.
+  bool project_default = 17;
+  // implicit or managed. An implicit database creates collections and fields
+  // on first write. Submitting a release or connecting a source selects
+  // managed, where only releases change the schema.
+  string schema_mode = 18;
 }
 message DatabaseSource {
   string repository_id = 1;
@@ -68,6 +77,7 @@ message UpdateManagedDatabaseRequest {
   // Set an empty source to disconnect. Connected GitHub branches follow pushes.
   DatabaseSource source = 7;
 }
+
 message DatabaseAttachment {
   string database_id = 1;
   string agent_host_id = 2;

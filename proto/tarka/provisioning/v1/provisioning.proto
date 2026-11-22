@@ -27,7 +27,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Tarka Control API"
     description: "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management."
-    version: "1.34.0"
+    version: "1.35.0"
   }
   host: "tarka.rest"
   schemes: HTTPS
@@ -128,6 +128,21 @@ service ProvisioningService {
   rpc CreateComputeWorkload(CreateComputeWorkloadRequest) returns (ComputeWorkload) {
     option (google.api.http) = {
       post: "/control/v1/orgs/{org_id}/compute/workloads"
+      body: "*"
+    };
+  }
+
+  // Returns the platform services the workload reaches at http://tarka, with
+  // profile defaults resolved.
+  rpc GetWorkloadAccess(GetWorkloadAccessRequest) returns (WorkloadAccess) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/compute/workloads/{workload_id}/access"};
+  }
+
+  // Replaces a workload's access. Takes effect on running workloads without a
+  // redeploy.
+  rpc SetWorkloadAccess(SetWorkloadAccessRequest) returns (WorkloadAccess) {
+    option (google.api.http) = {
+      put: "/control/v1/orgs/{org_id}/compute/workloads/{workload_id}/access"
       body: "*"
     };
   }
@@ -1999,6 +2014,8 @@ message ComputeWorkload {
   string image = 12;
   // Generated HTTPS address of a publicly invocable HTTP service.
   string public_url = 13;
+  // Platform services reachable at http://tarka, with profile defaults resolved.
+  WorkloadAccess access = 14;
 }
 
 message ListComputeWorkloadsRequest {
@@ -2027,4 +2044,10 @@ message CreateComputeWorkloadRequest {
     CreateCodeSandboxRequest code_sandbox = 4;
     HTTPServiceSpec http_service = 5;
   }
+  // Project that owns the workload. Empty selects the organization's default
+  // project for a new workload and keeps the project of an existing one.
+  string project_id = 6;
+  // Platform services reachable at http://tarka. Omission applies the profile
+  // defaults to a new workload and preserves the access of an existing one.
+  WorkloadAccess access = 7;
 }

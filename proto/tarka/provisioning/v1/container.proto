@@ -72,3 +72,76 @@ message DeleteHTTPServiceRequest {
   string workload_id = 2;
   uint64 expected_revision = 3;
 }
+
+// The platform services a workload reaches through its private gateway at
+// http://tarka. The platform authenticates the workload; code inside the
+// container holds no credential. Every compute profile shares this message.
+// An unset capability takes the profile default: hosted agents, HTTP services
+// and batch jobs enable inference and databases, code sandboxes and container
+// sessions enable nothing.
+message WorkloadAccess {
+  // Output only. Zero while the workload still uses its profile defaults.
+  uint64 version = 1;
+  WorkloadInferenceAccess inference = 2;
+  WorkloadDatabaseAccess databases = 3;
+  // Optional. Unset authenticates the workload as itself.
+  WorkloadIdentity identity = 4;
+}
+
+// Model access at http://tarka/v1.
+message WorkloadInferenceAccess {
+  optional bool enabled = 1;
+  // Model aliases the workload may call. Empty allows every model the
+  // organization may use; a hosted agent is always limited to its configured
+  // models.
+  repeated string allowed_models = 2;
+}
+
+// Record access at http://tarka/database (the workload's own database),
+// http://tarka/project/database (the project's default database) and
+// http://tarka/databases/{name} (a named database in the workload's project).
+message WorkloadDatabaseAccess {
+  optional bool enabled = 1;
+  // rules or full. Empty selects rules: collection rules decide each call.
+  // full bypasses collection rules and requires an owner, admin or operator.
+  string mode = 2;
+  // The workload's own default database, created on first use. Hosted agents,
+  // HTTP services and batch jobs only.
+  optional bool own = 3;
+  // The project's default database, created on first use.
+  optional bool project_default = 4;
+  // Named databases. Empty allows read, write and subscribe on every shared
+  // database in the project; another workload's own database always needs a
+  // grant.
+  repeated WorkloadDatabaseGrant grants = 5;
+}
+
+message WorkloadDatabaseGrant {
+  // Database name in the workload's project.
+  string database = 1;
+  // read, write or subscribe.
+  repeated string actions = 2;
+}
+
+// Binds the workload to an identity in its project's identity scope. The
+// principal's roles then decide database access: read, use, or administer for
+// full access.
+message WorkloadIdentity {
+  // An active agent or service principal. Requires an owner, admin or operator.
+  string principal_id = 1;
+}
+
+message GetWorkloadAccessRequest {
+  string org_id = 1;
+  string workload_id = 2;
+}
+
+// Replaces the workload's access. Omitted capabilities return to their
+// profile defaults.
+message SetWorkloadAccessRequest {
+  string org_id = 1;
+  string workload_id = 2;
+  WorkloadAccess access = 3;
+  // The version last read. Zero replaces profile defaults only.
+  uint64 expected_version = 4;
+}

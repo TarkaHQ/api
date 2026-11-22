@@ -89,6 +89,16 @@ model on an OpenAI-compatible endpoint and key the customer brings
 (`runtime.model_endpoint`); the same gateway forwards that model's requests
 there and keeps every other model on Tarka.
 
+Every compute workload, not only Agent Hosts, has that private gateway at
+`http://tarka`: HTTP services, batch jobs, code sandboxes and container
+sessions use the same routes for inference and for database records, and the
+platform authenticates the workload so code holds no credential.
+[`contracts/compute/README.md`](contracts/compute/README.md) defines the
+routes, the required `Tarka-Workload: 1` header, zero-setup databases and the
+error codes. `WorkloadAccess` selects what each workload may reach
+(`CreateComputeWorkloadRequest.access`, `GetWorkloadAccess`,
+`SetWorkloadAccess`).
+
 The control REST gateway is rooted at `https://tarka.rest/control/v1`. It
 accepts `Authorization: Bearer <Tarka account access token>` and uses protobuf
 field names in JSON. A `tk_live_` inference key is not an account token and is
