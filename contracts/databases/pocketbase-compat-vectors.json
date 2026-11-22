@@ -8,6 +8,8 @@
     {"http": 404, "grpc": "NOT_FOUND"},
     {"http": 409, "grpc": "ABORTED"},
     {"http": 413, "grpc": "RESOURCE_EXHAUSTED"},
+    {"http": 416, "grpc": "OUT_OF_RANGE"},
+    {"http": 422, "grpc": "FAILED_PRECONDITION"},
     {"http": 429, "grpc": "RESOURCE_EXHAUSTED"},
     {"http": 499, "grpc": "CANCELLED"},
     {"http": 500, "grpc": "INTERNAL"},

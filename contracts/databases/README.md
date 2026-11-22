@@ -20,7 +20,8 @@ Each case names one RPC and describes the same exchange twice:
 
 `status_mapping` lists the HTTP status for each gRPC code in both directions.
 Where several HTTP statuses map to one code, the first entry is used when
-translating back.
+translating back. `422` is the answer to a write that a before-write Function
+rejected, and `416` to a byte range outside the file.
 
 Multipart text parts follow PocketBase's inference: `true` and `false` become
 booleans, numbers without a leading zero or plus sign become numbers, repeated
