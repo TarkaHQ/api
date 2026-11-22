@@ -1,0 +1,422 @@
+{
+  "version": 1,
+  "service": "tarka.databases.v1.DatabaseService",
+  "status_mapping": [
+    {"http": 400, "grpc": "INVALID_ARGUMENT"},
+    {"http": 401, "grpc": "UNAUTHENTICATED"},
+    {"http": 403, "grpc": "PERMISSION_DENIED"},
+    {"http": 404, "grpc": "NOT_FOUND"},
+    {"http": 409, "grpc": "ABORTED"},
+    {"http": 413, "grpc": "RESOURCE_EXHAUSTED"},
+    {"http": 416, "grpc": "OUT_OF_RANGE"},
+    {"http": 422, "grpc": "FAILED_PRECONDITION"},
+    {"http": 429, "grpc": "RESOURCE_EXHAUSTED"},
+    {"http": 499, "grpc": "CANCELLED"},
+    {"http": 500, "grpc": "INTERNAL"},
+    {"http": 503, "grpc": "UNAVAILABLE"},
+    {"http": 504, "grpc": "DEADLINE_EXCEEDED"}
+  ],
+  "cases": [
+    {
+      "name": "list with defaults",
+      "rpc": "ListRecords",
+      "http_request": {"method": "GET", "path": "/api/collections/notes/records"},
+      "grpc_request": {"collection": "notes"},
+      "http_response": {
+        "status": 200,
+        "body": {
+          "page": 1,
+          "perPage": 30,
+          "totalItems": 1,
+          "totalPages": 1,
+          "items": [
+            {"id": "n1a2b3c4d5e6f7g", "collectionId": "notescollection", "collectionName": "notes", "body": "first"}
+          ]
+        }
+      },
+      "grpc_response": {
+        "page": 1,
+        "per_page": 30,
+        "total_items": "1",
+        "total_pages": "1",
+        "items": [
+          {"values": {"id": "n1a2b3c4d5e6f7g", "collectionId": "notescollection", "collectionName": "notes", "body": "first"}}
+        ]
+      }
+    },
+    {
+      "name": "list with paging, sort, filter, expand, fields, skipped total and a rule parameter",
+      "rpc": "ListRecords",
+      "http_request": {
+        "method": "GET",
+        "path": "/api/collections/notes/records",
+        "query": {
+          "page": "2",
+          "perPage": "10",
+          "sort": "-created,body",
+          "filter": "body ~ 'first' && author = @request.auth.id",
+          "expand": "author",
+          "fields": "id,body,expand.author.name",
+          "skipTotal": "true",
+          "tenant": "acme"
+        }
+      },
+      "grpc_request": {
+        "collection": "notes",
+        "page": 2,
+        "per_page": 10,
+        "sort": "-created,body",
+        "filter": "body ~ 'first' && author = @request.auth.id",
+        "expand": "author",
+        "fields": "id,body,expand.author.name",
+        "skip_total": true,
+        "query": {"tenant": "acme"}
+      },
+      "http_response": {
+        "status": 200,
+        "body": {"page": 2, "perPage": 10, "totalItems": -1, "totalPages": -1, "items": []}
+      },
+      "grpc_response": {"page": 2, "per_page": 10, "total_items": "-1", "total_pages": "-1", "items": []}
+    },
+    {
+      "name": "get one record with expand",
+      "rpc": "GetRecord",
+      "http_request": {
+        "method": "GET",
+        "path": "/api/collections/notes/records/n1a2b3c4d5e6f7g",
+        "query": {"expand": "author", "fields": "id,body,expand"}
+      },
+      "grpc_request": {"collection": "notes", "record_id": "n1a2b3c4d5e6f7g", "expand": "author", "fields": "id,body,expand"},
+      "http_response": {
+        "status": 200,
+        "body": {"id": "n1a2b3c4d5e6f7g", "body": "first", "expand": {"author": {"id": "u1a2b3c4d5e6f7g", "name": "Asha"}}}
+      },
+      "grpc_response": {
+        "values": {"id": "n1a2b3c4d5e6f7g", "body": "first", "expand": {"author": {"id": "u1a2b3c4d5e6f7g", "name": "Asha"}}}
+      }
+    },
+    {
+      "name": "create from JSON",
+      "rpc": "CreateRecord",
+      "http_request": {
+        "method": "POST",
+        "path": "/api/collections/notes/records",
+        "query": {"expand": "author"},
+        "json": {"body": "second", "pinned": true, "rank": 3, "tags": ["a", "b"], "meta": {"k": null}}
+      },
+      "grpc_request": {
+        "collection": "notes",
+        "values": {"body": "second", "pinned": true, "rank": 3, "tags": ["a", "b"], "meta": {"k": null}},
+        "expand": "author"
+      },
+      "http_response": {
+        "status": 200,
+        "body": {"id": "n2a2b3c4d5e6f7g", "collectionId": "notescollection", "collectionName": "notes", "body": "second", "pinned": true, "rank": 3, "tags": ["a", "b"], "meta": {"k": null}}
+      },
+      "grpc_response": {
+        "values": {"id": "n2a2b3c4d5e6f7g", "collectionId": "notescollection", "collectionName": "notes", "body": "second", "pinned": true, "rank": 3, "tags": ["a", "b"], "meta": {"k": null}}
+      }
+    },
+    {
+      "name": "create from multipart: text parts are typed like PocketBase infers them and files become RecordFile",
+      "rpc": "CreateRecord",
+      "http_request": {
+        "method": "POST",
+        "path": "/api/collections/notes/records",
+        "multipart": [
+          {"name": "body", "value": "with file"},
+          {"name": "pinned", "value": "true"},
+          {"name": "rank", "value": "3"},
+          {"name": "ratio", "value": "0.5"},
+          {"name": "code", "value": "007"},
+          {"name": "tags", "value": "a"},
+          {"name": "tags", "value": "b"},
+          {"name": "attachments", "filename": "hello.txt", "content_type": "text/plain", "content_base64": "aGVsbG8="}
+        ]
+      },
+      "grpc_request": {
+        "collection": "notes",
+        "values": {"body": "with file", "pinned": true, "rank": 3, "ratio": 0.5, "code": "007", "tags": ["a", "b"]},
+        "files": [
+          {"field": "attachments", "filename": "hello.txt", "content_type": "text/plain", "content": "aGVsbG8="}
+        ]
+      },
+      "engine_request": {
+        "method": "POST",
+        "path": "/api/collections/notes/records",
+        "multipart": [
+          {"name": "@jsonPayload", "value": "{\"body\":\"with file\",\"code\":\"007\",\"pinned\":true,\"rank\":3,\"ratio\":0.5,\"tags\":[\"a\",\"b\"]}"},
+          {"name": "attachments", "filename": "hello.txt", "content_type": "text/plain", "content_base64": "aGVsbG8="}
+        ]
+      },
+      "http_response": {
+        "status": 200,
+        "body": {"id": "n3a2b3c4d5e6f7g", "body": "with file", "attachments": ["hello_a1b2c3d4e5.txt"]}
+      },
+      "grpc_response": {
+        "values": {"id": "n3a2b3c4d5e6f7g", "body": "with file", "attachments": ["hello_a1b2c3d4e5.txt"]}
+      }
+    },
+    {
+      "name": "update with append and remove modifiers",
+      "rpc": "UpdateRecord",
+      "http_request": {
+        "method": "PATCH",
+        "path": "/api/collections/notes/records/n3a2b3c4d5e6f7g",
+        "multipart": [
+          {"name": "tags+", "value": "c"},
+          {"name": "attachments-", "value": "hello_a1b2c3d4e5.txt"},
+          {"name": "attachments+", "filename": "more.txt", "content_type": "text/plain", "content_base64": "bW9yZQ=="}
+        ]
+      },
+      "grpc_request": {
+        "collection": "notes",
+        "record_id": "n3a2b3c4d5e6f7g",
+        "values": {"tags+": "c", "attachments-": "hello_a1b2c3d4e5.txt"},
+        "files": [
+          {"field": "attachments+", "filename": "more.txt", "content_type": "text/plain", "content": "bW9yZQ=="}
+        ]
+      },
+      "engine_request": {
+        "method": "PATCH",
+        "path": "/api/collections/notes/records/n3a2b3c4d5e6f7g",
+        "multipart": [
+          {"name": "@jsonPayload", "value": "{\"attachments-\":\"hello_a1b2c3d4e5.txt\",\"tags+\":\"c\"}"},
+          {"name": "attachments+", "filename": "more.txt", "content_type": "text/plain", "content_base64": "bW9yZQ=="}
+        ]
+      },
+      "http_response": {
+        "status": 200,
+        "body": {"id": "n3a2b3c4d5e6f7g", "tags": ["a", "b", "c"], "attachments": ["more_f6g7h8i9j0.txt"]}
+      },
+      "grpc_response": {
+        "values": {"id": "n3a2b3c4d5e6f7g", "tags": ["a", "b", "c"], "attachments": ["more_f6g7h8i9j0.txt"]}
+      }
+    },
+    {
+      "name": "delete",
+      "rpc": "DeleteRecord",
+      "http_request": {"method": "DELETE", "path": "/api/collections/notes/records/n3a2b3c4d5e6f7g"},
+      "grpc_request": {"collection": "notes", "record_id": "n3a2b3c4d5e6f7g"},
+      "http_response": {"status": 204},
+      "grpc_response": {}
+    },
+    {
+      "name": "batch from JSON with create, update, upsert and delete",
+      "rpc": "BatchRecords",
+      "http_request": {
+        "method": "POST",
+        "path": "/api/batch",
+        "json": {
+          "requests": [
+            {"method": "POST", "url": "/api/collections/notes/records", "body": {"body": "b1"}},
+            {"method": "PATCH", "url": "/api/collections/notes/records/n1a2b3c4d5e6f7g?expand=author", "body": {"body": "b2"}},
+            {"method": "PUT", "url": "/api/collections/notes/records", "body": {"id": "n9a2b3c4d5e6f7g", "body": "b3"}},
+            {"method": "DELETE", "url": "/api/collections/notes/records/n2a2b3c4d5e6f7g"}
+          ]
+        }
+      },
+      "grpc_request": {
+        "operations": [
+          {"action": "BATCH_ACTION_CREATE", "collection": "notes", "values": {"body": "b1"}},
+          {"action": "BATCH_ACTION_UPDATE", "collection": "notes", "record_id": "n1a2b3c4d5e6f7g", "values": {"body": "b2"}, "expand": "author"},
+          {"action": "BATCH_ACTION_UPSERT", "collection": "notes", "values": {"id": "n9a2b3c4d5e6f7g", "body": "b3"}},
+          {"action": "BATCH_ACTION_DELETE", "collection": "notes", "record_id": "n2a2b3c4d5e6f7g"}
+        ]
+      },
+      "http_response": {
+        "status": 200,
+        "body_array": [
+          {"status": 200, "body": {"id": "n4a2b3c4d5e6f7g", "body": "b1"}},
+          {"status": 200, "body": {"id": "n1a2b3c4d5e6f7g", "body": "b2"}},
+          {"status": 200, "body": {"id": "n9a2b3c4d5e6f7g", "body": "b3"}},
+          {"status": 204, "body": null}
+        ]
+      },
+      "grpc_response": {
+        "results": [
+          {"status": 200, "record": {"values": {"id": "n4a2b3c4d5e6f7g", "body": "b1"}}},
+          {"status": 200, "record": {"values": {"id": "n1a2b3c4d5e6f7g", "body": "b2"}}},
+          {"status": 200, "record": {"values": {"id": "n9a2b3c4d5e6f7g", "body": "b3"}}},
+          {"status": 204}
+        ]
+      }
+    },
+    {
+      "name": "batch from multipart with a file for the first request",
+      "rpc": "BatchRecords",
+      "http_request": {
+        "method": "POST",
+        "path": "/api/batch",
+        "multipart": [
+          {"name": "@jsonPayload", "value": "{\"requests\":[{\"method\":\"POST\",\"url\":\"/api/collections/notes/records\",\"body\":{\"body\":\"b4\"}}]}"},
+          {"name": "requests.0.attachments", "filename": "hello.txt", "content_type": "text/plain", "content_base64": "aGVsbG8="}
+        ]
+      },
+      "grpc_request": {
+        "operations": [
+          {
+            "action": "BATCH_ACTION_CREATE",
+            "collection": "notes",
+            "values": {"body": "b4"},
+            "files": [{"field": "attachments", "filename": "hello.txt", "content_type": "text/plain", "content": "aGVsbG8="}]
+          }
+        ]
+      },
+      "http_response": {
+        "status": 200,
+        "body_array": [{"status": 200, "body": {"id": "n5a2b3c4d5e6f7g", "body": "b4", "attachments": ["hello_k1l2m3n4o5.txt"]}}]
+      },
+      "grpc_response": {
+        "results": [
+          {"status": 200, "record": {"values": {"id": "n5a2b3c4d5e6f7g", "body": "b4", "attachments": ["hello_k1l2m3n4o5.txt"]}}}
+        ]
+      }
+    },
+    {
+      "name": "validation failure carries the field codes",
+      "rpc": "CreateRecord",
+      "http_request": {"method": "POST", "path": "/api/collections/notes/records", "json": {"body": ""}},
+      "grpc_request": {"collection": "notes", "values": {"body": ""}},
+      "http_response": {
+        "status": 400,
+        "body": {
+          "status": 400,
+          "message": "Failed to create record.",
+          "data": {"body": {"code": "validation_required", "message": "Cannot be blank."}}
+        }
+      },
+      "grpc_error": {
+        "code": "INVALID_ARGUMENT",
+        "message": "Failed to create record.",
+        "record_error": {
+          "status": 400,
+          "message": "Failed to create record.",
+          "data": {"body": {"code": "validation_required", "message": "Cannot be blank."}}
+        }
+      }
+    },
+    {
+      "name": "a record hidden by its view rule is not found",
+      "rpc": "GetRecord",
+      "http_request": {"method": "GET", "path": "/api/collections/notes/records/n0a2b3c4d5e6f7g"},
+      "grpc_request": {"collection": "notes", "record_id": "n0a2b3c4d5e6f7g"},
+      "http_response": {
+        "status": 404,
+        "body": {"status": 404, "message": "The requested resource wasn't found.", "data": {}}
+      },
+      "grpc_error": {
+        "code": "NOT_FOUND",
+        "message": "The requested resource wasn't found.",
+        "record_error": {"status": 404, "message": "The requested resource wasn't found.", "data": {}}
+      }
+    },
+    {
+      "name": "health",
+      "rpc": "GetDatabaseHealth",
+      "http_request": {"method": "GET", "path": "/api/health"},
+      "grpc_request": {},
+      "http_response": {"status": 200, "body": {"code": 200, "message": "API is healthy.", "data": {}}},
+      "grpc_response": {"healthy": true, "message": "API is healthy."}
+    },
+    {
+      "name": "download a whole file",
+      "rpc": "DownloadRecordFile",
+      "http_request": {"method": "GET", "path": "/api/files/notes/n3a2b3c4d5e6f7g/hello_a1b2c3d4e5.txt"},
+      "grpc_request": {"collection": "notes", "record_id": "n3a2b3c4d5e6f7g", "filename": "hello_a1b2c3d4e5.txt"},
+      "http_response": {
+        "status": 200,
+        "headers": {"Content-Type": "text/plain; charset=utf-8", "Content-Length": "5", "Accept-Ranges": "bytes"},
+        "body_base64": "aGVsbG8="
+      },
+      "grpc_stream": [
+        {"info": {"content_type": "text/plain; charset=utf-8", "size_bytes": "5", "offset": "0", "length": "5"}, "content": "aGVsbG8="}
+      ]
+    },
+    {
+      "name": "download a byte range",
+      "rpc": "DownloadRecordFile",
+      "http_request": {
+        "method": "GET",
+        "path": "/api/files/notes/n3a2b3c4d5e6f7g/hello_a1b2c3d4e5.txt",
+        "headers": {"Range": "bytes=1-3"}
+      },
+      "grpc_request": {"collection": "notes", "record_id": "n3a2b3c4d5e6f7g", "filename": "hello_a1b2c3d4e5.txt", "offset": "1", "length": "3"},
+      "http_response": {
+        "status": 206,
+        "headers": {"Content-Type": "text/plain; charset=utf-8", "Content-Length": "3", "Content-Range": "bytes 1-3/5", "Accept-Ranges": "bytes"},
+        "body_base64": "ZWxs"
+      },
+      "grpc_stream": [
+        {"info": {"content_type": "text/plain; charset=utf-8", "size_bytes": "5", "offset": "1", "length": "3"}, "content": "ZWxs"}
+      ]
+    },
+    {
+      "name": "download an open-ended range",
+      "rpc": "DownloadRecordFile",
+      "http_request": {
+        "method": "GET",
+        "path": "/api/files/notes/n3a2b3c4d5e6f7g/hello_a1b2c3d4e5.txt",
+        "headers": {"Range": "bytes=2-"}
+      },
+      "grpc_request": {"collection": "notes", "record_id": "n3a2b3c4d5e6f7g", "filename": "hello_a1b2c3d4e5.txt", "offset": "2"},
+      "http_response": {
+        "status": 206,
+        "headers": {"Content-Type": "text/plain; charset=utf-8", "Content-Length": "3", "Content-Range": "bytes 2-4/5", "Accept-Ranges": "bytes"},
+        "body_base64": "bGxv"
+      },
+      "grpc_stream": [
+        {"info": {"content_type": "text/plain; charset=utf-8", "size_bytes": "5", "offset": "2", "length": "3"}, "content": "bGxv"}
+      ]
+    },
+    {
+      "name": "realtime connect announces the client id",
+      "rpc": "OpenRealtime",
+      "http_request": {"method": "GET", "path": "/api/realtime"},
+      "grpc_request": {},
+      "http_response": {
+        "status": 200,
+        "headers": {"Content-Type": "text/event-stream"},
+        "sse": [
+          {"id": "c1a2b3c4d5e6f7g8h9i0", "event": "PB_CONNECT", "data": {"clientId": "c1a2b3c4d5e6f7g8h9i0"}}
+        ]
+      },
+      "grpc_stream": [
+        {"connected": {"client_id": "c1a2b3c4d5e6f7g8h9i0"}}
+      ]
+    },
+    {
+      "name": "realtime subscribe replaces the topics of a connected client",
+      "rpc": "SetRealtimeSubscriptions",
+      "http_request": {
+        "method": "POST",
+        "path": "/api/realtime",
+        "json": {"clientId": "c1a2b3c4d5e6f7g8h9i0", "subscriptions": ["notes/*", "notes/n1a2b3c4d5e6f7g?options=%7B%22query%22%3A%7B%22expand%22%3A%22author%22%7D%7D"]}
+      },
+      "grpc_request": {
+        "client_id": "c1a2b3c4d5e6f7g8h9i0",
+        "topics": ["notes/*", "notes/n1a2b3c4d5e6f7g?options=%7B%22query%22%3A%7B%22expand%22%3A%22author%22%7D%7D"]
+      },
+      "http_response": {"status": 204},
+      "grpc_response": {}
+    },
+    {
+      "name": "realtime change event",
+      "rpc": "OpenRealtime",
+      "http_request": {"method": "GET", "path": "/api/realtime"},
+      "grpc_request": {},
+      "http_response": {
+        "status": 200,
+        "headers": {"Content-Type": "text/event-stream"},
+        "sse": [
+          {"id": "c1a2b3c4d5e6f7g8h9i0", "event": "PB_CONNECT", "data": {"clientId": "c1a2b3c4d5e6f7g8h9i0"}},
+          {"id": "c1a2b3c4d5e6f7g8h9i0", "event": "notes/*", "data": {"action": "create", "record": {"id": "n6a2b3c4d5e6f7g", "collectionId": "notescollection", "collectionName": "notes", "body": "live"}}}
+        ]
+      },
+      "grpc_stream": [
+        {"connected": {"client_id": "c1a2b3c4d5e6f7g8h9i0"}},
+        {"change": {"topic": "notes/*", "action": "create", "record": {"values": {"id": "n6a2b3c4d5e6f7g", "collectionId": "notescollection", "collectionName": "notes", "body": "live"}}}}
+      ]
+    }
+  ]
+}

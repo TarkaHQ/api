@@ -76,7 +76,7 @@
       "label": "Databases",
       "description": "Serverless embedded databases for agents and Functions",
       "group": "data",
-      "api_key_scope": false
+      "api_key_scope": true
     }
   ],
   "presets": [

@@ -11,6 +11,7 @@ plugins:
       - tarka.gateway.v1.GatewayService
       - tarka.access.v1.AccessService
       - tarka.channels.v1.ChannelsService
+      - tarka.databases.v1.DatabaseService
     opt:
       - allow_merge=true
       - merge_file_name=tarka-control-v1
