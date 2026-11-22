@@ -3,7 +3,7 @@
   "info": {
     "title": "Tarka Control API",
     "description": "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management.",
-    "version": "1.35.0"
+    "version": "1.36.0"
   },
   "tags": [
     {
@@ -5681,6 +5681,86 @@
         ]
       }
     },
+    "/control/v1/orgs/{org_id}/compute/workloads/{workload_id}/access": {
+      "get": {
+        "summary": "Returns the platform services the workload reaches at http://tarka, with\nprofile defaults resolved.",
+        "operationId": "ProvisioningService_GetWorkloadAccess",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1WorkloadAccess"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "workload_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      },
+      "put": {
+        "summary": "Replaces a workload's access. Takes effect on running workloads without a\nredeploy.",
+        "operationId": "ProvisioningService_SetWorkloadAccess",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1WorkloadAccess"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "workload_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProvisioningServiceSetWorkloadAccessBody"
+            }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
     "/control/v1/orgs/{org_id}/compute/workloads/{workload_id}:invoke": {
       "post": {
         "operationId": "ProvisioningService_InvokeHTTPService",
@@ -10402,6 +10482,14 @@
         },
         "http_service": {
           "$ref": "#/definitions/v1HTTPServiceSpec"
+        },
+        "project_id": {
+          "type": "string",
+          "description": "Project that owns the workload. Empty selects the organization's default\nproject for a new workload and keeps the project of an existing one."
+        },
+        "access": {
+          "$ref": "#/definitions/v1WorkloadAccess",
+          "description": "Platform services reachable at http://tarka. Omission applies the profile\ndefaults to a new workload and preserves the access of an existing one."
         }
       }
     },
@@ -10752,6 +10840,20 @@
           "type": "boolean"
         }
       }
+    },
+    "ProvisioningServiceSetWorkloadAccessBody": {
+      "type": "object",
+      "properties": {
+        "access": {
+          "$ref": "#/definitions/v1WorkloadAccess"
+        },
+        "expected_version": {
+          "type": "string",
+          "format": "uint64",
+          "description": "The version last read. Zero replaces profile defaults only."
+        }
+      },
+      "description": "Replaces the workload's access. Omitted capabilities return to their\nprofile defaults."
     },
     "ProvisioningServiceStartAgentHostRegistryTestBody": {
       "type": "object",
@@ -12288,6 +12390,10 @@
         "public_url": {
           "type": "string",
           "description": "Generated HTTPS address of a publicly invocable HTTP service."
+        },
+        "access": {
+          "$ref": "#/definitions/v1WorkloadAccess",
+          "description": "Platform services reachable at http://tarka, with profile defaults resolved."
         }
       },
       "description": "Stable inventory metadata. IDs are shared with the corresponding profile API."
@@ -13089,6 +13195,14 @@
         },
         "release": {
           "$ref": "#/definitions/v1DatabaseRelease"
+        },
+        "implicit_collections_json": {
+          "type": "string",
+          "description": "For the active release of a database whose schema mode is implicit: the\ncollections first writes defined, as a JSON array in the form a manifest\ndeclares collections. Adding them unchanged to a manifest's collections\nadopts them without data loss. Empty for any other release."
+        },
+        "implicit_collections_truncated": {
+          "type": "boolean",
+          "description": "Set when the database defined more collections than one report carries,\nso implicit_collections_json lists only some of them."
         }
       }
     },
@@ -14854,6 +14968,18 @@
           "type": "string",
           "format": "date-time",
           "description": "Set while a restore point requested with CreateDatabaseRestorePoint is\nstill being written and verified."
+        },
+        "owner_workload_id": {
+          "type": "string",
+          "description": "Set when this is a compute workload's own default database. Cleared when\nthat workload is deleted; the database and its data remain."
+        },
+        "project_default": {
+          "type": "boolean",
+          "description": "True for the project's default database."
+        },
+        "schema_mode": {
+          "type": "string",
+          "description": "implicit or managed. An implicit database creates collections and fields\non first write. Submitting a release or connecting a source selects\nmanaged, where only releases change the schema."
         }
       },
       "description": "A project-owned, single-writer embedded Turso database."
@@ -16478,6 +16604,99 @@
         }
       },
       "description": "UsageSummary aggregates metering over a half-open UTC time interval."
+    },
+    "v1WorkloadAccess": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string",
+          "format": "uint64",
+          "description": "Output only. Zero while the workload still uses its profile defaults.",
+          "readOnly": true
+        },
+        "inference": {
+          "$ref": "#/definitions/v1WorkloadInferenceAccess"
+        },
+        "databases": {
+          "$ref": "#/definitions/v1WorkloadDatabaseAccess"
+        },
+        "identity": {
+          "$ref": "#/definitions/v1WorkloadIdentity",
+          "description": "Optional. Unset authenticates the workload as itself."
+        }
+      },
+      "description": "The platform services a workload reaches through its private gateway at\nhttp://tarka. The platform authenticates the workload; code inside the\ncontainer holds no credential. Every compute profile shares this message.\nAn unset capability takes the profile default: hosted agents, HTTP services\nand batch jobs enable inference and databases, code sandboxes and container\nsessions enable nothing."
+    },
+    "v1WorkloadDatabaseAccess": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "mode": {
+          "type": "string",
+          "description": "rules or full. Empty selects rules: collection rules decide each call.\nfull bypasses collection rules and requires an owner, admin or operator."
+        },
+        "own": {
+          "type": "boolean",
+          "description": "The workload's own default database, created on first use. Hosted agents,\nHTTP services and batch jobs only."
+        },
+        "project_default": {
+          "type": "boolean",
+          "description": "The project's default database, created on first use."
+        },
+        "grants": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1WorkloadDatabaseGrant"
+          },
+          "description": "Named databases. Empty allows read, write and subscribe on every shared\ndatabase in the project; another workload's own database always needs a\ngrant."
+        }
+      },
+      "description": "Record access at http://tarka/database (the workload's own database),\nhttp://tarka/project/database (the project's default database) and\nhttp://tarka/databases/{name} (a named database in the workload's project)."
+    },
+    "v1WorkloadDatabaseGrant": {
+      "type": "object",
+      "properties": {
+        "database": {
+          "type": "string",
+          "description": "Database name in the workload's project."
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "read, write or subscribe."
+        }
+      }
+    },
+    "v1WorkloadIdentity": {
+      "type": "object",
+      "properties": {
+        "principal_id": {
+          "type": "string",
+          "description": "An active agent or service principal. Requires an owner, admin or operator."
+        }
+      },
+      "description": "Binds the workload to an identity in its project's identity scope. The\nprincipal's roles then decide database access: read, use, or administer for\nfull access."
+    },
+    "v1WorkloadInferenceAccess": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "allowed_models": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Model aliases the workload may call. Empty allows every model the\norganization may use; a hosted agent is always limited to its configured\nmodels."
+        }
+      },
+      "description": "Model access at http://tarka/v1."
     },
     "v1Workspace": {
       "type": "object",

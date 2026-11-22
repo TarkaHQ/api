@@ -48,6 +48,15 @@ message ManagedDatabase {
   // Set while a restore point requested with CreateDatabaseRestorePoint is
   // still being written and verified.
   google.protobuf.Timestamp backup_requested_at = 21;
+  // Set when this is a compute workload's own default database. Cleared when
+  // that workload is deleted; the database and its data remain.
+  string owner_workload_id = 22;
+  // True for the project's default database.
+  bool project_default = 23;
+  // implicit or managed. An implicit database creates collections and fields
+  // on first write. Submitting a release or connecting a source selects
+  // managed, where only releases change the schema.
+  string schema_mode = 24;
 }
 message DatabaseSource {
   string repository_id = 1;
@@ -163,6 +172,7 @@ message ListDatabaseAttachmentsResponse {
   repeated DatabaseAttachment attachments = 1;
   string next_page_token = 2;
 }
+
 message DatabaseAttachment {
   string database_id = 1;
   string agent_host_id = 2;
@@ -231,6 +241,14 @@ message GetDatabaseManifestRequest {
 message DatabaseManifest {
   string manifest_json = 1;
   DatabaseRelease release = 2;
+  // For the active release of a database whose schema mode is implicit: the
+  // collections first writes defined, as a JSON array in the form a manifest
+  // declares collections. Adding them unchanged to a manifest's collections
+  // adopts them without data loss. Empty for any other release.
+  string implicit_collections_json = 3;
+  // Set when the database defined more collections than one report carries,
+  // so implicit_collections_json lists only some of them.
+  bool implicit_collections_truncated = 4;
 }
 
 message ProposeDatabaseSchemaRequest {
