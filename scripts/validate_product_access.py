@@ -41,8 +41,8 @@ def main() -> int:
     if model_products != {"himalaya", "inference", "utilities"}:
         raise SystemExit("the model authorization boundary must contain exactly himalaya, inference, and utilities")
     api_key_products = {product["id"] for product in products if product["api_key_scope"]}
-    if api_key_products != model_products | {"sandboxes"}:
-        raise SystemExit("API-key scopes must be the three model products plus sandboxes")
+    if api_key_products != model_products | {"sandboxes", "databases"}:
+        raise SystemExit("API-key scopes must be the three model products plus sandboxes and databases")
 
     presets = policy.get("presets")
     if not isinstance(presets, list):

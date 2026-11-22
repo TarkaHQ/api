@@ -1,0 +1,355 @@
+// Copyright 2026 Tarka
+// SPDX-License-Identifier: Apache-2.0
+
+syntax = "proto3";
+
+package tarka.databases.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option go_package = "github.com/TarkaHQ/api/gen/go/tarka/databases/v1;databasesv1";
+
+// DatabaseService reads and writes the records of one managed database. It is
+// the canonical data API: the generated REST routes and the
+// PocketBase-compatible HTTP endpoints are translations of these RPCs.
+//
+// Every request names its organization and database. A sleeping database is
+// started by the first authorized request. Collections, fields, and access
+// rules come from the active release; this service never changes schema.
+//
+// Callers authenticate with a bearer credential:
+//   - An organization owner, admin, or operator (account token, CLI token, or
+//     a tk_live_ key with the databases scope) administers data. Collection
+//     rules do not restrict them.
+//   - A project identity token acts as that application user. Collection rules
+//     and the database permissions granted in the project realm apply.
+//   - An agent runtime credential additionally needs an attachment with the
+//     read, write, or subscribe action.
+//
+// A request rejected by the database carries a RecordError status detail with
+// the per-field validation codes.
+service DatabaseService {
+  // ListRecords returns one page of the records the caller may list.
+  rpc ListRecords(ListRecordsRequest) returns (ListRecordsResponse) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/databases/{database_id}/collections/{collection}/records"};
+  }
+
+  // GetRecord returns one record the caller may view.
+  rpc GetRecord(GetRecordRequest) returns (Record) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/databases/{database_id}/collections/{collection}/records/{record_id}"};
+  }
+
+  // CreateRecord validates and stores a new record. Before-write Functions
+  // bound to the collection run first and may reject or amend it.
+  rpc CreateRecord(CreateRecordRequest) returns (Record) {
+    option (google.api.http) = {
+      post: "/control/v1/orgs/{org_id}/databases/{database_id}/collections/{collection}/records"
+      body: "*"
+    };
+  }
+
+  // UpdateRecord changes the given values of an existing record and leaves
+  // every other value untouched.
+  rpc UpdateRecord(UpdateRecordRequest) returns (Record) {
+    option (google.api.http) = {
+      patch: "/control/v1/orgs/{org_id}/databases/{database_id}/collections/{collection}/records/{record_id}"
+      body: "*"
+    };
+  }
+
+  // DeleteRecord removes a record and the files it owns.
+  rpc DeleteRecord(DeleteRecordRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/control/v1/orgs/{org_id}/databases/{database_id}/collections/{collection}/records/{record_id}"};
+  }
+
+  // BatchRecords applies up to 50 writes in one transaction. Either every
+  // operation commits or none does.
+  rpc BatchRecords(BatchRecordsRequest) returns (BatchRecordsResponse) {
+    option (google.api.http) = {
+      post: "/control/v1/orgs/{org_id}/databases/{database_id}/records:batch"
+      body: "*"
+    };
+  }
+
+  // GetDatabaseHealth reports whether the database runtime answers requests.
+  rpc GetDatabaseHealth(GetDatabaseHealthRequest) returns (DatabaseHealth) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/databases/{database_id}/health"};
+  }
+
+  // DownloadRecordFile streams the bytes of a file stored in a record. The
+  // caller must be allowed to view the record. The first message carries
+  // RecordFileInfo. gRPC only; over HTTP use the PocketBase-compatible file
+  // route.
+  rpc DownloadRecordFile(DownloadRecordFileRequest) returns (stream RecordFileChunk) {}
+
+  // OpenRealtime opens a change stream. The first event is RealtimeConnected
+  // with the client ID to pass to SetRealtimeSubscriptions. The stream ends
+  // when the caller cancels it, the credential stops being valid, or the
+  // database restarts; clients reconnect and subscribe again. An open stream
+  // keeps the database running. gRPC only; over HTTP use the
+  // PocketBase-compatible realtime route.
+  rpc OpenRealtime(OpenRealtimeRequest) returns (stream RealtimeEvent) {}
+
+  // SetRealtimeSubscriptions replaces the topics of an open stream. It must be
+  // called with the credential that opened the stream.
+  rpc SetRealtimeSubscriptions(SetRealtimeSubscriptionsRequest) returns (google.protobuf.Empty) {}
+}
+
+// Record is one row of a collection.
+message Record {
+  // Every value the caller may see, keyed by field name. Always includes id,
+  // collectionId, and collectionName, and an expand object when relations were
+  // expanded. Dates are RFC 3339 strings and file fields hold file names.
+  google.protobuf.Struct values = 1;
+}
+
+// RecordFile is one uploaded file of a create, update, or batch write.
+message RecordFile {
+  // File field to store the file in. A trailing + appends to and a trailing -
+  // removes from a multi-file field, as in "attachments+".
+  string field = 1 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {max_length: 256}];
+  // Original file name. The database stores a sanitized, unique variant.
+  string filename = 2 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {max_length: 255}];
+  // Media type declared by the caller. The database detects the type itself
+  // when checking a field's allowed types.
+  string content_type = 3 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {max_length: 255}];
+  // File bytes. One request, including all files, may not exceed 32 MiB.
+  bytes content = 4;
+}
+
+// ListRecordsRequest selects a page of one collection.
+message ListRecordsRequest {
+  string org_id = 1;
+  string database_id = 2;
+  // Collection ID or name from the active release.
+  string collection = 3;
+  // 1-based page number; defaults to 1.
+  uint32 page = 4;
+  // Records per page; defaults to 30 and is capped at 1000.
+  uint32 per_page = 5;
+  // Comma-separated sort fields, each optionally prefixed with - for
+  // descending order, for example "-created,title".
+  string sort = 6;
+  // Filter expression, for example "status = 'open' && owner = @request.auth.id".
+  string filter = 7;
+  // Comma-separated relation fields to embed under each record's expand.
+  string expand = 8;
+  // Comma-separated fields to return; all visible fields when empty.
+  string fields = 9;
+  // Skip counting. total_items and total_pages are then -1.
+  bool skip_total = 10;
+  // Additional query parameters, readable by collection rules as
+  // @request.query.NAME. At most 32 entries.
+  map<string, string> query = 11;
+}
+
+// ListRecordsResponse is one page of records.
+message ListRecordsResponse {
+  uint32 page = 1;
+  uint32 per_page = 2;
+  // Matching records across all pages, or -1 when counting was skipped.
+  int64 total_items = 3;
+  // Pages available, or -1 when counting was skipped.
+  int64 total_pages = 4;
+  repeated Record items = 5;
+}
+
+// GetRecordRequest selects one record.
+message GetRecordRequest {
+  string org_id = 1;
+  string database_id = 2;
+  string collection = 3;
+  string record_id = 4;
+  string expand = 5;
+  string fields = 6;
+  map<string, string> query = 7;
+}
+
+// CreateRecordRequest carries the values and files of a new record.
+message CreateRecordRequest {
+  string org_id = 1;
+  string database_id = 2;
+  string collection = 3;
+  // Field values. Include id to choose the record ID.
+  google.protobuf.Struct values = 4;
+  repeated RecordFile files = 5;
+  // Applied to the returned record.
+  string expand = 6;
+  string fields = 7;
+  map<string, string> query = 8;
+}
+
+// UpdateRecordRequest carries the values and files to change.
+message UpdateRecordRequest {
+  string org_id = 1;
+  string database_id = 2;
+  string collection = 3;
+  string record_id = 4;
+  // Only the listed values change. A key with a trailing + or - appends to or
+  // removes from a multi-value field, as in "tags+".
+  google.protobuf.Struct values = 5;
+  repeated RecordFile files = 6;
+  // Applied to the returned record.
+  string expand = 7;
+  string fields = 8;
+  map<string, string> query = 9;
+}
+
+// DeleteRecordRequest selects the record to remove.
+message DeleteRecordRequest {
+  string org_id = 1;
+  string database_id = 2;
+  string collection = 3;
+  string record_id = 4;
+  map<string, string> query = 5;
+}
+
+// BatchAction is the kind of write of one batch operation.
+enum BatchAction {
+  BATCH_ACTION_UNSPECIFIED = 0;
+  BATCH_ACTION_CREATE = 1;
+  BATCH_ACTION_UPDATE = 2;
+  // Updates the record whose id is given in values, or creates it.
+  BATCH_ACTION_UPSERT = 3;
+  BATCH_ACTION_DELETE = 4;
+}
+
+// BatchOperation is one write of a batch.
+message BatchOperation {
+  BatchAction action = 1;
+  string collection = 2;
+  // Required for update and delete.
+  string record_id = 3;
+  google.protobuf.Struct values = 4;
+  repeated RecordFile files = 5;
+  string expand = 6;
+  string fields = 7;
+  map<string, string> query = 8;
+}
+
+// BatchRecordsRequest lists the writes of one transaction in execution order.
+message BatchRecordsRequest {
+  string org_id = 1;
+  string database_id = 2;
+  // 1 to 50 operations. The request, including all files, may not exceed
+  // 32 MiB.
+  repeated BatchOperation operations = 3;
+}
+
+// BatchResult is the outcome of the operation at the same position.
+message BatchResult {
+  // HTTP-equivalent status: 200 for a written record and 204 for a delete.
+  int32 status = 1;
+  // The written record; unset for a delete.
+  Record record = 2;
+}
+
+// BatchRecordsResponse holds one result per operation, in request order.
+message BatchRecordsResponse {
+  repeated BatchResult results = 1;
+}
+
+// GetDatabaseHealthRequest selects the database to probe.
+message GetDatabaseHealthRequest {
+  string org_id = 1;
+  string database_id = 2;
+}
+
+// DatabaseHealth is the answer of a running database.
+message DatabaseHealth {
+  bool healthy = 1;
+  string message = 2;
+}
+
+// DownloadRecordFileRequest selects a stored file and an optional byte range.
+message DownloadRecordFileRequest {
+  string org_id = 1;
+  string database_id = 2;
+  string collection = 3;
+  string record_id = 4;
+  // Stored file name, as held in the record's file field.
+  string filename = 5;
+  // First byte to return; defaults to 0.
+  uint64 offset = 6;
+  // Number of bytes to return; 0 returns everything from offset to the end.
+  uint64 length = 7;
+}
+
+// RecordFileInfo describes the file and the range being streamed.
+message RecordFileInfo {
+  string content_type = 1;
+  // Size of the whole file in bytes.
+  uint64 size_bytes = 2;
+  // First byte and number of bytes of the range that follows.
+  uint64 offset = 3;
+  uint64 length = 4;
+  google.protobuf.Timestamp modified_at = 5;
+}
+
+// RecordFileChunk is one message of a file download.
+message RecordFileChunk {
+  // Set on the first message only.
+  RecordFileInfo info = 1;
+  // Consecutive bytes of the requested range; at most 64 KiB per message.
+  bytes content = 2;
+}
+
+// OpenRealtimeRequest opens a change stream on one database.
+message OpenRealtimeRequest {
+  string org_id = 1;
+  string database_id = 2;
+  // Topics to subscribe to as soon as the stream is connected; see
+  // SetRealtimeSubscriptionsRequest.topics. May be empty.
+  repeated string topics = 3;
+}
+
+// RealtimeConnected is the first event of a change stream.
+message RealtimeConnected {
+  // Identifies this stream in SetRealtimeSubscriptions.
+  string client_id = 1;
+}
+
+// RecordChange reports one committed write the caller is allowed to see.
+message RecordChange {
+  // The subscribed topic that matched.
+  string topic = 1;
+  // create, update, or delete.
+  string action = 2;
+  Record record = 3;
+}
+
+// RealtimeEvent is one message of a change stream.
+message RealtimeEvent {
+  oneof event {
+    RealtimeConnected connected = 1;
+    RecordChange change = 2;
+  }
+}
+
+// SetRealtimeSubscriptionsRequest replaces the topics of an open stream.
+message SetRealtimeSubscriptionsRequest {
+  string org_id = 1;
+  string database_id = 2;
+  string client_id = 3;
+  // "COLLECTION/*" for every record of a collection or "COLLECTION/RECORD_ID"
+  // for one record. A topic may carry "?options=" with a URL-encoded JSON
+  // object {"query":{...},"headers":{...}} to set expand, fields, or filter
+  // for its events. An empty list ends all subscriptions.
+  repeated string topics = 4;
+}
+
+// RecordError is attached as a status detail when the database rejects a
+// request. It mirrors the PocketBase error body.
+message RecordError {
+  // HTTP-equivalent status, for example 400, 403, or 404.
+  int32 status = 1;
+  string message = 2;
+  // Per-field details, for example {"title":{"code":"validation_required",
+  // "message":"Cannot be blank."}}. For a failed batch, the failing operation
+  // is under "requests" keyed by its position.
+  google.protobuf.Struct data = 3;
+}

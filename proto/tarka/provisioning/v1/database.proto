@@ -3,6 +3,9 @@
 syntax = "proto3";
 package tarka.provisioning.v1;
 
+import "google/protobuf/timestamp.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
 option csharp_namespace = "Tarka.Provisioning.V1";
 option go_package = "github.com/TarkaHQ/api/gen/go/tarka/provisioning/v1;provisioningv1";
 option java_multiple_files = true;
@@ -15,6 +18,8 @@ message ManagedDatabase {
   string org_id = 2;
   string project_id = 3;
   string name = 4;
+  // provisioning, sleeping, starting, ready, draining, restoring, failed,
+  // deleting, or deleted. Clients must tolerate values added later.
   string state = 5;
   uint64 version = 6;
   bool backups_enabled = 7;
@@ -28,6 +33,21 @@ message ManagedDatabase {
   string source_error = 14;
   // Most recently submitted release, including a pending Git revision.
   DatabaseRelease latest_release = 15;
+  google.protobuf.Timestamp created_at = 16;
+  google.protobuf.Timestamp updated_at = 17;
+  // Set once deletion was requested. A deleted database serves no requests
+  // and keeps no volume.
+  google.protobuf.Timestamp deleted_at = 18;
+  // Until this time RestoreManagedDatabase can bring a deleted database back
+  // with its original ID and name, and the name stays reserved in the project.
+  // Unset for a live database and for a deleted one without restore points.
+  google.protobuf.Timestamp restorable_until = 19;
+  // Stable reason for the most recent failed delete, backup, or restore.
+  // Empty after a successful operation.
+  string operation_error = 20;
+  // Set while a restore point requested with CreateDatabaseRestorePoint is
+  // still being written and verified.
+  google.protobuf.Timestamp backup_requested_at = 21;
 }
 message DatabaseSource {
   string repository_id = 1;
@@ -48,6 +68,8 @@ message ListManagedDatabasesRequest {
   string project_id = 2;
   uint32 page_size = 3;
   string page_token = 4;
+  // Also return deleted databases that can still be restored.
+  bool include_deleted = 5;
 }
 message ListManagedDatabasesResponse {
   repeated ManagedDatabase databases = 1;
@@ -67,12 +89,86 @@ message UpdateManagedDatabaseRequest {
   optional string gateway_id = 6;
   // Set an empty source to disconnect. Connected GitHub branches follow pushes.
   DatabaseSource source = 7;
+  // Renames the database within its project. The generated public URL and the
+  // database ID do not change.
+  optional string name = 8;
+}
+
+// DeleteManagedDatabaseRequest stops the database and destroys its volume and
+// public URL. Verified restore points are retained for seven days.
+message DeleteManagedDatabaseRequest {
+  string org_id = 1;
+  string database_id = 2;
+  // Must equal the current ManagedDatabase.version.
+  uint64 expected_version = 3;
+}
+
+// RestoreManagedDatabaseRequest replaces the contents of a live or deleted
+// database with one of its restore points. The database keeps its ID and name.
+// Writes made after the restore point are lost.
+message RestoreManagedDatabaseRequest {
+  string org_id = 1;
+  string database_id = 2;
+  string restore_point_id = 3;
+  // Must equal the current ManagedDatabase.version.
+  uint64 expected_version = 4;
+}
+
+// A verified archive of one database in Tarka object storage.
+message DatabaseRestorePoint {
+  string id = 1;
+  string database_id = 2;
+  // Digest of the release that was active when the point was written.
+  // Restoring the point makes this release active again.
+  string release = 3;
+  // Lowercase hexadecimal SHA-256 of the archive, checked after upload.
+  string sha256 = 4;
+  uint64 size_bytes = 5;
+  google.protobuf.Timestamp created_at = 6;
+}
+
+// ListDatabaseRestorePointsRequest selects the restore points of a live or
+// deleted database, newest first.
+message ListDatabaseRestorePointsRequest {
+  string org_id = 1;
+  string database_id = 2;
+  // page_size defaults to 50 and is capped at 100.
+  uint32 page_size = 3 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {maximum: 100}];
+  // page_token is opaque, at most 1024 bytes, and bound to the same database.
+  string page_token = 4 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {max_length: 1024}];
+}
+message ListDatabaseRestorePointsResponse {
+  repeated DatabaseRestorePoint restore_points = 1;
+  string next_page_token = 2;
+}
+
+// CreateDatabaseRestorePointRequest asks for a restore point of the current
+// data. Backups must be enabled. No new point is written when nothing changed
+// since the newest one.
+message CreateDatabaseRestorePointRequest {
+  string org_id = 1;
+  string database_id = 2;
+}
+
+// ListDatabaseAttachmentsRequest selects the agent hosts attached to a database.
+message ListDatabaseAttachmentsRequest {
+  string org_id = 1;
+  string database_id = 2;
+  // page_size defaults to 50 and is capped at 100.
+  uint32 page_size = 3 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {maximum: 100}];
+  // page_token is opaque, at most 1024 bytes, and bound to the same database.
+  string page_token = 4 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {max_length: 1024}];
+}
+message ListDatabaseAttachmentsResponse {
+  repeated DatabaseAttachment attachments = 1;
+  string next_page_token = 2;
 }
 message DatabaseAttachment {
   string database_id = 1;
   string agent_host_id = 2;
   // agent or delegated.
   string identity_mode = 3;
+  // Any of read, write, and subscribe.
   repeated string actions = 4;
 }
 message SetDatabaseAttachmentRequest {
@@ -88,8 +184,30 @@ message DatabaseRelease {
   string database_id = 2;
   string digest = 3;
   string parent = 4;
+  // validating, awaiting_approval, queued, activating, active, superseded, or
+  // failed. Clients must tolerate values added later.
   string state = 5;
   string commit_sha = 6;
+  google.protobuf.Timestamp created_at = 7;
+  // Set when the database first served this release.
+  google.protobuf.Timestamp activated_at = 8;
+  // Stable reason reported by the database when state is failed.
+  string error = 9;
+}
+
+// ListDatabaseReleasesRequest selects the release history of a database,
+// newest first.
+message ListDatabaseReleasesRequest {
+  string org_id = 1;
+  string database_id = 2;
+  // page_size defaults to 50 and is capped at 100.
+  uint32 page_size = 3 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {maximum: 100}];
+  // page_token is opaque, at most 1024 bytes, and bound to the same database.
+  string page_token = 4 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {max_length: 1024}];
+}
+message ListDatabaseReleasesResponse {
+  repeated DatabaseRelease releases = 1;
+  string next_page_token = 2;
 }
 message SubmitDatabaseReleaseRequest {
   string org_id = 1;
