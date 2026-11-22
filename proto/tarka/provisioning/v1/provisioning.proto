@@ -27,7 +27,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Tarka Control API"
     description: "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management."
-    version: "1.35.0"
+    version: "1.36.0"
   }
   host: "tarka.rest"
   schemes: HTTPS
@@ -40,7 +40,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
         type: TYPE_API_KEY
         in: IN_HEADER
         name: "Authorization"
-        description: "Bearer Tarka account access token. Sandbox RPCs also accept a tk_live_ key with the sandboxes scope."
+        description: "Bearer Tarka account access token. Sandbox RPCs also accept a tk_live_ key with the sandboxes scope, and database RPCs one with the databases scope. DatabaseService additionally accepts project identity tokens and agent runtime credentials."
       }
     }
   }
@@ -100,6 +100,48 @@ service ProvisioningService {
   rpc ApproveDatabaseRelease(ApproveDatabaseReleaseRequest) returns (DatabaseRelease) {
     option (google.api.http) = {
       post: "/control/v1/orgs/{org_id}/databases/{database_id}/releases/{release_id}:approve"
+      body: "*"
+    };
+  }
+  // ListDatabaseReleases returns the release history of a database, newest
+  // first, including the reason a release failed.
+  rpc ListDatabaseReleases(ListDatabaseReleasesRequest) returns (ListDatabaseReleasesResponse) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/databases/{database_id}/releases"};
+  }
+  // ListDatabaseAttachments returns the agent hosts attached to a database
+  // with their identity mode and permitted actions.
+  rpc ListDatabaseAttachments(ListDatabaseAttachmentsRequest) returns (ListDatabaseAttachmentsResponse) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/databases/{database_id}/agents"};
+  }
+  // DeleteManagedDatabase stops a database and destroys its volume and public
+  // URL. It returns as soon as the deletion is recorded; state moves from
+  // deleting to deleted. Restore points are kept for seven days, during which
+  // the database can be restored and its name stays reserved. Repeated
+  // deletion is safe.
+  rpc DeleteManagedDatabase(DeleteManagedDatabaseRequest) returns (ManagedDatabase) {
+    option (google.api.http) = {delete: "/control/v1/orgs/{org_id}/databases/{database_id}"};
+  }
+  // ListDatabaseRestorePoints returns the verified restore points of a live
+  // or deleted database, newest first.
+  rpc ListDatabaseRestorePoints(ListDatabaseRestorePointsRequest) returns (ListDatabaseRestorePointsResponse) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/databases/{database_id}/restore-points"};
+  }
+  // CreateDatabaseRestorePoint requests a restore point of the current data.
+  // It returns as soon as the request is recorded; the point appears in
+  // ListDatabaseRestorePoints once its archive has been verified.
+  rpc CreateDatabaseRestorePoint(CreateDatabaseRestorePointRequest) returns (ManagedDatabase) {
+    option (google.api.http) = {
+      post: "/control/v1/orgs/{org_id}/databases/{database_id}/restore-points"
+      body: "*"
+    };
+  }
+  // RestoreManagedDatabase replaces the contents of a live or deleted database
+  // with one of its restore points, keeping its ID and name. It returns as
+  // soon as the restore is recorded; state is restoring until the database
+  // serves the restored release.
+  rpc RestoreManagedDatabase(RestoreManagedDatabaseRequest) returns (ManagedDatabase) {
+    option (google.api.http) = {
+      post: "/control/v1/orgs/{org_id}/databases/{database_id}:restore"
       body: "*"
     };
   }

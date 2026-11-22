@@ -27,6 +27,7 @@ deployment manifests, and repository dependencies.
 | --- | --- |
 | `proto/tarka/provisioning/v1` | Authoritative control-plane protobuf and gRPC definitions |
 | `proto/tarka/inference/v1` | Authoritative inference protobuf and gRPC definitions |
+| `proto/tarka/databases/v1` | Authoritative record data API of managed databases |
 | `openapi/tarka-control-v1.swagger.json` | Generated OpenAPI v2 description of the control API's REST transcoding surface |
 | `openapi/tarka-inference-v1.openapi.json` | Authored OpenAPI 3.1 contract for the supported OpenAI-compatible inference surface |
 | `openapi/tarka-iam-oauth-v1.openapi.json` | Authored customer OAuth discovery, CIMD, public DCR, authorization and token contracts on the configured environment issuer |
@@ -35,6 +36,7 @@ deployment manifests, and repository dependencies.
 | `openapi/tarka-inference-v2.openapi.json` | Authored OpenAPI 3.1 contract for the deprecated `/v2` REST alias |
 | `openapi/tarka-inference-v1.swagger.json` | Generated OpenAPI v2 description of protobuf-bound inference methods |
 | `contracts/agent-hosts` | Versioned OpenClaw, Hermes, and Onyx Compose contracts plus their machine-readable release catalog |
+| `contracts/databases` | Cases pinning how the PocketBase-compatible HTTP endpoints translate to `DatabaseService` |
 | `examples/tarka-control-api` | Copyable Claude Code / Codex skill with a dependency-free Control API helper |
 | `buf.yaml` | Buf module, lint, dependency, and compatibility policy |
 | `buf.gen.yaml` | Pinned generator for the derived control OpenAPI document |
@@ -60,6 +62,12 @@ cannot describe precisely.
   The Tarka extension `POST /v1/document/layout` returns ordered regions with
   confidence scores and geometry while preserving the same authentication,
   discovery, metering, and error conventions.
+- The database data API, `tarka.databases.v1.DatabaseService`, reads and writes
+  the records of one managed database: records, atomic batches, files, and
+  realtime changes. It is gRPC-first as well. The generated REST routes under
+  `/control/v1/orgs/{org_id}/databases/{database_id}` and the
+  PocketBase-compatible endpoints of each database are translations of the
+  same RPCs.
 - Every inference operation also has a native gRPC method at
   `grpc.tarka.rest:443`. The REST gateway calls those same authenticated gRPC
   methods, so REST and gRPC share authorization, model routing, metering,
@@ -79,7 +87,8 @@ The REST endpoint is `tarka.rest:443` and the native gRPC endpoint is
 `authorization: Bearer <token>` key. Control-plane RPCs use a Tarka account
 access token. Customer keys beginning with `tk_live_` are accepted by the
 Inference API and, when they include the `sandboxes` scope, by SandboxService
-RPCs.
+RPCs. A key with the `databases` scope is accepted by the managed database
+RPCs and by DatabaseService.
 
 Inside a Tarka Agent Host, the same canonical REST API is available at
 `http://tarka/v1` without a caller-supplied Authorization header. A host-bound
@@ -102,8 +111,9 @@ error codes. `WorkloadAccess` selects what each workload may reach
 The control REST gateway is rooted at `https://tarka.rest/control/v1`. It
 accepts `Authorization: Bearer <Tarka account access token>` and uses protobuf
 field names in JSON. A `tk_live_` inference key is not an account token and is
-rejected by ordinary Control API methods. Sandbox methods are the deliberate
-exception: they also accept a `tk_live_` key with the `sandboxes` scope.
+rejected by ordinary Control API methods. Sandbox and database methods are the
+deliberate exceptions: they also accept a `tk_live_` key with the `sandboxes`
+or `databases` scope respectively.
 Requests with unknown JSON fields are rejected. Sandbox mutations accept an
 idempotency key either in their request message or through the
 `Idempotency-Key` HTTP/gRPC metadata header.
@@ -116,12 +126,14 @@ transcoding binding on the same protobuf method. JSON field names are
 `snake_case`, timestamps use RFC 3339, and 64-bit integers may be serialized as
 JSON strings by protobuf-aware clients.
 
-The API has three credential boundaries:
+The API has these credential boundaries:
 
 | Credential | Accepted by | Purpose |
 | --- | --- | --- |
 | Tarka account access token | Every Control API method | Identity, organizations, credentials, policy, usage, and provisioning |
 | `tk_live_` key with `sandboxes` scope | SandboxService methods only | Organization-bound sandbox automation |
+| `tk_live_` key with `databases` scope | Managed database methods and DatabaseService | Organization-bound database automation and record access with the key creator's role |
+| Project identity token or agent runtime credential | DatabaseService only | Record access as an application user or attached agent, subject to collection rules |
 | `tk_live_` key with `himalaya`, `inference`, or `utilities` scope | Inference API only | Runtime requests for HimalayaAI, general LLM, or utility model categories |
 
 Account access must be approved, the organization must be active, and the
@@ -217,6 +229,67 @@ S3 credentials are separate from Tarka API keys. `access_key_id` and
 `secret_access_key` are returned together only at credential creation; later
 list operations return redacted metadata. Hosted Git data-plane authentication
 uses an SSH key or a Forgejo personal access token, not a `tk_live_` key.
+
+### Managed Databases
+
+A managed database belongs to a project. Its collections, access rules,
+Function triggers, and schedules come from a release manifest; record data is
+read and written through `DatabaseService`.
+
+| Method | REST route | Ability |
+| --- | --- | --- |
+| `CreateManagedDatabase` | `POST /control/v1/orgs/{org_id}/databases` | Create a database in a project |
+| `ListManagedDatabases` | `GET /control/v1/orgs/{org_id}/databases` | List a project's databases, optionally including deleted ones that can be restored |
+| `GetManagedDatabase` | `GET /control/v1/orgs/{org_id}/databases/{database_id}` | Read state, settings, and the latest release |
+| `UpdateManagedDatabase` | `PATCH /control/v1/orgs/{org_id}/databases/{database_id}` | Rename, toggle backups and public HTTPS, select a gateway, or connect a Git schema |
+| `DeleteManagedDatabase` | `DELETE /control/v1/orgs/{org_id}/databases/{database_id}` | Destroy the volume and public URL; restore points are kept for seven days |
+| `RestoreManagedDatabase` | `POST /control/v1/orgs/{org_id}/databases/{database_id}:restore` | Replace the contents of a live or deleted database with a restore point |
+| `ListDatabaseRestorePoints` | `GET /control/v1/orgs/{org_id}/databases/{database_id}/restore-points` | List verified restore points, newest first |
+| `CreateDatabaseRestorePoint` | `POST /control/v1/orgs/{org_id}/databases/{database_id}/restore-points` | Request a restore point of the current data |
+| `SetDatabaseAttachment` | `PUT /control/v1/orgs/{org_id}/databases/{database_id}/agents/{agent_host_id}` | Attach or detach an Agent Host with read, write, or subscribe actions |
+| `ListDatabaseAttachments` | `GET /control/v1/orgs/{org_id}/databases/{database_id}/agents` | List attached Agent Hosts |
+| `SubmitDatabaseRelease` | `POST /control/v1/orgs/{org_id}/databases/{database_id}/releases` | Submit a release manifest |
+| `ApproveDatabaseRelease` | `POST /control/v1/orgs/{org_id}/databases/{database_id}/releases/{release_id}:approve` | Approve the exact digest of a destructive release |
+| `ListDatabaseReleases` | `GET /control/v1/orgs/{org_id}/databases/{database_id}/releases` | Release history with failure reasons |
+| `GetDatabaseManifest` | `GET /control/v1/orgs/{org_id}/databases/{database_id}/manifest` | Read the active or a named release manifest |
+| `ProposeDatabaseSchema` | `POST /control/v1/orgs/{org_id}/databases/{database_id}/schema:propose` | Prepare a Git patch or pull request for a schema change |
+
+Deletion, restore, and restore-point creation return as soon as they are
+recorded; poll `GetManagedDatabase` for `state`, `operation_error`, and
+`backup_requested_at`. A deleted database keeps its ID and name reserved until
+`restorable_until`. Restoring makes the restore point's release active again,
+and writes made after the point are lost.
+
+`DatabaseService` is served at `grpc.tarka.rest:443`. Every request names its
+`org_id` and `database_id`; the first authorized request starts a sleeping
+database.
+
+| Method | REST route | Ability |
+| --- | --- | --- |
+| `ListRecords` | `GET .../collections/{collection}/records` | Page, sort, filter, and expand records |
+| `GetRecord` | `GET .../collections/{collection}/records/{record_id}` | Read one record |
+| `CreateRecord` | `POST .../collections/{collection}/records` | Create a record with optional file parts |
+| `UpdateRecord` | `PATCH .../collections/{collection}/records/{record_id}` | Change the given values and files |
+| `DeleteRecord` | `DELETE .../collections/{collection}/records/{record_id}` | Delete a record and its files |
+| `BatchRecords` | `POST .../records:batch` | Apply up to 50 writes in one transaction |
+| `GetDatabaseHealth` | `GET .../health` | Probe the running database |
+| `DownloadRecordFile` | gRPC server stream | Stream a stored file or a byte range of it |
+| `OpenRealtime` | gRPC server stream | Receive committed record changes |
+| `SetRealtimeSubscriptions` | gRPC | Replace the topics of an open change stream |
+
+Routes are relative to `/control/v1/orgs/{org_id}/databases/{database_id}`.
+Organization owners, admins, and operators administer data and are not
+restricted by collection rules. Project identity tokens act as an application
+user: collection rules and the database permissions granted in the project
+realm apply. Attached agents additionally need the matching attachment action.
+A rejected write carries a `RecordError` status detail with per-field codes.
+
+Each database also answers PocketBase-compatible HTTP under
+`/control/v1/orgs/{org_id}/databases/{database_id}/data/api/` and, when public
+HTTPS is enabled, at its generated `.tarka.run` name. Those endpoints translate
+to `DatabaseService`; [`contracts/databases`](contracts/databases/README.md)
+pins the translation. Use them from browsers and for file downloads and
+realtime over HTTP.
 
 ### Queued compute contract and availability
 

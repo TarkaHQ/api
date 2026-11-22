@@ -52,8 +52,6 @@ class WorkloadAccessContractTests(unittest.TestCase):
         database = self.definitions["v1ManagedDatabase"]["properties"]
         for field in ("owner_workload_id", "project_default", "schema_mode"):
             self.assertIn(field, database)
-        # Deleting a database is published only once it is implemented.
-        self.assertNotIn("delete", self.document["paths"]["/control/v1/orgs/{org_id}/databases/{database_id}"])
 
     def test_in_workload_contract_documents_routes_header_and_errors(self):
         contract = (ROOT / "contracts/compute/README.md").read_text(encoding="utf-8")

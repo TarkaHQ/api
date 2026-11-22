@@ -3,7 +3,7 @@
   "info": {
     "title": "Tarka Control API",
     "description": "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management.",
-    "version": "1.35.0"
+    "version": "1.36.0"
   },
   "tags": [
     {
@@ -18,6 +18,10 @@
     },
     {
       "name": "ChannelsService"
+    },
+    {
+      "name": "DatabaseService",
+      "description": "DatabaseService reads and writes the records of one managed database. It is\nthe canonical data API: the generated REST routes and the\nPocketBase-compatible HTTP endpoints are translations of these RPCs.\n\nEvery request names its organization and database. A sleeping database is\nstarted by the first authorized request. Collections, fields, and access\nrules come from the active release; this service never changes schema.\n\nCallers authenticate with a bearer credential:\n  - An organization owner, admin, or operator (account token, CLI token, or\n    a tk_live_ key with the databases scope) administers data. Collection\n    rules do not restrict them.\n  - A project identity token acts as that application user. Collection rules\n    and the database permissions granted in the project realm apply.\n  - An agent runtime credential additionally needs an attachment with the\n    read, write, or subscribe action.\n\nA request rejected by the database carries a RecordError status detail with\nthe per-field validation codes."
     },
     {
       "name": "GatewayService"
@@ -5843,6 +5847,13 @@
             "in": "query",
             "required": false,
             "type": "string"
+          },
+          {
+            "name": "include_deleted",
+            "description": "Also return deleted databases that can still be restored.",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [
@@ -5921,6 +5932,49 @@
           "ProvisioningService"
         ]
       },
+      "delete": {
+        "summary": "DeleteManagedDatabase stops a database and destroys its volume and public\nURL. It returns as soon as the deletion is recorded; state moves from\ndeleting to deleted. Restore points are kept for seven days, during which\nthe database can be restored and its name stays reserved. Repeated\ndeletion is safe.",
+        "operationId": "ProvisioningService_DeleteManagedDatabase",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ManagedDatabase"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "database_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "expected_version",
+            "description": "Must equal the current ManagedDatabase.version.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      },
       "patch": {
         "operationId": "ProvisioningService_UpdateManagedDatabase",
         "responses": {
@@ -5957,6 +6011,58 @@
             "schema": {
               "$ref": "#/definitions/ProvisioningServiceUpdateManagedDatabaseBody"
             }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/databases/{database_id}/agents": {
+      "get": {
+        "summary": "ListDatabaseAttachments returns the agent hosts attached to a database\nwith their identity mode and permitted actions.",
+        "operationId": "ProvisioningService_ListDatabaseAttachments",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListDatabaseAttachmentsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "database_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "page_size",
+            "description": "page_size defaults to 50 and is capped at 100.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "page_token",
+            "description": "page_token is opaque, at most 1024 bytes, and bound to the same database.",
+            "in": "query",
+            "required": false,
+            "type": "string"
           }
         ],
         "tags": [
@@ -6014,6 +6120,370 @@
         ]
       }
     },
+    "/control/v1/orgs/{org_id}/databases/{database_id}/collections/{collection}/records": {
+      "get": {
+        "summary": "ListRecords returns one page of the records the caller may list.",
+        "operationId": "DatabaseService_ListRecords",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListRecordsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "database_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "collection",
+            "description": "Collection ID or name from the active release.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "page",
+            "description": "1-based page number; defaults to 1.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "per_page",
+            "description": "Records per page; defaults to 30 and is capped at 1000.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "sort",
+            "description": "Comma-separated sort fields, each optionally prefixed with - for\ndescending order, for example \"-created,title\".",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "filter",
+            "description": "Filter expression, for example \"status = 'open' \u0026\u0026 owner = @request.auth.id\".",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "expand",
+            "description": "Comma-separated relation fields to embed under each record's expand.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "fields",
+            "description": "Comma-separated fields to return; all visible fields when empty.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "skip_total",
+            "description": "Skip counting. total_items and total_pages are then -1.",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "query[string]",
+            "description": "Additional query parameters, readable by collection rules as\n@request.query.NAME. At most 32 entries.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "DatabaseService"
+        ]
+      },
+      "post": {
+        "summary": "CreateRecord validates and stores a new record. Before-write Functions\nbound to the collection run first and may reject or amend it.",
+        "operationId": "DatabaseService_CreateRecord",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Record"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "database_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/DatabaseServiceCreateRecordBody"
+            }
+          }
+        ],
+        "tags": [
+          "DatabaseService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/databases/{database_id}/collections/{collection}/records/{record_id}": {
+      "get": {
+        "summary": "GetRecord returns one record the caller may view.",
+        "operationId": "DatabaseService_GetRecord",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Record"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "database_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "record_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "fields",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query[string]",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "DatabaseService"
+        ]
+      },
+      "delete": {
+        "summary": "DeleteRecord removes a record and the files it owns.",
+        "operationId": "DatabaseService_DeleteRecord",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "database_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "record_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "query[string]",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "DatabaseService"
+        ]
+      },
+      "patch": {
+        "summary": "UpdateRecord changes the given values of an existing record and leaves\nevery other value untouched.",
+        "operationId": "DatabaseService_UpdateRecord",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Record"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "database_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "record_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/DatabaseServiceUpdateRecordBody"
+            }
+          }
+        ],
+        "tags": [
+          "DatabaseService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/databases/{database_id}/health": {
+      "get": {
+        "summary": "GetDatabaseHealth reports whether the database runtime answers requests.",
+        "operationId": "DatabaseService_GetDatabaseHealth",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DatabaseHealth"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "database_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "DatabaseService"
+        ]
+      }
+    },
     "/control/v1/orgs/{org_id}/databases/{database_id}/manifest": {
       "get": {
         "operationId": "ProvisioningService_GetDatabaseManifest",
@@ -6057,7 +6527,102 @@
         ]
       }
     },
+    "/control/v1/orgs/{org_id}/databases/{database_id}/records:batch": {
+      "post": {
+        "summary": "BatchRecords applies up to 50 writes in one transaction. Either every\noperation commits or none does.",
+        "operationId": "DatabaseService_BatchRecords",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1BatchRecordsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "database_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/DatabaseServiceBatchRecordsBody"
+            }
+          }
+        ],
+        "tags": [
+          "DatabaseService"
+        ]
+      }
+    },
     "/control/v1/orgs/{org_id}/databases/{database_id}/releases": {
+      "get": {
+        "summary": "ListDatabaseReleases returns the release history of a database, newest\nfirst, including the reason a release failed.",
+        "operationId": "ProvisioningService_ListDatabaseReleases",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListDatabaseReleasesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "database_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "page_size",
+            "description": "page_size defaults to 50 and is capped at 100.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "page_token",
+            "description": "page_token is opaque, at most 1024 bytes, and bound to the same database.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      },
       "post": {
         "operationId": "ProvisioningService_SubmitDatabaseRelease",
         "responses": {
@@ -6151,6 +6716,101 @@
         ]
       }
     },
+    "/control/v1/orgs/{org_id}/databases/{database_id}/restore-points": {
+      "get": {
+        "summary": "ListDatabaseRestorePoints returns the verified restore points of a live\nor deleted database, newest first.",
+        "operationId": "ProvisioningService_ListDatabaseRestorePoints",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListDatabaseRestorePointsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "database_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "page_size",
+            "description": "page_size defaults to 50 and is capped at 100.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "page_token",
+            "description": "page_token is opaque, at most 1024 bytes, and bound to the same database.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      },
+      "post": {
+        "summary": "CreateDatabaseRestorePoint requests a restore point of the current data.\nIt returns as soon as the request is recorded; the point appears in\nListDatabaseRestorePoints once its archive has been verified.",
+        "operationId": "ProvisioningService_CreateDatabaseRestorePoint",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ManagedDatabase"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "database_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProvisioningServiceCreateDatabaseRestorePointBody"
+            }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
     "/control/v1/orgs/{org_id}/databases/{database_id}/schema:propose": {
       "post": {
         "operationId": "ProvisioningService_ProposeDatabaseSchema",
@@ -6187,6 +6847,51 @@
             "required": true,
             "schema": {
               "$ref": "#/definitions/ProvisioningServiceProposeDatabaseSchemaBody"
+            }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/databases/{database_id}:restore": {
+      "post": {
+        "summary": "RestoreManagedDatabase replaces the contents of a live or deleted database\nwith one of its restore points, keeping its ID and name. It returns as\nsoon as the restore is recorded; state is restoring until the database\nserves the restored release.",
+        "operationId": "ProvisioningService_RestoreManagedDatabase",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ManagedDatabase"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "database_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProvisioningServiceRestoreManagedDatabaseBody"
             }
           }
         ],
@@ -9066,6 +9771,80 @@
         }
       }
     },
+    "DatabaseServiceBatchRecordsBody": {
+      "type": "object",
+      "properties": {
+        "operations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1BatchOperation"
+          },
+          "description": "1 to 50 operations. The request, including all files, may not exceed\n32 MiB."
+        }
+      },
+      "description": "BatchRecordsRequest lists the writes of one transaction in execution order."
+    },
+    "DatabaseServiceCreateRecordBody": {
+      "type": "object",
+      "properties": {
+        "values": {
+          "type": "object",
+          "description": "Field values. Include id to choose the record ID."
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1RecordFile"
+          }
+        },
+        "expand": {
+          "type": "string",
+          "description": "Applied to the returned record."
+        },
+        "fields": {
+          "type": "string"
+        },
+        "query": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "CreateRecordRequest carries the values and files of a new record."
+    },
+    "DatabaseServiceUpdateRecordBody": {
+      "type": "object",
+      "properties": {
+        "values": {
+          "type": "object",
+          "description": "Only the listed values change. A key with a trailing + or - appends to or\nremoves from a multi-value field, as in \"tags+\"."
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1RecordFile"
+          }
+        },
+        "expand": {
+          "type": "string",
+          "description": "Applied to the returned record."
+        },
+        "fields": {
+          "type": "string"
+        },
+        "query": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "UpdateRecordRequest carries the values and files to change."
+    },
     "GatewayServiceDiagnoseConnectionBody": {
       "type": "object",
       "properties": {
@@ -9714,6 +10493,10 @@
         }
       }
     },
+    "ProvisioningServiceCreateDatabaseRestorePointBody": {
+      "type": "object",
+      "description": "CreateDatabaseRestorePointRequest asks for a restore point of the current\ndata. Backups must be enabled. No new point is written when nothing changed\nsince the newest one."
+    },
     "ProvisioningServiceCreateGitRepositoryBody": {
       "type": "object",
       "properties": {
@@ -10005,6 +10788,20 @@
       },
       "description": "RequestProductAccessRequest submits interest in a product that requires an\nentitlement decision. The authenticated caller must be an active member of\norg_id. contact_email defaults to the authenticated account email."
     },
+    "ProvisioningServiceRestoreManagedDatabaseBody": {
+      "type": "object",
+      "properties": {
+        "restore_point_id": {
+          "type": "string"
+        },
+        "expected_version": {
+          "type": "string",
+          "format": "uint64",
+          "description": "Must equal the current ManagedDatabase.version."
+        }
+      },
+      "description": "RestoreManagedDatabaseRequest replaces the contents of a live or deleted\ndatabase with one of its restore points. The database keeps its ID and name.\nWrites made after the restore point are lost."
+    },
     "ProvisioningServiceRevokeApiKeyBody": {
       "type": "object",
       "properties": {
@@ -10145,6 +10942,10 @@
         "source": {
           "$ref": "#/definitions/v1DatabaseSource",
           "description": "Set an empty source to disconnect. Connected GitHub branches follow pushes."
+        },
+        "name": {
+          "type": "string",
+          "description": "Renames the database within its project. The generated public URL and the\ndatabase ID do not change."
         }
       }
     },
@@ -11067,6 +11868,84 @@
           "description": "Optional for Hermes/OpenClaw. Disabled or absent provisions no personal\ncompute and never falls back to the host's shared native UI."
         }
       }
+    },
+    "v1BatchAction": {
+      "type": "string",
+      "enum": [
+        "BATCH_ACTION_UNSPECIFIED",
+        "BATCH_ACTION_CREATE",
+        "BATCH_ACTION_UPDATE",
+        "BATCH_ACTION_UPSERT",
+        "BATCH_ACTION_DELETE"
+      ],
+      "default": "BATCH_ACTION_UNSPECIFIED",
+      "description": "BatchAction is the kind of write of one batch operation.\n\n - BATCH_ACTION_UPSERT: Updates the record whose id is given in values, or creates it."
+    },
+    "v1BatchOperation": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "$ref": "#/definitions/v1BatchAction"
+        },
+        "collection": {
+          "type": "string"
+        },
+        "record_id": {
+          "type": "string",
+          "description": "Required for update and delete."
+        },
+        "values": {
+          "type": "object"
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1RecordFile"
+          }
+        },
+        "expand": {
+          "type": "string"
+        },
+        "fields": {
+          "type": "string"
+        },
+        "query": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "BatchOperation is one write of a batch."
+    },
+    "v1BatchRecordsResponse": {
+      "type": "object",
+      "properties": {
+        "results": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1BatchResult"
+          }
+        }
+      },
+      "description": "BatchRecordsResponse holds one result per operation, in request order."
+    },
+    "v1BatchResult": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "integer",
+          "format": "int32",
+          "description": "HTTP-equivalent status: 200 for a written record and 204 for a delete."
+        },
+        "record": {
+          "$ref": "#/definitions/v1Record",
+          "description": "The written record; unset for a delete."
+        }
+      },
+      "description": "BatchResult is the outcome of the operation at the same position."
     },
     "v1BootstrapCurrentUserRequest": {
       "type": "object",
@@ -12291,9 +13170,22 @@
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "Any of read, write, and subscribe."
         }
       }
+    },
+    "v1DatabaseHealth": {
+      "type": "object",
+      "properties": {
+        "healthy": {
+          "type": "boolean"
+        },
+        "message": {
+          "type": "string"
+        }
+      },
+      "description": "DatabaseHealth is the answer of a running database."
     },
     "v1DatabaseManifest": {
       "type": "object",
@@ -12322,12 +13214,54 @@
           "type": "string"
         },
         "state": {
-          "type": "string"
+          "type": "string",
+          "description": "validating, awaiting_approval, queued, activating, active, superseded, or\nfailed. Clients must tolerate values added later."
         },
         "commit_sha": {
           "type": "string"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "activated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Set when the database first served this release."
+        },
+        "error": {
+          "type": "string",
+          "description": "Stable reason reported by the database when state is failed."
         }
       }
+    },
+    "v1DatabaseRestorePoint": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "database_id": {
+          "type": "string"
+        },
+        "release": {
+          "type": "string",
+          "description": "Digest of the release that was active when the point was written.\nRestoring the point makes this release active again."
+        },
+        "sha256": {
+          "type": "string",
+          "description": "Lowercase hexadecimal SHA-256 of the archive, checked after upload."
+        },
+        "size_bytes": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "description": "A verified archive of one database in Tarka object storage."
     },
     "v1DatabaseSchemaProposal": {
       "type": "object",
@@ -13320,6 +14254,51 @@
         }
       }
     },
+    "v1ListDatabaseAttachmentsResponse": {
+      "type": "object",
+      "properties": {
+        "attachments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1DatabaseAttachment"
+          }
+        },
+        "next_page_token": {
+          "type": "string"
+        }
+      }
+    },
+    "v1ListDatabaseReleasesResponse": {
+      "type": "object",
+      "properties": {
+        "releases": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1DatabaseRelease"
+          }
+        },
+        "next_page_token": {
+          "type": "string"
+        }
+      }
+    },
+    "v1ListDatabaseRestorePointsResponse": {
+      "type": "object",
+      "properties": {
+        "restore_points": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1DatabaseRestorePoint"
+          }
+        },
+        "next_page_token": {
+          "type": "string"
+        }
+      }
+    },
     "v1ListDirectoryGroupsResponse": {
       "type": "object",
       "properties": {
@@ -13645,6 +14624,37 @@
         }
       }
     },
+    "v1ListRecordsResponse": {
+      "type": "object",
+      "properties": {
+        "page": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "per_page": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "total_items": {
+          "type": "string",
+          "format": "int64",
+          "description": "Matching records across all pages, or -1 when counting was skipped."
+        },
+        "total_pages": {
+          "type": "string",
+          "format": "int64",
+          "description": "Pages available, or -1 when counting was skipped."
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Record"
+          }
+        }
+      },
+      "description": "ListRecordsResponse is one page of records."
+    },
     "v1ListRolesResponse": {
       "type": "object",
       "properties": {
@@ -13888,7 +14898,8 @@
           "type": "string"
         },
         "state": {
-          "type": "string"
+          "type": "string",
+          "description": "provisioning, sleeping, starting, ready, draining, restoring, failed,\ndeleting, or deleted. Clients must tolerate values added later."
         },
         "version": {
           "type": "string",
@@ -13922,6 +14933,33 @@
         "latest_release": {
           "$ref": "#/definitions/v1DatabaseRelease",
           "description": "Most recently submitted release, including a pending Git revision."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "deleted_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Set once deletion was requested. A deleted database serves no requests\nand keeps no volume."
+        },
+        "restorable_until": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Until this time RestoreManagedDatabase can bring a deleted database back\nwith its original ID and name, and the name stays reserved in the project.\nUnset for a live database and for a deleted one without restore points."
+        },
+        "operation_error": {
+          "type": "string",
+          "description": "Stable reason for the most recent failed delete, backup, or restore.\nEmpty after a successful operation."
+        },
+        "backup_requested_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Set while a restore point requested with CreateDatabaseRestorePoint is\nstill being written and verified."
         },
         "owner_workload_id": {
           "type": "string",
@@ -14717,6 +15755,42 @@
           "type": "string"
         }
       }
+    },
+    "v1Record": {
+      "type": "object",
+      "properties": {
+        "values": {
+          "type": "object",
+          "description": "Every value the caller may see, keyed by field name. Always includes id,\ncollectionId, and collectionName, and an expand object when relations were\nexpanded. Dates are RFC 3339 strings and file fields hold file names."
+        }
+      },
+      "description": "Record is one row of a collection."
+    },
+    "v1RecordFile": {
+      "type": "object",
+      "properties": {
+        "field": {
+          "type": "string",
+          "description": "File field to store the file in. A trailing + appends to and a trailing -\nremoves from a multi-file field, as in \"attachments+\".",
+          "maxLength": 256
+        },
+        "filename": {
+          "type": "string",
+          "description": "Original file name. The database stores a sanitized, unique variant.",
+          "maxLength": 255
+        },
+        "content_type": {
+          "type": "string",
+          "description": "Media type declared by the caller. The database detects the type itself\nwhen checking a field's allowed types.",
+          "maxLength": 255
+        },
+        "content": {
+          "type": "string",
+          "format": "byte",
+          "description": "File bytes. One request, including all files, may not exceed 32 MiB."
+        }
+      },
+      "description": "RecordFile is one uploaded file of a create, update, or batch write."
     },
     "v1RevokeApiKeyResponse": {
       "type": "object",
@@ -15718,7 +16792,7 @@
   "securityDefinitions": {
     "bearerAuth": {
       "type": "apiKey",
-      "description": "Bearer Tarka account access token. Sandbox RPCs also accept a tk_live_ key with the sandboxes scope.",
+      "description": "Bearer Tarka account access token. Sandbox RPCs also accept a tk_live_ key with the sandboxes scope, and database RPCs one with the databases scope. DatabaseService additionally accepts project identity tokens and agent runtime credentials.",
       "name": "Authorization",
       "in": "header"
     }
