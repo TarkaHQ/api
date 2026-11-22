@@ -3,7 +3,7 @@
   "info": {
     "title": "Tarka Control API",
     "description": "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management.",
-    "version": "1.36.0"
+    "version": "1.37.0"
   },
   "tags": [
     {
@@ -16623,9 +16623,15 @@
         "identity": {
           "$ref": "#/definitions/v1WorkloadIdentity",
           "description": "Optional. Unset authenticates the workload as itself."
+        },
+        "storage": {
+          "$ref": "#/definitions/v1WorkloadStorageAccess"
+        },
+        "git": {
+          "$ref": "#/definitions/v1WorkloadGitAccess"
         }
       },
-      "description": "The platform services a workload reaches through its private gateway at\nhttp://tarka. The platform authenticates the workload; code inside the\ncontainer holds no credential. Every compute profile shares this message.\nAn unset capability takes the profile default: hosted agents, HTTP services\nand batch jobs enable inference and databases, code sandboxes and container\nsessions enable nothing."
+      "description": "The platform services a workload reaches through its private gateway at\nhttp://tarka. The platform authenticates the workload; code inside the\ncontainer holds no credential. Every compute profile shares this message.\nAn unset capability takes the profile default: hosted agents, HTTP services\nand batch jobs enable inference and databases, code sandboxes and container\nsessions enable nothing. Object storage and Hosted Git are disabled for\nevery profile until they are enabled for the workload."
     },
     "v1WorkloadDatabaseAccess": {
       "type": "object",
@@ -16672,6 +16678,39 @@
         }
       }
     },
+    "v1WorkloadGitAccess": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "grants": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1WorkloadGitGrant"
+          },
+          "description": "Repositories in the workload's project the workload may use. Every\nrepository must be named: enabling Git without a grant reaches no\nrepository, and listing grants does not enable Git."
+        }
+      },
+      "description": "Git smart HTTP at http://tarka/git/{repository}.git. Disabled for every\nprofile until enabled. The platform authenticates to Hosted Git with a\ncredential limited to the granted repository; the workload never receives\none."
+    },
+    "v1WorkloadGitGrant": {
+      "type": "object",
+      "properties": {
+        "repository": {
+          "type": "string",
+          "description": "Repository name in the workload's project."
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "read (clone and fetch) or write (push)."
+        }
+      }
+    },
     "v1WorkloadIdentity": {
       "type": "object",
       "properties": {
@@ -16697,6 +16736,39 @@
         }
       },
       "description": "Model access at http://tarka/v1."
+    },
+    "v1WorkloadStorageAccess": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "grants": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1WorkloadStorageGrant"
+          },
+          "description": "Buckets in the workload's project the workload may use. Every bucket must\nbe named: enabling storage without a grant reaches no bucket, and listing\ngrants does not enable storage."
+        }
+      },
+      "description": "Object access at http://tarka/storage/{bucket}. Disabled for every profile\nuntil enabled. The platform signs each call with a credential limited to\nthe granted bucket; the workload never receives one."
+    },
+    "v1WorkloadStorageGrant": {
+      "type": "object",
+      "properties": {
+        "bucket": {
+          "type": "string",
+          "description": "Bucket name in the workload's project."
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "read (get, list, and presigned downloads) or write (put, delete, and\npresigned uploads)."
+        }
+      }
     },
     "v1Workspace": {
       "type": "object",

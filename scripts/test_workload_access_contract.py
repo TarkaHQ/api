@@ -26,7 +26,7 @@ class WorkloadAccessContractTests(unittest.TestCase):
 
     def test_access_names_inference_databases_and_identity(self):
         access = self.definitions["v1WorkloadAccess"]["properties"]
-        self.assertEqual(set(access), {"version", "inference", "databases", "identity"})
+        self.assertEqual(set(access), {"version", "inference", "databases", "identity", "storage", "git"})
         inference = self.definitions["v1WorkloadInferenceAccess"]["properties"]
         self.assertEqual(set(inference), {"enabled", "allowed_models"})
         databases = self.definitions["v1WorkloadDatabaseAccess"]["properties"]
@@ -35,6 +35,27 @@ class WorkloadAccessContractTests(unittest.TestCase):
         grant = self.definitions["v1WorkloadDatabaseGrant"]["properties"]
         self.assertEqual(set(grant), {"database", "actions"})
         self.assertEqual(set(self.definitions["v1WorkloadIdentity"]["properties"]), {"principal_id"})
+
+    def test_storage_and_git_are_switched_on_and_granted_by_name(self):
+        access = self.definitions["v1WorkloadAccess"]["properties"]
+        self.assertEqual(access["storage"]["$ref"], "#/definitions/v1WorkloadStorageAccess")
+        self.assertEqual(access["git"]["$ref"], "#/definitions/v1WorkloadGitAccess")
+        for capability, grant, target in (("Storage", "v1WorkloadStorageGrant", "bucket"), ("Git", "v1WorkloadGitGrant", "repository")):
+            block = self.definitions[f"v1Workload{capability}Access"]["properties"]
+            self.assertEqual(set(block), {"enabled", "grants"})
+            self.assertEqual(block["enabled"]["type"], "boolean")
+            self.assertEqual(block["grants"]["items"]["$ref"], f"#/definitions/{grant}")
+            self.assertEqual(set(self.definitions[grant]["properties"]), {target, "actions"})
+            self.assertEqual(self.definitions[grant]["properties"]["actions"]["items"]["type"], "string")
+
+    def test_storage_and_git_keep_their_field_numbers(self):
+        proto = (ROOT / "proto/tarka/provisioning/v1/container.proto").read_text(encoding="utf-8")
+        message = proto.split("message WorkloadAccess {", 1)[1].split("}", 1)[0]
+        self.assertIn("WorkloadStorageAccess storage = 5;", message)
+        self.assertIn("WorkloadGitAccess git = 6;", message)
+        # Numbers 7 and above are held for the gateway and compute capabilities.
+        for number in range(7, 10):
+            self.assertNotIn(f"= {number};", message)
 
     def test_access_is_read_and_replaced_per_workload_with_a_version(self):
         operations = self.document["paths"][ACCESS_PATH]
@@ -73,6 +94,29 @@ class WorkloadAccessContractTests(unittest.TestCase):
             "database_starting",
         ):
             self.assertIn(required, contract)
+
+    def test_in_workload_contract_documents_storage_and_git(self):
+        contract = (ROOT / "contracts/compute/README.md").read_text(encoding="utf-8")
+        for required in (
+            "http://tarka/storage/{bucket}/{key}",
+            "POST http://tarka/storage/{bucket}/{key}:presign",
+            "http://tarka/git/{repository}.git/*",
+            "info/refs?service=git-upload-pack",
+            "git-receive-pack",
+            "| `storage` | disabled | disabled |",
+            "| `git` | disabled | disabled |",
+            "http.http://tarka/.extraHeader",
+            "GIT_CONFIG_COUNT",
+            "bucket_not_found",
+            "object_not_found",
+            "repository_not_found",
+            "length_required",
+            "payload_too_large",
+            "precondition_failed",
+            "range_not_satisfiable",
+        ):
+            self.assertIn(required, contract)
+        self.assertNotIn("Object storage, Hosted Git", contract)
 
 
 if __name__ == "__main__":
