@@ -78,7 +78,8 @@ message DeleteHTTPServiceRequest {
 // container holds no credential. Every compute profile shares this message.
 // An unset capability takes the profile default: hosted agents, HTTP services
 // and batch jobs enable inference and databases, code sandboxes and container
-// sessions enable nothing. Object storage and Hosted Git are disabled for
+// sessions enable nothing. Object storage, Hosted Git, the project's API and
+// MCP gateways, invoking other compute, and project secrets are disabled for
 // every profile until they are enabled for the workload.
 message WorkloadAccess {
   // Output only. Zero while the workload still uses its profile defaults.
@@ -89,6 +90,9 @@ message WorkloadAccess {
   WorkloadIdentity identity = 4;
   WorkloadStorageAccess storage = 5;
   WorkloadGitAccess git = 6;
+  WorkloadGatewayAccess gateway = 7;
+  WorkloadComputeAccess compute = 8;
+  WorkloadEnvironmentAccess environment = 9;
 }
 
 // Model access at http://tarka/v1.
@@ -164,12 +168,57 @@ message WorkloadGitGrant {
   repeated string actions = 2;
 }
 
+// The project's API and MCP gateways at http://tarka/mcp and
+// http://tarka/api, or http://tarka/gateways/{gateway}/mcp and
+// http://tarka/gateways/{gateway}/api when several are granted. Disabled for
+// every profile until enabled. The workload calls a gateway as its bound
+// identity or, without one, as its own agent identity; the gateway's policy
+// and tool grants then decide every call.
+message WorkloadGatewayAccess {
+  optional bool enabled = 1;
+  // Gateways in the workload's project the workload may call, by name or ID.
+  // Every gateway must be named: enabling the gateway capability without a
+  // gateway reaches none.
+  repeated string gateways = 2;
+}
+
+// Invoking other compute of the workload's project at http://tarka/compute.
+// Disabled for every profile until enabled. Calls are billed and limited
+// exactly like calls through the control API, and a chain of workloads
+// invoking each other stops at a depth of four.
+message WorkloadComputeAccess {
+  optional bool enabled = 1;
+  // HTTP services (Functions) the workload may invoke, by name.
+  repeated string functions = 2;
+  // Start runs of the project's jobs and read their status.
+  bool jobs = 3;
+  // Create short-lived container sessions, run commands in them and delete
+  // them. A workload reaches only the sessions it created.
+  bool sessions = 4;
+}
+
+// Project secrets at http://tarka/environment and
+// http://tarka/secrets/{name}. Disabled for every profile until enabled. The
+// platform reads a secret when the workload asks for it and never writes it
+// into the workload's configuration.
+message WorkloadEnvironmentAccess {
+  optional bool enabled = 1;
+  // Secrets of the workload's project the workload may read, by name. Every
+  // secret must be named.
+  repeated string secrets = 2;
+}
+
 // Binds the workload to an identity in its project's identity scope. The
-// principal's roles then decide database access: read, use, or administer for
-// full access.
+// principal's roles then decide database and gateway access: read, use, or
+// administer for full database access.
 message WorkloadIdentity {
   // An active agent or service principal. Requires an owner, admin or operator.
   string principal_id = 1;
+  // HTTP services only. Lets the service act for the signed-in project user
+  // whose request invoked it, for the duration of that request, when its code
+  // sends Tarka-Act-As: invoking-user. The platform holds the user's assertion;
+  // the service never receives a token. Requires an owner, admin or operator.
+  optional bool act_as_invoking_user = 2;
 }
 
 message GetWorkloadAccessRequest {

@@ -26,7 +26,7 @@ class WorkloadAccessContractTests(unittest.TestCase):
 
     def test_access_names_inference_databases_and_identity(self):
         access = self.definitions["v1WorkloadAccess"]["properties"]
-        self.assertEqual(set(access), {"version", "inference", "databases", "identity", "storage", "git"})
+        self.assertEqual(set(access), {"version", "inference", "databases", "identity", "storage", "git", "gateway", "compute", "environment"})
         inference = self.definitions["v1WorkloadInferenceAccess"]["properties"]
         self.assertEqual(set(inference), {"enabled", "allowed_models"})
         databases = self.definitions["v1WorkloadDatabaseAccess"]["properties"]
@@ -34,7 +34,7 @@ class WorkloadAccessContractTests(unittest.TestCase):
         self.assertEqual(databases["grants"]["items"]["$ref"], "#/definitions/v1WorkloadDatabaseGrant")
         grant = self.definitions["v1WorkloadDatabaseGrant"]["properties"]
         self.assertEqual(set(grant), {"database", "actions"})
-        self.assertEqual(set(self.definitions["v1WorkloadIdentity"]["properties"]), {"principal_id"})
+        self.assertEqual(set(self.definitions["v1WorkloadIdentity"]["properties"]), {"principal_id", "act_as_invoking_user"})
 
     def test_storage_and_git_are_switched_on_and_granted_by_name(self):
         access = self.definitions["v1WorkloadAccess"]["properties"]
@@ -48,14 +48,48 @@ class WorkloadAccessContractTests(unittest.TestCase):
             self.assertEqual(set(self.definitions[grant]["properties"]), {target, "actions"})
             self.assertEqual(self.definitions[grant]["properties"]["actions"]["items"]["type"], "string")
 
-    def test_storage_and_git_keep_their_field_numbers(self):
+    def test_capabilities_keep_their_field_numbers(self):
         proto = (ROOT / "proto/tarka/provisioning/v1/container.proto").read_text(encoding="utf-8")
         message = proto.split("message WorkloadAccess {", 1)[1].split("}", 1)[0]
         self.assertIn("WorkloadStorageAccess storage = 5;", message)
         self.assertIn("WorkloadGitAccess git = 6;", message)
-        # Numbers 7 and above are held for the gateway and compute capabilities.
-        for number in range(7, 10):
-            self.assertNotIn(f"= {number};", message)
+        self.assertIn("WorkloadGatewayAccess gateway = 7;", message)
+        self.assertIn("WorkloadComputeAccess compute = 8;", message)
+        self.assertIn("WorkloadEnvironmentAccess environment = 9;", message)
+        self.assertNotIn("= 10;", message)
+        identity = proto.split("message WorkloadIdentity {", 1)[1].split("}", 1)[0]
+        self.assertIn("optional bool act_as_invoking_user = 2;", identity)
+
+    def test_gateway_compute_and_environment_are_switched_on_and_named(self):
+        access = self.definitions["v1WorkloadAccess"]["properties"]
+        self.assertEqual(access["gateway"]["$ref"], "#/definitions/v1WorkloadGatewayAccess")
+        self.assertEqual(access["compute"]["$ref"], "#/definitions/v1WorkloadComputeAccess")
+        self.assertEqual(access["environment"]["$ref"], "#/definitions/v1WorkloadEnvironmentAccess")
+        gateway = self.definitions["v1WorkloadGatewayAccess"]["properties"]
+        self.assertEqual(set(gateway), {"enabled", "gateways"})
+        compute = self.definitions["v1WorkloadComputeAccess"]["properties"]
+        self.assertEqual(set(compute), {"enabled", "functions", "jobs", "sessions"})
+        self.assertEqual(compute["jobs"]["type"], "boolean")
+        self.assertEqual(compute["sessions"]["type"], "boolean")
+        environment = self.definitions["v1WorkloadEnvironmentAccess"]["properties"]
+        self.assertEqual(set(environment), {"enabled", "secrets"})
+        for block, field in ((gateway, "gateways"), (compute, "functions"), (environment, "secrets")):
+            self.assertEqual(block["enabled"]["type"], "boolean")
+            self.assertEqual(block[field]["items"]["type"], "string")
+
+    def test_project_secrets_are_write_only(self):
+        secret = self.definitions["v1ProjectSecret"]["properties"]
+        self.assertEqual(set(secret), {"project_id", "name", "version", "created_at", "updated_at"})
+        collection = "/control/v1/orgs/{org_id}/projects/{project_id}/secrets"
+        self.assertEqual(set(self.document["paths"][collection]), {"get"})
+        item = self.document["paths"][collection + "/{name}"]
+        self.assertEqual(set(item), {"put", "delete"})
+        body = self.definitions["ProvisioningServiceSetProjectSecretBody"]["properties"]
+        self.assertEqual(set(body), {"value", "expected_version"})
+        self.assertEqual(body["value"].get("format"), "password")
+        self.assertEqual(body["value"].get("maxLength"), 65536)
+        for method in ("put", "delete"):
+            self.assertEqual(item[method]["responses"]["200"]["schema"]["$ref"], "#/definitions/v1ProjectSecret")
 
     def test_access_is_read_and_replaced_per_workload_with_a_version(self):
         operations = self.document["paths"][ACCESS_PATH]
@@ -117,6 +151,35 @@ class WorkloadAccessContractTests(unittest.TestCase):
         ):
             self.assertIn(required, contract)
         self.assertNotIn("Object storage, Hosted Git", contract)
+
+    def test_in_workload_contract_documents_gateway_compute_secrets_and_delegation(self):
+        contract = (ROOT / "contracts/compute/README.md").read_text(encoding="utf-8")
+        for required in (
+            "http://tarka/mcp",
+            "http://tarka/gateways/{gateway}/mcp",
+            "http://tarka/compute/functions/{name}/*",
+            "POST /compute/jobs/{name}/runs",
+            "POST /compute/sessions/{session_id}/exec",
+            "GET http://tarka/environment",
+            "GET http://tarka/secrets/{name}",
+            "Tarka-Act-As: invoking-user",
+            "Tarka-Call-Depth",
+            "| `gateway` | disabled | disabled |",
+            "| `compute` | disabled | disabled |",
+            "| `environment` | disabled | disabled |",
+            "gateway_not_found",
+            "gateway_required",
+            "identity_required",
+            "function_not_found",
+            "job_run_active",
+            "session_not_found",
+            "secret_not_found",
+            "invoking_user_unavailable",
+            "call_depth_exceeded",
+            "rate_limited",
+        ):
+            self.assertIn(required, contract)
+        self.assertNotIn("not part of this\ncontract yet", contract)
 
 
 if __name__ == "__main__":

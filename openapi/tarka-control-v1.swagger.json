@@ -3,7 +3,7 @@
   "info": {
     "title": "Tarka Control API",
     "description": "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management.",
-    "version": "1.37.0"
+    "version": "1.38.0"
   },
   "tags": [
     {
@@ -7984,6 +7984,144 @@
         ]
       }
     },
+    "/control/v1/orgs/{org_id}/projects/{project_id}/secrets": {
+      "get": {
+        "summary": "Lists a project's secrets without their values.",
+        "operationId": "ProvisioningService_ListProjectSecrets",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListProjectSecretsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
+    "/control/v1/orgs/{org_id}/projects/{project_id}/secrets/{name}": {
+      "delete": {
+        "summary": "Deletes one project secret. Workloads granted it stop reading it at once.",
+        "operationId": "ProvisioningService_DeleteProjectSecret",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ProjectSecret"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "expected_version",
+            "description": "The version last read.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      },
+      "put": {
+        "summary": "Creates or replaces one project secret. Owners, admins and operators only.\nThe value is encrypted at rest and never returned.",
+        "operationId": "ProvisioningService_SetProjectSecret",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ProjectSecret"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "pattern": "^[A-Z_][A-Z0-9_]{0,127}$"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProvisioningServiceSetProjectSecretBody"
+            }
+          }
+        ],
+        "tags": [
+          "ProvisioningService"
+        ]
+      }
+    },
     "/control/v1/orgs/{org_id}/projects/{project_id}:enable-identity": {
       "post": {
         "summary": "Repeated and concurrent calls return the same production scope.",
@@ -10840,6 +10978,23 @@
           "type": "boolean"
         }
       }
+    },
+    "ProvisioningServiceSetProjectSecretBody": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "string",
+          "format": "password",
+          "description": "Up to 64 KiB of UTF-8.",
+          "maxLength": 65536
+        },
+        "expected_version": {
+          "type": "string",
+          "format": "uint64",
+          "description": "The version last read, or zero to create a secret that does not exist."
+        }
+      },
+      "description": "SetProjectSecretRequest creates or replaces one secret. It is served over\nHTTPS and gRPC only, never as an MCP tool."
     },
     "ProvisioningServiceSetWorkloadAccessBody": {
       "type": "object",
@@ -14577,6 +14732,18 @@
         }
       }
     },
+    "v1ListProjectSecretsResponse": {
+      "type": "object",
+      "properties": {
+        "secrets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1ProjectSecret"
+          }
+        }
+      }
+    },
     "v1ListProjectsResponse": {
       "type": "object",
       "properties": {
@@ -15587,6 +15754,32 @@
         }
       },
       "description": "Metadata for a resource grouped in a project. Credentials are never returned."
+    },
+    "v1ProjectSecret": {
+      "type": "object",
+      "properties": {
+        "project_id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string",
+          "description": "An environment variable name: an uppercase letter or underscore, then\nuppercase letters, digits and underscores."
+        },
+        "version": {
+          "type": "string",
+          "format": "uint64",
+          "description": "Increases with every replaced value."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "description": "ProjectSecret is metadata only. A value is encrypted at rest and is never\nreturned by the control API; compute workloads granted the secret read it at\nhttp://tarka/secrets/{name}."
     },
     "v1ProvisionedResource": {
       "type": "object",
@@ -16629,9 +16822,42 @@
         },
         "git": {
           "$ref": "#/definitions/v1WorkloadGitAccess"
+        },
+        "gateway": {
+          "$ref": "#/definitions/v1WorkloadGatewayAccess"
+        },
+        "compute": {
+          "$ref": "#/definitions/v1WorkloadComputeAccess"
+        },
+        "environment": {
+          "$ref": "#/definitions/v1WorkloadEnvironmentAccess"
         }
       },
-      "description": "The platform services a workload reaches through its private gateway at\nhttp://tarka. The platform authenticates the workload; code inside the\ncontainer holds no credential. Every compute profile shares this message.\nAn unset capability takes the profile default: hosted agents, HTTP services\nand batch jobs enable inference and databases, code sandboxes and container\nsessions enable nothing. Object storage and Hosted Git are disabled for\nevery profile until they are enabled for the workload."
+      "description": "The platform services a workload reaches through its private gateway at\nhttp://tarka. The platform authenticates the workload; code inside the\ncontainer holds no credential. Every compute profile shares this message.\nAn unset capability takes the profile default: hosted agents, HTTP services\nand batch jobs enable inference and databases, code sandboxes and container\nsessions enable nothing. Object storage, Hosted Git, the project's API and\nMCP gateways, invoking other compute, and project secrets are disabled for\nevery profile until they are enabled for the workload."
+    },
+    "v1WorkloadComputeAccess": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "functions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "HTTP services (Functions) the workload may invoke, by name."
+        },
+        "jobs": {
+          "type": "boolean",
+          "description": "Start runs of the project's jobs and read their status."
+        },
+        "sessions": {
+          "type": "boolean",
+          "description": "Create short-lived container sessions, run commands in them and delete\nthem. A workload reaches only the sessions it created."
+        }
+      },
+      "description": "Invoking other compute of the workload's project at http://tarka/compute.\nDisabled for every profile until enabled. Calls are billed and limited\nexactly like calls through the control API, and a chain of workloads\ninvoking each other stops at a depth of four."
     },
     "v1WorkloadDatabaseAccess": {
       "type": "object",
@@ -16678,6 +16904,38 @@
         }
       }
     },
+    "v1WorkloadEnvironmentAccess": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "secrets": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Secrets of the workload's project the workload may read, by name. Every\nsecret must be named."
+        }
+      },
+      "description": "Project secrets at http://tarka/environment and\nhttp://tarka/secrets/{name}. Disabled for every profile until enabled. The\nplatform reads a secret when the workload asks for it and never writes it\ninto the workload's configuration."
+    },
+    "v1WorkloadGatewayAccess": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "gateways": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Gateways in the workload's project the workload may call, by name or ID.\nEvery gateway must be named: enabling the gateway capability without a\ngateway reaches none."
+        }
+      },
+      "description": "The project's API and MCP gateways at http://tarka/mcp and\nhttp://tarka/api, or http://tarka/gateways/{gateway}/mcp and\nhttp://tarka/gateways/{gateway}/api when several are granted. Disabled for\nevery profile until enabled. The workload calls a gateway as its bound\nidentity or, without one, as its own agent identity; the gateway's policy\nand tool grants then decide every call."
+    },
     "v1WorkloadGitAccess": {
       "type": "object",
       "properties": {
@@ -16717,9 +16975,13 @@
         "principal_id": {
           "type": "string",
           "description": "An active agent or service principal. Requires an owner, admin or operator."
+        },
+        "act_as_invoking_user": {
+          "type": "boolean",
+          "description": "HTTP services only. Lets the service act for the signed-in project user\nwhose request invoked it, for the duration of that request, when its code\nsends Tarka-Act-As: invoking-user. The platform holds the user's assertion;\nthe service never receives a token. Requires an owner, admin or operator."
         }
       },
-      "description": "Binds the workload to an identity in its project's identity scope. The\nprincipal's roles then decide database access: read, use, or administer for\nfull access."
+      "description": "Binds the workload to an identity in its project's identity scope. The\nprincipal's roles then decide database and gateway access: read, use, or\nadminister for full database access."
     },
     "v1WorkloadInferenceAccess": {
       "type": "object",
