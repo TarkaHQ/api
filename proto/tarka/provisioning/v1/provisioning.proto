@@ -14,6 +14,7 @@ import "tarka/provisioning/v1/billing_quote.proto";
 import "tarka/provisioning/v1/container.proto";
 import "tarka/provisioning/v1/database.proto";
 import "tarka/provisioning/v1/job.proto";
+import "tarka/provisioning/v1/project_secrets.proto";
 import "tarka/provisioning/v1/registry_credentials.proto";
 import "tarka/provisioning/v1/sandbox.proto";
 import "tarka/provisioning/v1/source_builds.proto";
@@ -27,7 +28,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Tarka Control API"
     description: "Organization-scoped provisioning, credentials, policy, usage, storage, Hosted Git, and sandbox management."
-    version: "1.36.0"
+    version: "1.38.0"
   }
   host: "tarka.rest"
   schemes: HTTPS
@@ -187,6 +188,25 @@ service ProvisioningService {
       put: "/control/v1/orgs/{org_id}/compute/workloads/{workload_id}/access"
       body: "*"
     };
+  }
+
+  // Lists a project's secrets without their values.
+  rpc ListProjectSecrets(ListProjectSecretsRequest) returns (ListProjectSecretsResponse) {
+    option (google.api.http) = {get: "/control/v1/orgs/{org_id}/projects/{project_id}/secrets"};
+  }
+
+  // Creates or replaces one project secret. Owners, admins and operators only.
+  // The value is encrypted at rest and never returned.
+  rpc SetProjectSecret(SetProjectSecretRequest) returns (ProjectSecret) {
+    option (google.api.http) = {
+      put: "/control/v1/orgs/{org_id}/projects/{project_id}/secrets/{name}"
+      body: "*"
+    };
+  }
+
+  // Deletes one project secret. Workloads granted it stop reading it at once.
+  rpc DeleteProjectSecret(DeleteProjectSecretRequest) returns (ProjectSecret) {
+    option (google.api.http) = {delete: "/control/v1/orgs/{org_id}/projects/{project_id}/secrets/{name}"};
   }
 
   rpc InvokeHTTPService(InvokeHTTPServiceRequest) returns (InvokeHTTPServiceResponse) {

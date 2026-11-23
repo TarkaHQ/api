@@ -29,8 +29,10 @@ Every running Agent Host also receives a private platform gateway at
 `http://tarka`. Agent workloads call the OpenAI-compatible inference API at
 `http://tarka/v1` without supplying a customer API key. A host-bound service
 identity is held only by that gateway and is rejected by Tarka's public API
-surfaces. The same gateway serves database records; the routes shared by every
-compute profile are defined in [`../compute/README.md`](../compute/README.md).
+surfaces. The same gateway serves database records, object storage, Git,
+the project's API and MCP gateways, compute invocation and project secrets;
+the routes shared by every compute profile are defined in
+[`../compute/README.md`](../compute/README.md).
 
 ## Your own model endpoint
 
