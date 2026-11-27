@@ -109,6 +109,11 @@ databases and the error codes. `WorkloadAccess` selects what each workload
 may reach (`CreateComputeWorkloadRequest.access`, `GetWorkloadAccess`,
 `SetWorkloadAccess`).
 
+Availability: Agent Hosts serve `http://tarka` today. HTTP services, batch
+jobs, code sandboxes and container sessions are defined by the same contract,
+but they do not have the gateway yet. On an Agent Host, capabilities that its
+access has not enabled answer `403 capability_disabled`.
+
 The control REST gateway is rooted at `https://tarka.rest/control/v1`. It
 accepts `Authorization: Bearer <Tarka account access token>` and uses protobuf
 field names in JSON. A `tk_live_` inference key is not an account token and is
@@ -235,7 +240,12 @@ uses an SSH key or a Forgejo personal access token, not a `tk_live_` key.
 
 A managed database belongs to a project. Its collections, access rules,
 Function triggers, and schedules come from a release manifest; record data is
-read and written through `DatabaseService`.
+read and written through `DatabaseService`. A compute workload's own database
+and a project's default database (`owner_workload_id`, `project_default`) are
+created on first use and start in `implicit` schema mode, where a first write
+creates a collection or field. Submitting a release or connecting a source
+switches a database to `managed` mode (`schema_mode`);
+[`contracts/compute`](contracts/compute/README.md#databases) has the details.
 
 | Method | REST route | Ability |
 | --- | --- | --- |
@@ -254,6 +264,12 @@ read and written through `DatabaseService`.
 | `ListDatabaseReleases` | `GET /control/v1/orgs/{org_id}/databases/{database_id}/releases` | Release history with failure reasons |
 | `GetDatabaseManifest` | `GET /control/v1/orgs/{org_id}/databases/{database_id}/manifest` | Read the active or a named release manifest |
 | `ProposeDatabaseSchema` | `POST /control/v1/orgs/{org_id}/databases/{database_id}/schema:propose` | Prepare a Git patch or pull request for a schema change |
+
+Database methods accept a Tarka account access token or a `tk_live_` key with
+the `databases` scope. Reads need organization membership; changes need an
+owner, admin, or operator. MCP tools do not offer `DeleteManagedDatabase` or
+`RestoreManagedDatabase`; an OAuth connection such as a CLI login with write
+access may call them.
 
 Deletion, restore, and restore-point creation return as soon as they are
 recorded; poll `GetManagedDatabase` for `state`, `operation_error`, and
