@@ -90,31 +90,42 @@ Inference API and, when they include the `sandboxes` scope, by SandboxService
 RPCs. A key with the `databases` scope is accepted by the managed database
 RPCs and by DatabaseService.
 
-Inside a Tarka Agent Host, the same canonical REST API is available at
-`http://tarka/v1` without a caller-supplied Authorization header. A host-bound
-service identity is injected only by the namespace-local platform gateway and
+Inside any tarka.run workload, the same canonical REST API is available at
+`http://tarka/v1` without a caller-supplied Authorization header. The
+workload's service identity is injected only by the namespace-local platform gateway and
 is rejected by Tarka's public API surfaces. A host may instead run its chat
 model on an OpenAI-compatible endpoint and key the customer brings
 (`runtime.model_endpoint`); the same gateway forwards that model's requests
 there and keeps every other model on Tarka.
 
-Every compute workload, not only Agent Hosts, has that private gateway at
-`http://tarka`: HTTP services, batch jobs, code sandboxes and container
+Every compute workload has that private gateway at `http://tarka`: Agent
+Hosts, HTTP services (Functions), batch jobs, code sandboxes and container
 sessions use the same routes for inference, database records, object storage,
 Hosted Git, the project's API and MCP gateways, invoking other compute and
 project secrets, and the platform authenticates the workload so code holds no
 credential. [`contracts/compute/README.md`](contracts/compute/README.md)
-defines the routes, the required `Tarka-Workload: 1` header, zero-setup
-databases and the error codes. `WorkloadAccess` selects what each workload
-may reach (`CreateComputeWorkloadRequest.access`, `GetWorkloadAccess`,
-`SetWorkloadAccess`).
+defines the routes, the required `Tarka-Workload: 1` header (every route but
+`/v1` needs it), zero-setup databases and the error codes. `WorkloadAccess`
+selects what each workload may reach (`CreateComputeWorkloadRequest.access`,
+`GetWorkloadAccess`, `SetWorkloadAccess`).
+
+Only the defaults differ by use case. Agent Hosts, HTTP services and batch jobs
+start with inference, their own database and the project's default database
+on. Code sandboxes and container sessions start with everything off and have
+no database of their own. A workload gets platform access when at least one
+capability is on; a capability its access has not enabled answers
+`403 capability_disabled`. In HTTP services and batch jobs the platform sets
+`TARKA_API_URL=http://tarka/v1` and configures git to send the
+`Tarka-Workload: 1` header to `http://tarka` only; in Agent Hosts, code
+sandboxes and container sessions, code sets that git header itself.
 
 The control REST gateway is rooted at `https://tarka.rest/control/v1`. It
 accepts `Authorization: Bearer <Tarka account access token>` and uses protobuf
 field names in JSON. A `tk_live_` inference key is not an account token and is
-rejected by ordinary Control API methods. Sandbox and database methods are the
-deliberate exceptions: they also accept a `tk_live_` key with the `sandboxes`
-or `databases` scope respectively.
+rejected by ordinary Control API methods. The deliberate exceptions also accept
+a `tk_live_` key with the matching scope: sandbox methods, compute quotes and
+HTTP service invocation with `sandboxes`, and database and record methods with
+`databases`.
 Requests with unknown JSON fields are rejected. Sandbox mutations accept an
 idempotency key either in their request message or through the
 `Idempotency-Key` HTTP/gRPC metadata header.
@@ -235,7 +246,12 @@ uses an SSH key or a Forgejo personal access token, not a `tk_live_` key.
 
 A managed database belongs to a project. Its collections, access rules,
 Function triggers, and schedules come from a release manifest; record data is
-read and written through `DatabaseService`.
+read and written through `DatabaseService`. A compute workload's own database
+and a project's default database (`owner_workload_id`, `project_default`) are
+created on first use and start in `implicit` schema mode, where a first write
+creates a collection or field. Submitting a release or connecting a source
+switches a database to `managed` mode (`schema_mode`);
+[`contracts/compute`](contracts/compute/README.md#databases) has the details.
 
 | Method | REST route | Ability |
 | --- | --- | --- |
@@ -254,6 +270,12 @@ read and written through `DatabaseService`.
 | `ListDatabaseReleases` | `GET /control/v1/orgs/{org_id}/databases/{database_id}/releases` | Release history with failure reasons |
 | `GetDatabaseManifest` | `GET /control/v1/orgs/{org_id}/databases/{database_id}/manifest` | Read the active or a named release manifest |
 | `ProposeDatabaseSchema` | `POST /control/v1/orgs/{org_id}/databases/{database_id}/schema:propose` | Prepare a Git patch or pull request for a schema change |
+
+Database methods accept a Tarka account access token or a `tk_live_` key with
+the `databases` scope. Reads need organization membership; changes need an
+owner, admin, or operator. MCP tools do not offer `DeleteManagedDatabase` or
+`RestoreManagedDatabase`; an OAuth connection such as a CLI login with write
+access may call them.
 
 Deletion, restore, and restore-point creation return as soon as they are
 recorded; poll `GetManagedDatabase` for `state`, `operation_error`, and
@@ -294,9 +316,8 @@ realtime over HTTP.
 
 ### Queued compute contract and availability
 
-Jobs, sandboxes and Agent Hosts support explicit US East placement (`us-1`).
-Check organization-scoped product and location discovery and obtain an available
-compute quote before creation. Contract definitions alone do not enable a
+Jobs, sandboxes and Agent Hosts run in Europe. Check organization-scoped product
+and location discovery and obtain an available compute quote before creation. Contract definitions alone do not enable a
 runtime; product approval, billing and shared capacity checks still apply.
 
 Omitting a location selects the current per-product default reported by
@@ -306,12 +327,6 @@ constraint; a closed location fails instead of silently selecting another pool.
 The chosen location is returned in the quote and
 cannot change during retries or a failed launch. Existing resources retain
 placement. A location list is not a reservation.
-
-An accepted sandbox can be `QUEUED` while capacity starts. `queue_deadline`
-bounds waiting and setup, with a default of ten minutes. `expires_at` is unset
-until readiness, when it becomes `ready_at + timeout_seconds`. Queue/setup time
-is free; a capacity timeout releases the unused reservation. Clients should
-poll lifecycle state rather than assume a create response is ready to execute.
 
 Jobs request CPU, memory and ephemeral scratch through `JobResources`. Zero
 fields select 1000 millicores, 1024 MiB RAM and 1024 MiB scratch; explicit values
@@ -565,10 +580,9 @@ Apache License 2.0. See [`LICENSE`](LICENSE).
 `POST /control/v1/orgs/{org_id}/compute-quotes` returns a five-minute quote in
 billing currency, including normalized allocation, runtime/network caps,
 minimum charge, maximum reservation and immutable price/FX version. Creation
-uses `accepted_quote_id` and the returned location; US East requires price
-consent even when it is the default. Existing EU resources retain placement and
-billing. Agent Host previews include `admission` with a timestamp, availability
-and reason; they reserve no capacity. Availability can change before atomic
+uses `accepted_quote_id` and the returned location. Existing resources retain
+placement and billing. Agent Host previews include `admission` with a
+timestamp, availability and reason; they reserve no capacity. Availability can change before atomic
 creation. The console shows quotes before creation.
 
 `GET /control/v1/orgs/{org_id}/usage-policy` reports allowances, inventory and
@@ -577,13 +591,6 @@ only after shadow metering and backend enforcement qualify. Existing data is
 never billed retroactively. At exhausted funds data is read-only and retained;
 there is no automatic deletion or unpaid debt. Product availability remains a
 separate gate; these contracts do not announce customer launch.
-
-US East Agent Host quotes additionally bind persistent disk bytes, the disk rate,
-and a renewable network allowance. Retained disks remain metered while the host
-is paused; runtime does not. A temporary startup credit hold is shown separately
-and unused funds are released. Exhausted credit suspends compute/networking and
-retains disks without automatic deletion or unpaid debt. These fields do not
-activate US East Agent Hosts: live availability and qualification remain separate.
 
 ### Host secret handoff
 
