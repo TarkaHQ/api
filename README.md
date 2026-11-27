@@ -326,12 +326,6 @@ The chosen location is returned in the quote and
 cannot change during retries or a failed launch. Existing resources retain
 placement. A location list is not a reservation.
 
-An accepted sandbox can be `QUEUED` while capacity starts. `queue_deadline`
-bounds waiting and setup, with a default of ten minutes. `expires_at` is unset
-until readiness, when it becomes `ready_at + timeout_seconds`. Queue/setup time
-is free; a capacity timeout releases the unused reservation. Clients should
-poll lifecycle state rather than assume a create response is ready to execute.
-
 Jobs request CPU, memory and ephemeral scratch through `JobResources`. Zero
 fields select 1000 millicores, 1024 MiB RAM and 1024 MiB scratch; explicit values
 must meet the bounds documented in the protobuf. Images are resolved to a
