@@ -90,32 +90,34 @@ Inference API and, when they include the `sandboxes` scope, by SandboxService
 RPCs. A key with the `databases` scope is accepted by the managed database
 RPCs and by DatabaseService.
 
-Inside a Tarka Agent Host, the same canonical REST API is available at
-`http://tarka/v1` without a caller-supplied Authorization header. A host-bound
-service identity is injected only by the namespace-local platform gateway and
+Inside any tarka.run workload, the same canonical REST API is available at
+`http://tarka/v1` without a caller-supplied Authorization header. The
+workload's service identity is injected only by the namespace-local platform gateway and
 is rejected by Tarka's public API surfaces. A host may instead run its chat
 model on an OpenAI-compatible endpoint and key the customer brings
 (`runtime.model_endpoint`); the same gateway forwards that model's requests
 there and keeps every other model on Tarka.
 
-The contract gives every compute workload, not only Agent Hosts, that private
-gateway at `http://tarka`: HTTP services, batch jobs, code sandboxes and
-container sessions are defined to use the same routes for inference, database
-records, object storage, Hosted Git, the project's API and MCP gateways,
-invoking other compute and project secrets, and the platform authenticates the
-workload so code holds no credential.
-[`contracts/compute/README.md`](contracts/compute/README.md) defines the
-routes, the required `Tarka-Workload: 1` header, zero-setup databases and the
-error codes. `WorkloadAccess` selects what each workload
-may reach (`CreateComputeWorkloadRequest.access`, `GetWorkloadAccess`,
-`SetWorkloadAccess`).
+Every compute workload has that private gateway at `http://tarka`: Agent
+Hosts, HTTP services (Functions), batch jobs, code sandboxes and container
+sessions use the same routes for inference, database records, object storage,
+Hosted Git, the project's API and MCP gateways, invoking other compute and
+project secrets, and the platform authenticates the workload so code holds no
+credential. [`contracts/compute/README.md`](contracts/compute/README.md)
+defines the routes, the required `Tarka-Workload: 1` header (every route but
+`/v1` needs it), zero-setup databases and the error codes. `WorkloadAccess`
+selects what each workload may reach (`CreateComputeWorkloadRequest.access`,
+`GetWorkloadAccess`, `SetWorkloadAccess`).
 
-Availability: Agent Hosts serve `http://tarka` today: discovery, inference at
-`/v1` (the only route that needs no `Tarka-Workload` header), and databases at
-`/database`, `/project/database` and `/databases`. HTTP services (Functions),
-batch jobs, code sandboxes and container sessions are defined by the same
-contract, but they do not have the gateway yet. On an Agent Host, capabilities
-that its access has not enabled answer `403 capability_disabled`.
+Only the defaults differ by use case. Agent Hosts, HTTP services and batch jobs
+start with inference, their own database and the project's default database
+on. Code sandboxes and container sessions start with everything off and have
+no database of their own. A workload gets platform access when at least one
+capability is on; a capability its access has not enabled answers
+`403 capability_disabled`. In HTTP services and batch jobs the platform sets
+`TARKA_API_URL=http://tarka/v1` and configures git to send the
+`Tarka-Workload: 1` header to `http://tarka` only; in Agent Hosts, code
+sandboxes and container sessions, code sets that git header itself.
 
 The control REST gateway is rooted at `https://tarka.rest/control/v1`. It
 accepts `Authorization: Bearer <Tarka account access token>` and uses protobuf
